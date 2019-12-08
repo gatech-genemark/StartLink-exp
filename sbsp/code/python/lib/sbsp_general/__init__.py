@@ -22,13 +22,14 @@ class Environment:
         # type: (str, Any) -> None
         self._env[key] = value
 
-    def duplicate(self, new_values):
+    def duplicate(self, new_values=None):
         # type: (Dict[str, Any]) -> Environment
         """Creates a copy of the environment, with update variables
         """
         new_env = copy.deepcopy(self)
-        for item in new_values.keys():
-            new_env[item] = new_values[item]
+        if new_values is not None:
+            for item in new_values.keys():
+                new_env[item] = new_values[item]
 
         return new_env
 

@@ -12,15 +12,16 @@ from typing import *
 import pathmagic
 
 # noinspection PyUnresolvedReferences
-import sbsp_log             # runs init in sbsp_log and configures logger
+import sbsp_log  # runs init in sbsp_log and configures logger
 
 import sbsp_argparse.parallelization
 import sbsp_argparse.msa
 
 from sbsp_general import Environment
 from sbsp_options.msa import MSAOptions
-from sbsp_options.pipeline_msa import PipelineMSAOptions
 from sbsp_options.pbs import PBSOptions
+from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
+
 
 # ------------------------------ #
 #           Parse CMD            #
@@ -49,7 +50,6 @@ parser.add_argument('--upstream-length-nt', required=False, default=None, type=U
                     help="The maximum number of upstream nucleotides (from annotation) to use in MSA")
 parser.add_argument('--downstream-length-nt', required=False, default=None, type=Union[int],
                     help="The maximum number of downstream nucleotides to use in MSA")
-
 
 sbsp_argparse.parallelization.add_pbs_options(parser)
 sbsp_argparse.msa.add_msa_options(parser)
@@ -82,19 +82,20 @@ def main(env, args):
     msa_options = MSAOptions.init_from_dict(env, vars(args))
     pbs_options = PBSOptions.init_from_dict(env, vars(args))
 
-    pipeline_options = PipelineMSAOptions(env,
-                                          pf_q_list=args.pf_q_list,
-                                          pf_t_list=args.pf_t_list,
-                                          fn_q_labels=args.fn_q_labels,
-                                          fn_t_labels=args.fn_t_labels,
-                                          upstream_length_nt=args.upstream_length_nt,
-                                          downstream_length_nt=args.downstream_length_nt,
-                                          pbs_options=pbs_options,
-                                          steps=args.steps,
-                                          fn_q_labels_true=args.fn_q_labels_true,
-                                          )
+    pipeline_options = PipelineSBSPOptions(env,
+                                           pf_q_list=args.pf_q_list,
+                                           pf_t_list=args.pf_t_list,
+                                           msa_options=msa_options,
+                                           fn_q_labels=args.fn_q_labels,
+                                           fn_t_labels=args.fn_t_labels,
+                                           fn_q_labels_true=args.fn_q_labels_true,
+                                           upstream_length_nt=args.upstream_length_nt,
+                                           downstream_length_nt=args.downstream_length_nt,
+                                           pbs_options=pbs_options,
+                                           steps=args.steps
+                                           )
 
-    p_msa = PipelineMSA(pipeline_options, msa_options)
+    p_msa = PipelineMSA(pipeline_options)
     p_msa.run()
 
 

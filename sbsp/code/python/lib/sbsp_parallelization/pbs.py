@@ -66,10 +66,10 @@ class PBS:
 
         job_name = get_value(kwargs, "job_name", "JOBNAME")
         pf_input_package_template_formatted = os.path.join(
-            self._pbs_options["pd-work-pbs"], "input_package_{}"
+            self._pbs_options["pd-head"], "input_package_{}"
         )
 
-        num_jobs = self._pbs_options["num-pbs-jobs"]
+        num_jobs = self._pbs_options["num-jobs"]
 
         # 1) Parse all PBS arguments
         self._setup_pbs_run()
@@ -112,7 +112,7 @@ class PBS:
         :rtype: List[str]
         """
 
-        pd_work_pbs = self._pbs_options["pd-work-pbs"]
+        pd_work_pbs = self._pbs_options["pd-head"]
 
         pf_package_template_formatted = get_value(
             kwargs, "pf_package_template_formatted", os.path.join(pd_work_pbs, "input_package_{}")
@@ -138,7 +138,7 @@ class PBS:
         :rtype: str
         """
 
-        pf_pbs = os.path.join(self._pbs_options["pd-work-pbs"], "run.pbs")
+        pf_pbs = os.path.join(self._pbs_options["pd-head"], "run.pbs")
         pf_input_package_template = pf_input_package_template_formatted.format("${PBS_ARRAYID}")
 
         # create pbs file
@@ -151,7 +151,7 @@ class PBS:
 
         # write summary file
         list_pf_outputs = [PBS.create_concrete_from_template(pf_output_package_template, x) for x in range(num_jobs)]
-        pf_pbs_summary = os.path.join(self._pbs_options["pd-work-pbs"], self._pbs_options["fn-pbs-summary"])
+        pf_pbs_summary = os.path.join(self._pbs_options["pd-head"], self._pbs_options["fn-pbs-summary"])
         sbsp_io.general.write_string_to_file("\n".join(list_pf_outputs), pf_pbs_summary)
 
         return list_pf_outputs
@@ -238,11 +238,13 @@ class PBS:
         :return:
         """
 
-        num_nodes = pbs_options["num-nodes"]
+        num_nodes = pbs_options["num-nodes-per-job"]
         ppn = pbs_options["num-processors"]
         walltime = pbs_options["walltime"]
 
-        pd_job_template = os.path.join(pbs_options["pd-work-pbs"], "job_${PBS_ARRAYID}")
+        pd_compute = os.path.join(pbs_options["pd-root-compute"], "dn-compute")
+
+        pd_job_template = os.path.join(pd_compute, "job_${PBS_ARRAYID}")
 
 
         pbs_text = " "

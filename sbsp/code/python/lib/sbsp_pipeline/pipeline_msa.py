@@ -1,11 +1,12 @@
 import os
 from typing import *
 
-from sbsp_alg.sbsp_steps import sbsp_step_get_orthologs
+from sbsp_alg.sbsp_steps import sbsp_step_get_orthologs, sbsp_step_compute_features, sbsp_step_filter, sbsp_step_msa, \
+    sbsp_step_accuracy
 from sbsp_general import Environment
 from sbsp_io.general import read_rows_to_list
 from sbsp_options.msa import MSAOptions
-from sbsp_options.pipeline_msa import PipelineMSAOptions
+from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
 
 
 class PipelineMSA:
@@ -23,12 +24,11 @@ class PipelineMSA:
             list_pf_data = read_rows_to_list(pf_list_pf_data)
             return cls(list_pf_data)
 
-    def __init__(self, env, pipeline_options, msa_options, **kwargs):
-        # type: (Environment, PipelineMSAOptions, MSAOptions, Dict[str, Any]) -> None
+    def __init__(self, env, pipeline_options, **kwargs):
+        # type: (Environment, PipelineSBSPOptions, Dict[str, Any]) -> None
 
         self.env = env
         self.pipeline_options = pipeline_options
-        self.msa_options = msa_options
 
     def run(self):
         # type: () -> None
@@ -57,7 +57,7 @@ class PipelineMSA:
         curr_env = self.env.duplicate({
             "pd-work": os.path.join(self.env["pd-work"], "features")
         })
-        result = sbsp_step_get_compute_features(curr_env, self.pipeline_options)
+        result = sbsp_step_compute_features(curr_env, self.pipeline_options)
 
         return PipelineMSA.PipelineState.from_file(result["pf-list-output"])
 
