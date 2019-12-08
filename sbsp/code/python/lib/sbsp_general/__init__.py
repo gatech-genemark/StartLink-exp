@@ -37,30 +37,30 @@ class Environment:
     def load_environment_variables(pd_data=None, pd_work=None, **kwargs):
         # type: (str, str, Dict[str, Any]) -> Dict[str, str]
 
-        from os.path import join
+        import os
 
         pd_results = kwargs["pd_results"] if "pd_results" in kwargs else None
 
         # path to current file
         pd_curr = general.get_file_dir(__file__)
 
-        pd_base = join(pd_curr, "/../../../../")
-        pd_bin = join(pd_base, "/bin")
-        pd_code = join(pd_base, "/code")
-        pd_tmp = join(pd_base, "/tmp")
-        pd_mat = join(pd_base, "/mat")
-        pd_config = join(pd_base, "config")
+        pd_base = os.path.join(pd_curr, "../../../../")
+        pd_bin = os.path.join(pd_base, "bin")
+        pd_code = os.path.join(pd_base, "code")
+        pd_tmp = os.path.join(pd_base, "tmp")
+        pd_mat = os.path.join(pd_base, "mat")
+        pd_config = os.path.join(pd_base, "config")
 
         if pd_results is None:
-            pd_results = pd_base + "/results"
+            pd_results = os.path.join(pd_base, "results")
 
         if pd_data is None:
-            pd_data = pd_base + "/data/all"
+            pd_data = os.path.join(pd_base, "data/all")
 
         if pd_work is None:
             pd_work = "."
 
-        pd_work_results = pd_results + "/" + os.path.basename(pd_work)
+        pd_work_results = os.path.join(pd_results, os.path.basename(pd_work))
         if pd_work == ".":
             pd_work_results = "."
 
@@ -70,9 +70,9 @@ class Environment:
         if not os.path.exists(pd_work_results):
             os.makedirs(pd_work_results)
 
-        pd_bash = pd_code + "/bash"
-        pd_bash_lib = pd_bash + "/lib"
-        pd_bash_driver = pd_bash + "/lib"
+        pd_bash = os.path.join(pd_code, "bash")
+        pd_bash_lib = os.path.join(pd_bash, "lib")
+        pd_bash_driver = os.path.join(pd_bash, "lib")
 
         env = {
             "base": pd_base,

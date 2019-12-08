@@ -34,6 +34,9 @@ class GenomeInfoList:
 
         return data
 
+    def __getitem__(self, item):
+        return self._list_genome_info[item]
+
     def __iter__(self):
         # type: () -> GenomeInfoList
         return self
@@ -94,7 +97,7 @@ class GenomeInfoList:
 
             gcfid = row["gcfid"]
             gcode = row["genetic-code"]
-            attributes_str = row["attributes"]
+            attributes_str = str(row["attributes"])
 
             attributes = parse_attributes(attributes_str)
 

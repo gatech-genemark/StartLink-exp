@@ -21,7 +21,7 @@ class Options:
         self.env = env.duplicate()
 
         # get default options
-        self._default_options = Options.get_default_options(env)
+        self._default_options = self.get_default_options(env)
 
         # get custom options
         self._custom_options = Options.read_from_file(pf_options_custom)
@@ -35,10 +35,9 @@ class Options:
         # check that required parameters have been set
         self._check_requirements()
 
-    @staticmethod
-    def get_default_options(env):
+    def get_default_options(self, env):
         # type: (Environment) -> Dict[str, Any]
-        pf_default = Options.path_to_default_options_file(env)
+        pf_default = self.path_to_default_options_file(env)
         return Options.read_from_defaults_file(pf_default)
 
     def __getitem__(self, item):
@@ -65,9 +64,8 @@ class Options:
         # type: (str) -> None
         sbsp_io.general.write_string_to_file(self.to_string(), pf_options)
 
-    @staticmethod
     @abstractmethod
-    def path_to_default_options_file(env):
+    def path_to_default_options_file(self, env):
         # type: (Environment) -> str
         # Needs to be implemented by child class, and returns the path to the file containing
         # the class's default options
@@ -141,7 +139,7 @@ class Options:
 
     def _check_requirements(self):
         # type: () -> None
-        requirements = Options.required()
+        requirements = self.required()
         if requirements is None:
             return
 
@@ -149,9 +147,7 @@ class Options:
             if r not in self._options or self._options[r] is None:
                 raise ValueError("Option required: {}".format(r))
 
-
-    @staticmethod
-    def required():
+    def required(self):
         # type: () -> Union[Set[str], None]
         """Returns a set of required options to be set"""
         return None

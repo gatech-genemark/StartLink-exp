@@ -95,7 +95,7 @@ def main(env, args):
                                            steps=args.steps
                                            )
 
-    p_msa = PipelineMSA(pipeline_options)
+    p_msa = PipelineMSA(env, pipeline_options)
     p_msa.run()
 
 

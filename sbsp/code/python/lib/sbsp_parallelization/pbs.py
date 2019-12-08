@@ -51,7 +51,7 @@ class PBS:
 
     def _setup_pbs_run(self):
 
-        mkdir_p(self._pbs_options["pd-work-pbs"])
+        mkdir_p(self._pbs_options["pd-head"])
 
     def run(self, data, func, func_kwargs, **kwargs):
         # type: (Dict[str, Any], Callable, Dict[str, Any], Dict[str, Any]) -> Any

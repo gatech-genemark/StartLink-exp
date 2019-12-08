@@ -21,17 +21,15 @@ class PipelineSBSPOptions(Options):
             return True
         return step in self["steps"]
 
-    @staticmethod
-    def path_to_default_options_file(env):
+    def path_to_default_options_file(self, env):
         # type: (Environment) -> str
-        return os.path.join(env["pd-config"], "sbsp-defaults.conf")
+        return os.path.join(env["pd-config"], "pipeline-sbsp-defaults.conf")
 
-    @staticmethod
-    def required():
+    def required(self):
         # type: () -> Union[Set[str], None]
         return {
             # output files for sbsp steps
-            "fn-orthologs", "fn-compute-features", "fn-filter", "fn-msa", "fns-accuracy",
+            "fn-orthologs", "fn-compute-features", "fn-filter", "fn-msa", "fn-accuracy",
             # input files
             "pf-q-list", "pf-t-list", "fn-q-labels", "fn-t-labels"
         }
@@ -40,6 +38,25 @@ class PipelineSBSPOptions(Options):
         # type: () -> bool
         return "pbs-options" in self and self["pbs-options"]["use-pbs"]
 
+    @staticmethod
+    def init_from_dict(env, dict_options):
+        # type: (Environment, Dict[str, Any]) -> TypeVar('T', bound=Options)
+
+        pf_custom_options = None
+        if "pf_msa_options" in dict_options:
+            pf_custom_options = dict_options["pf_msa_options"]
+
+        msa_options = PipelineSBSPOptions(env,
+                                          pf_custom_options=pf_custom_options, **dict_options)
+
+        # valid_keys = msa_options._options.keys()
+        #
+        # for k in valid_keys:
+        #     k_in_args = k.replace("-", "_")
+        #     if k_in_args in dict_options and dict_options[k_in_args] is not None:
+        #         msa_options[k] = dict_options[k_in_args]
+
+        return msa_options
 
 
 #
