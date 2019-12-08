@@ -10,13 +10,13 @@ from sbsp_io.general import mkdir_p
 log = logging.getLogger(__name__)
 
 
-def get_orthologs_from_files(env, data, pf_output, **kwargs):
-    # type: (Environment, Dict[str, str], str, Dict[str, Any]) -> str
+def get_orthologs_from_files(env, pf_q_list, pf_t_list, pf_output, **kwargs):
+    # type: (Environment, str, str, str, Dict[str, Any]) -> str
 
     clean = get_value(kwargs, "clean", False)
 
-    pf_q_list = data["pf-q-list"]
-    pf_t_list = data["pf-t-list"]
+    # pf_q_list = data["pf-q-list"]
+    # pf_t_list = data["pf-t-list"]
 
     pd_work = env["pd-work"]
 
