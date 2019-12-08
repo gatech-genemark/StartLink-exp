@@ -7,7 +7,6 @@ from typing import *
 from sbsp_containers.genome_list import GenomeInfoList
 from sbsp_general import Environment
 from sbsp_general.general import get_value, except_if_not_in_set
-import sbsp_general.sequences
 import sbsp_general.labels
 from sbsp_general.general import create_gene_key
 from sbsp_io.general import write_string_to_file

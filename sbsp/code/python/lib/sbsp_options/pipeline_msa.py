@@ -1,6 +1,6 @@
 import os
 from sbsp_general.general import get_value
-import sbsp_alg.msaoptions
+import sbsp_options.msa
 from sbsp_options.pbs import PBSOptions
 
 
@@ -43,7 +43,7 @@ class PipelineMSAOptions:
         self.multiple_msa_start_selection_threshold = get_value(kwargs, "multiple_msa_start_selection_thresholds", None)
 
         self.msa_options = get_value(kwargs, "msa_options",
-                                sbsp_alg.msaoptions.MSAOptions(env))  # type: sbsp_alg.msaoptions.MSAOptions
+                                sbsp_options.msa.MSAOptions(env))  # type: sbsp_alg.msaoptions.MSAOptions
 
     def perform_step(self, step):
         # type: (str) -> bool
