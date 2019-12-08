@@ -242,7 +242,7 @@ class PBS:
         ppn = pbs_options["num-processors"]
         walltime = pbs_options["walltime"]
 
-        pd_compute = os.path.abspath(os.path.join(pbs_options["pd-root-compute"], "dn-compute"))
+        pd_compute = os.path.abspath(os.path.join(pbs_options["pd-root-compute"], pbs_options["dn-compute"]))
 
         pd_job_template = os.path.join(pd_compute, "job_${PBS_ARRAYID}")
 
