@@ -107,6 +107,6 @@ function get_file_extension() {
   echo "$ext"
 }
 
-create_exec_script_for_directory $PATH_BASH_DRIVER
+#create_exec_script_for_directory $PATH_BASH_DRIVER
 create_exec_script_for_directory $PATH_PYTHON_DRIVER
-create_exec_script_for_directory $PATH_PERL_DRIVER
+#create_exec_script_for_directory $PATH_PERL_DRIVER
