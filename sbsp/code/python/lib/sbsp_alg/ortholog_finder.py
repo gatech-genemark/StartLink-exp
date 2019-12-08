@@ -26,7 +26,7 @@ def get_orthologs_from_files(env, pf_q_list, pf_t_list, pf_output, **kwargs):
     fn_blast_out = "blast.xml"
     pf_blast_out = os.path.join(pd_work, fn_blast_out)
 
-    run_blast(env, pf_q_list, pf_t_list, **kwargs)
+    run_blast(env, pf_q_list, pf_t_list, pf_blast_out, **kwargs)
 
     # convert blast output to csv
     convert_blast_output_to_csv(pf_blast_out, pf_output, select_best_alignment_per_qt_pair=True)

@@ -64,4 +64,6 @@ def split_query_genomes_target_genomes_one_vs_group(data, num_splits, pd_work, *
                 "pf_t_list": pf_t_split
             })
 
+            split_number += 1
+
     return list_pf_splits
