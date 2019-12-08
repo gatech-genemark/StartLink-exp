@@ -16,7 +16,7 @@ class PBSOptions(Options):
         # type: () -> Union[Set[str], None]
         return {
             # directories for pbs
-            "pd-root-compute", "dn-compute", "pd-head",
+            "dn-compute",
             # node computation configuration
             "num-processors", "num-nodes-per-job", "walltime",
             "num-jobs",
