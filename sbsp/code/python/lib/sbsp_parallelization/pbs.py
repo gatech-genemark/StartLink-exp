@@ -44,7 +44,9 @@ class PBS:
         if pbs_options is None:
             raise ValueError("PBSOptions cannot be None")
 
-        self._pbs_options = pbs_options
+        self._pbs_options = copy.deepcopy(pbs_options)
+        self._pbs_options["pd-head"] = os.path.abspath(self._pbs_options["pd-head"])
+        self._pbs_options["pd-root-compute"] = os.path.abspath(self._pbs_options["pd-root-compute"])
 
         self._splitter = splitter
         self._merger = merger
@@ -63,6 +65,8 @@ class PBS:
         :param kwargs:
         :return: output of merger function
         """
+
+
 
         job_name = get_value(kwargs, "job_name", "JOBNAME")
         pf_input_package_template_formatted = os.path.join(
