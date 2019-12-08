@@ -66,7 +66,7 @@ class PBS:
 
         job_name = get_value(kwargs, "job_name", "JOBNAME")
         pf_input_package_template_formatted = os.path.join(
-            self._pbs_options["pd-head"], "input_package_{}"
+            os.path.abspath(self._pbs_options["pd-head"]), "input_package_{}"
         )
 
         num_jobs = self._pbs_options["num-jobs"]
@@ -269,7 +269,7 @@ class PBS:
 
         pbs_text += "mkdir -p {}".format(pd_job_template) + "\n"
 
-        pbs_text += "set PBS_O_WORKDIR = " + pd_job_template + "\n"
+        pbs_text += "PBS_O_WORKDIR=" + pd_job_template + "\n"
         pbs_text += "cd $PBS_O_WORKDIR \n"
 
         pbs_text += "echo The working directory is `echo $PBS_O_WORKDIR`" + "\n"
