@@ -4,6 +4,8 @@ import os
 import Bio.Align
 import sbsp_general.dataframe
 import numpy as np
+
+from sbsp_general import Environment
 from sbsp_general.general import get_value
 import sbsp_general.labels
 from sbsp_options.msa import MSAOptions
@@ -1221,7 +1223,7 @@ def filter_df(df, msa_options, **kwargs):
 
 
 def setup_directory_for_msa_outputs(env, dn_msa_output):
-    # type: (Dict[str, Any], str) -> str
+    # type: (Environment, str) -> str
     pd_msa_output = None
     if dn_msa_output is not None:
         pd_msa_output = os.path.join(env["pd-work"], dn_msa_output)
@@ -2091,7 +2093,7 @@ def print_filter_stats_to_file(meine_filter_stats, pf_filter_stats):
 
 
 def perform_msa_on_df(env, df, **kwargs):
-    # type: (Dict[str, Any], pd.DataFrame, Dict[str, Any]) -> pd.DataFrame
+    # type: (Environment, pd.DataFrame, Dict[str, Any]) -> pd.DataFrame
 
     msa_options = get_value(kwargs, "msa_options", MSAOptions(env))
     msa_output_start = get_value(kwargs, "msa_output_start", 0)
@@ -2202,6 +2204,18 @@ def select_start_for_msa_from_file(env, pf_msa, **kwargs):
 
     # read alignment
 
+
+
+def filter_orthologs(env, pf_data, pf_output, **kwargs):
+    # type: (Environment, str, str, Dict[str, Any]) -> str
+
+    df = pd.read_csv(pf_data, header=0)
+
+    perform_msa_on_df(env, df, **kwargs)
+
+    df.to_csv(pf_output, index=False)
+
+    return pf_output
 
 
 
