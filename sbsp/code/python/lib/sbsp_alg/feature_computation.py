@@ -124,6 +124,10 @@ def compute_feature_helper(pf_data, **kwargs):
     kimura_on_3rd = get_value(kwargs, "kimura_on_3rd", False)
     distance_types = get_value(kwargs, "distance_types", {"kimura"})
 
+    df = df_add_labeled_sequences(env, df,
+                                  source="both",
+                                  suffix_gene_sequence=suffix_gene_sequence)
+
     matrix = matlist.blosum62
     import sbsp_alg.phylogeny
     sbsp_alg.phylogeny.add_stop_codon_to_blosum(matrix)
