@@ -6,8 +6,11 @@ from typing import *
 
 from Bio.SubsMat import MatrixInfo as matlist
 
+import sbsp_general
+import sbsp_general.data
+import sbsp_io.sequences
 from sbsp_alg.phylogeny import global_alignment_aa_with_gap, k2p_distance
-from sbsp_general.general import get_value
+from sbsp_general.general import get_value, except_if_not_in_set
 from sbsp_io.general import mkdir_p
 from sbsp_general import Environment
 from sbsp_alg.gene_distances import *
@@ -113,8 +116,94 @@ def add_gaps_to_nt_based_on_aa(seq_nt, seq_aa_with_gaps):
 
     return seq_nt_with_gaps
 
-def compute_feature_helper(pf_data, **kwargs):
-    # type: (str, Dict[str, Any]) -> pd.DataFrame
+def df_add_labeled_sequences(env, df, **kwargs):
+    # type: (Dict, pd.DataFrame, Dict[str, Any]) -> pd.DataFrame
+
+    """
+    Add labeled sequences to data frame
+
+    :param df:
+    :param env: environment variable
+    :param kwargs: Variables to help define dataframe columns
+    :return:
+
+    """
+
+    source = get_value(kwargs, "source", "both")
+    suffix_coordinates = get_value(kwargs, "suffix_coordinates", None)
+    suffix_gene_sequence = get_value(kwargs, "suffix_gene_sequence", "gene-sequence")
+
+    upstream_length_nt = get_value(kwargs, "upstream_length_nt", None)
+    downstream_length_nt = get_value(kwargs, "downstream_length_nt", None)
+    limit_upstream_to_first_candidate = get_value(kwargs, "limit_upstream_to_first_candidate", False)
+
+    except_if_not_in_set(source, ["both", "q", "t"])
+
+    # Code sketch:
+    # 1) Find all needed genome sequences
+    # 2) Map genome to indices in dataframe
+    # 3) Read genomes one by one and add to dataframe
+
+    q_labels_per_genome = sbsp_general.data.get_labels_per_genome(df, "query", coordinates_suffix=suffix_coordinates)
+    t_labels_per_genome = sbsp_general.data.get_labels_per_genome(df, "target", coordinates_suffix=suffix_coordinates)
+
+    # get nucleotide and protein labels
+    q_sequences_per_genome = sbsp_io.sequences.read_sequences_from_genome_labels_pairs(
+        env, q_labels_per_genome,
+        leave_out_gene_stop=True,
+        **kwargs
+    )
+
+    t_sequences_per_genome = sbsp_io.sequences.read_sequences_from_genome_labels_pairs(
+        env, t_labels_per_genome,
+        leave_out_gene_stop=True,
+        **kwargs
+    )
+
+    sequences_per_genome = {
+        "q": q_sequences_per_genome,
+        "t": t_sequences_per_genome
+    }
+
+    sources = ["q", "t"]
+    if source != "both":
+        sources = [source]
+
+    # add to dataframe
+    for index, row in df.iterrows():
+
+        # for each source
+        for s in sources:
+
+            # key for gene
+            key = sbsp_general.general.create_gene_key(
+                row["{}-{}".format(s, "genome")],
+                row["{}-{}".format(s, "accession")],
+                row["{}-{}".format(s, "left")],
+                row["{}-{}".format(s, "right")],
+                row["{}-{}".format(s, "strand")]
+            )
+
+            if key not in sequences_per_genome[s].keys():
+                raise ValueError("Couldn't find sequence of key ({})".format(key))
+
+            # for types of sequence
+            for sequence_type in ["prot", "nucl"]:           # FIXME: change prot nucl to aa/nt
+
+                if sequence_type in sequences_per_genome[s][key].keys():
+                    df.at[index, "{}-{}-{}".format(s, sequence_type, suffix_gene_sequence)] = \
+                        sequences_per_genome[s][key][sequence_type]
+                    df.at[index, "{}-{}-pos-5prime-in-frag-{}".format(s, sequence_type, suffix_gene_sequence)] = \
+                        sequences_per_genome[s][key]["{}-pos-5prime-in-frag".format(sequence_type)]
+
+                    df.at[index, "{}-{}-position-of-5prime-in-msa-fragment-no-gaps".format(s, sequence_type)] = \
+                        sequences_per_genome[s][key]["{}-pos-5prime-in-frag".format(sequence_type)]
+
+    return df
+
+
+def compute_feature_helper(env, pf_data, **kwargs):
+    # type: (Environment, str, Dict[str, Any]) -> pd.DataFrame
     # assumes sequences extracted
 
     df = pd.read_csv(pf_data, header=0)
@@ -184,7 +273,7 @@ def compute_features(env, pf_data, pf_output, **kwargs):
 
     mkdir_p(pd_work)
 
-    df = compute_feature_helper(pf_data)
+    df = compute_feature_helper(env, pf_data)
 
     df.to_csv(pf_output, index=False)
     return pf_output
