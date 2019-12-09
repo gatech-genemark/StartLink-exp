@@ -171,7 +171,7 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
                   merger=merge_identity
                   )
 
-        if pipeline_options.perform_step("msa"):
+        if pipeline_options.perform_step("build-msa"):
 
             output = pbs.run(
                 data={"list_pf_data": list_pf_previous, "group_key": "q-3prime",
@@ -180,7 +180,7 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
                 func=filter_orthologs,
                 func_kwargs={
                     "env": env,
-                    "msa_options": pipeline_options["msa_options"]
+                    "msa_options": pipeline_options["msa-options"]
                 }
             )
         else:
