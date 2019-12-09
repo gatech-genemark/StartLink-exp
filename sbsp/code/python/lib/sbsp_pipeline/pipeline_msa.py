@@ -59,7 +59,7 @@ class PipelineMSA:
         })
         result = sbsp_step_compute_features(curr_env, self.pipeline_options, state.list_pf_data)
 
-        return PipelineMSA.PipelineState.from_file(result["pf-list-output"])
+        return PipelineMSA.PipelineState(result)
 
     def _run_filter(self, state):
         # type: (PipelineState) -> PipelineState
@@ -68,7 +68,7 @@ class PipelineMSA:
         })
         result = sbsp_step_filter(curr_env, self.pipeline_options, state.list_pf_data)
 
-        return PipelineMSA.PipelineState.from_file(result["pf-list-output"])
+        return PipelineMSA.PipelineState(result)
 
     def _run_msa(self, state):
         # type: (PipelineState) -> PipelineState
@@ -77,7 +77,7 @@ class PipelineMSA:
         })
         result = sbsp_step_msa(curr_env, self.pipeline_options, state.list_pf_data)
 
-        return PipelineMSA.PipelineState.from_file(result["pf-list-output"])
+        return PipelineMSA.PipelineState(result)
 
     def _accuracy(self, state):
         # type: (PipelineState) -> PipelineState
@@ -86,6 +86,6 @@ class PipelineMSA:
         })
         result = sbsp_step_accuracy(curr_env, self.pipeline_options, state.list_pf_data)
 
-        return PipelineMSA.PipelineState.from_file(result["pf-list-output"])
+        return PipelineMSA.PipelineState(result)
 
 
