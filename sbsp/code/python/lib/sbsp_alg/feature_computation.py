@@ -275,5 +275,11 @@ def compute_features(env, pf_data, pf_output, **kwargs):
 
     df = compute_feature_helper(env, pf_data)
 
+    # clean up
+    df.drop("q-nucl-gene-sequence", axis=1, inplace=True)
+    df.drop("q-prot-gene-sequence", axis=1, inplace=True)
+    df.drop("t-nucl-gene-sequence", axis=1, inplace=True)
+    df.drop("t-prot-gene-sequence", axis=1, inplace=True)
+
     df.to_csv(pf_output, index=False)
     return pf_output

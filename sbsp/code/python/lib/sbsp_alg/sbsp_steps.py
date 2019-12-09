@@ -85,7 +85,7 @@ def sbsp_step_compute_features(env, pipeline_options, list_pf_previous):
             output = pbs.run(
                 data={"list_pf_data": list_pf_previous,
                       "pf_output_template": os.path.join(pbs_options["pd-head"],
-                                                         pipeline_options["fn-orthologs"] + "_{}")},
+                                                         pipeline_options["fn-compute-features"] + "_{}")},
                 func=compute_features,
                 func_kwargs={
                     "env": env,
