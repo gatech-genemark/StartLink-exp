@@ -129,6 +129,7 @@ def sbsp_step_filter(env, pipeline_options, list_pf_previous):
                   merger=merge_identity
                   )
 
+
         if pipeline_options.perform_step("filter"):
 
             output = pbs.run(
@@ -138,7 +139,7 @@ def sbsp_step_filter(env, pipeline_options, list_pf_previous):
                 func=filter_orthologs,
                 func_kwargs={
                     "env": env,
-                    "msa_options": pipeline_options["msa_options"]
+                    "msa_options": pipeline_options["msa-options"]
                 }
             )
         else:
