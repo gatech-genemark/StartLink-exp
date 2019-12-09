@@ -3,7 +3,7 @@ import copy
 from typing import *
 
 from sbsp_general import Environment
-from sbsp_io.general import mkdir_p
+from sbsp_io.general import mkdir_p, write_string_to_file
 from sbsp_options.pbs import PBSOptions
 
 from sbsp_general.general import get_value, run_shell_cmd
@@ -140,6 +140,8 @@ class PBS:
         :rtype: str
         """
 
+        pd_head = self._pbs_options["pd-head"]
+
         pf_pbs = os.path.join(self._pbs_options["pd-head"], "run.pbs")
         pf_input_package_template = pf_input_package_template_formatted.format("${PBS_ARRAYID}")
 
@@ -149,7 +151,10 @@ class PBS:
 
         # run
         if not self._dry_run:
-            run_shell_cmd("qsub {}".format(pf_pbs))
+            array_job_name = PBS._qsub(pf_pbs)
+
+            # wait for jobs to end
+            self._wait_for_job_array(array_job_name, pd_head)
 
         # write summary file
         list_pf_outputs = [PBS.create_concrete_from_template(pf_output_package_template, x) for x in range(num_jobs)]
@@ -157,6 +162,11 @@ class PBS:
         sbsp_io.general.write_string_to_file("\n".join(list_pf_outputs), pf_pbs_summary)
 
         return list_pf_outputs
+
+    @staticmethod
+    def _qsub(pf_pbs):
+        # type: (str) -> str
+        return run_shell_cmd("qsub  -V " + pf_pbs, do_not_log=True).strip()
 
     def _read_data_from_output_packages(self, list_pf_output_packages):
 
@@ -304,3 +314,59 @@ class PBS:
         """
 
         return pf_template.replace("${PBS_ARRAYID}", str(file_number))
+
+    def _wait_for_job_array(self, array_jobname, pd_work):
+        # type: (str, str) -> None
+
+        import random, string
+        import sbsp_general.general
+
+        def _create_dummy_pbs_file(pf_dummy, jobname_dummy, pd_work):
+            # type: (str, str, str) -> None
+            pbstext = PBS.generate_pbs_header(jobname_dummy, pd_work, 1, 1, "00:00:01")
+            write_string_to_file(pbstext, pf_dummy)
+
+        def _cmd_run_dummy_and_wait(pf_dummy, jobname_dummy, jobname_array):
+            cmd = "qsub -W depend=afteranyarray:{} {} \n".format(
+                jobname_array,
+                pf_dummy
+            )
+
+            cmd += r'while [ $(qstat -a | grep " R\|Q\|H " | grep ' + jobname_dummy + \
+                   r'  | wc -l) != 0 ]; do sleep 60 ; done'
+
+            return cmd
+
+        # generate a random filename for the dummy job
+        fn_dummy = ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
+        pf_dummy = os.path.join(pd_work, fn_dummy)
+
+        # create an dummy pbs job that waits for the array to finish
+        _create_dummy_pbs_file(pf_dummy, fn_dummy, pd_work)
+
+        # generate pbs command to wait for job-array to finish and then run this dummy job
+        cmd = _cmd_run_dummy_and_wait(pf_dummy, fn_dummy, array_jobname)
+
+        # run command that waits
+        sbsp_general.general.run_shell_cmd(cmd, do_not_log=True)
+
+    @staticmethod
+    def generate_pbs_header(job_name, working_dir=".", num_nodes=1, ppn=1, walltime="00:30:00"):
+        pbs_text = ""
+
+        pbs_text += "#PBS -N " + str(job_name) + "\n"
+        pbs_text += "#PBS -o " + str(working_dir) + "\n"
+        pbs_text += "#PBS -j oe" + "\n"
+        pbs_text += "#PBS -l nodes=" + str(num_nodes) + ":ppn=" + str(ppn) + "\n"
+        pbs_text += "#PBS -l walltime=" + str(walltime) + "\n"
+
+        pbs_text += "#PBS -W umask=002" + "\n"
+
+        pbs_text += "set PBS_O_WORKDIR = " + str(working_dir) + "\n"
+        pbs_text += "cd $PBS_O_WORKDIR \n"
+
+        pbs_text += "echo The working directory is `echo $PBS_O_WORKDIR`" + "\n"
+        pbs_text += "echo This job runs on the following nodes:" + "\n"
+        pbs_text += "echo `cat $PBS_NODEFILE`" + "\n"
+
+        return pbs_text
