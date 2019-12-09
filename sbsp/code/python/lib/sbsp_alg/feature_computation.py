@@ -82,6 +82,37 @@ def count_aa_mismatches(seq_a, seq_b):
 
     return matches / float(ungapped_length)
 
+
+# FIXME: found in another file - put somewhere
+def add_gaps_to_nt_based_on_aa(seq_nt, seq_aa_with_gaps):
+    # type: (str, str) -> str
+
+    # make sure number of nt is 3 times number of amino acids (exclude gaps)
+    num_aa = len(seq_aa_with_gaps) - seq_aa_with_gaps.count('-')
+    if len(seq_nt) != 3 * num_aa:
+        raise ValueError("Number of nucleotides ({}) should be 3 times the number of amino acids ({})".format(
+            len(seq_nt), num_aa))
+
+    seq_nt_with_gaps = ""
+
+    pos_in_nt = 0
+    pos_in_aa_with_gaps = 0
+
+    while pos_in_aa_with_gaps < len(seq_aa_with_gaps):
+
+        curr_aa = seq_aa_with_gaps[pos_in_aa_with_gaps]
+
+        # if gap
+        if curr_aa == "-":
+            seq_nt_with_gaps += "---"       # 3 nt gaps = 1 aa gap
+        else:
+            seq_nt_with_gaps += seq_nt[pos_in_nt:pos_in_nt+3]       # add next 3 nucleotides
+            pos_in_nt += 3
+
+        pos_in_aa_with_gaps += 1
+
+    return seq_nt_with_gaps
+
 def compute_feature_helper(pf_data, **kwargs):
     # type: (str, Dict[str, Any]) -> pd.DataFrame
     # assumes sequences extracted
@@ -95,7 +126,6 @@ def compute_feature_helper(pf_data, **kwargs):
 
     matrix = matlist.blosum62
     import sbsp_alg.phylogeny
-    from sbsp_alg.msa import add_gaps_to_nt_based_on_aa
     sbsp_alg.phylogeny.add_stop_codon_to_blosum(matrix)
 
     df[column_output] = np.nan
