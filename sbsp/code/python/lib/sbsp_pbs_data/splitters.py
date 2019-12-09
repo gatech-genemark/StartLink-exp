@@ -1,6 +1,7 @@
 import math
 import os
 import logging
+import pandas as pd
 from typing import *
 
 from sbsp_containers.genome_list import GenomeInfoList
@@ -45,6 +46,59 @@ def split_list(data, num_splits, pd_work, **kwargs):
         split_number += 1
 
     return list_splits
+
+def split_list_and_remerge_by_key(data, num_splits, pd_work, **kwargs):
+    # type: (Dict[str, Any], int, str, Dict[str, Any]) -> List[Dict[str, str]]
+
+# def copy_files_to_new_dir_by_group(list_pf_data, pf_new_data_format, group_key):
+    # type: # (List[str], str, str) -> List[str]
+
+    # goal: move data from one directory to another, such that new files are one per group_key, and
+    # this is done memory-efficiently
+
+    # sketch: go through files one by one, create a new file every time we get to a new key.
+    file_number = 1
+    group_to_file_number = dict()
+
+    list_pf_data = data["list_pf_data"]
+    group_key = data["group_key"]
+    pf_output_template = data["pf_output_template"]
+
+    list_pf_new = list()
+
+    for pf_old in list_pf_data:
+
+        try:
+            df_old = pd.read_csv(pf_old, header=0)
+
+            # loop over groups
+            if group_key in df_old:
+                for name, df_group in df_old.groupby(group_key):
+
+                    # if group hasn't been tapped yet, create a new file for it
+                    if name not in group_to_file_number.keys():
+                        pf_new = pf_output_template.format(file_number)
+                        list_pf_new.append(pf_new)
+                        group_to_file_number[name] = file_number
+                        file_number += 1
+
+                        df_new = df_group
+                    else:
+
+                        curr_file_number = group_to_file_number[name]
+                        pf_new = pf_output_template.format(curr_file_number)
+
+                        df_new = pd.read_csv(pf_new, header=0)
+                        df_new = df_new.append(df_group)
+
+                    df_new.to_csv(pf_new, index=False)
+
+                    list_pf_new.append({"pf_data": pf_new, "pf_output": pf_output_template.format(file_number)})
+
+        except IOError:
+            pass
+
+    return list_pf_new
 
 
 

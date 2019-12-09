@@ -166,14 +166,14 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
         pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
 
         pbs = PBS(env, pbs_options,
-                  splitter=split_list,
+                  splitter=split_list_and_remerge_by_key,
                   merger=merge_identity
                   )
 
         if pipeline_options.perform_step("msa"):
 
             output = pbs.run(
-                data={"list_pf_data": list_pf_previous,
+                data={"list_pf_data": list_pf_previous, "group_key": "q-3prime",
                       "pf_output_template": os.path.join(pbs_options["pd-head"],
                                                          pipeline_options["fn-msa"] + "_{}")},
                 func=filter_orthologs,
