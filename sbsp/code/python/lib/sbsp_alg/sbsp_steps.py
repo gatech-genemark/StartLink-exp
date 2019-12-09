@@ -3,6 +3,7 @@ import os
 import logging
 from typing import *
 
+from sbsp_alg.feature_computation import compute_features
 from sbsp_alg.ortholog_finder import get_orthologs_from_files
 from sbsp_general import Environment
 from sbsp_options.pbs import PBSOptions
@@ -85,7 +86,7 @@ def sbsp_step_compute_features(env, pipeline_options, list_pf_previous):
                 data={"list_pf_data": list_pf_previous,
                       "pf_output_template": os.path.join(pbs_options["pd-head"],
                                                          pipeline_options["fn-orthologs"] + "_{}")},
-                func=get_orthologs_from_files,
+                func=compute_features,
                 func_kwargs={
                     "env": env,
                 }
