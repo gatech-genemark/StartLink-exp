@@ -66,8 +66,6 @@ class PBS:
         :return: output of merger function
         """
 
-
-
         job_name = get_value(kwargs, "job_name", "JOBNAME")
         pf_input_package_template_formatted = os.path.join(
             os.path.abspath(self._pbs_options["pd-head"]), "input_package_{}"

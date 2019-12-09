@@ -39,6 +39,7 @@ def split_query_genomes_target_genomes_one_vs_group(data, num_splits, pd_work, *
 
     pf_q_list = data["pf_q_list"]
     pf_t_list = data["pf_t_list"]
+    pf_output_template = data["pf_output_template"]
 
     list_pf_splits = list()
 
@@ -61,7 +62,8 @@ def split_query_genomes_target_genomes_one_vs_group(data, num_splits, pd_work, *
 
             list_pf_splits.append({
                 "pf_q_list": pf_q_split,
-                "pf_t_list": pf_t_split
+                "pf_t_list": pf_t_split,
+                "pf_output": pf_output_template.format(split_number)
             })
 
             split_number += 1
