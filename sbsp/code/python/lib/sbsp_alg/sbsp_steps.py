@@ -30,9 +30,9 @@ def sbsp_step_get_orthologs(env, pipeline_options):
 
         if pipeline_options.use_pbs():
             pbs_options = copy.deepcopy(pipeline_options["pbs-options"])
-            pbs_options["pd-head"] = env["pd-work"]
+            pbs_options["pd-head"] = os.path.abspath(env["pd-work"])
             if pbs_options["pd-root-compute"] is None:
-                pbs_options["pd-root-compute"] = env["pd-work"]
+                pbs_options["pd-root-compute"] = os.path.abspath(env["pd-work"])
 
             pbs = PBS(env, pbs_options,
                       splitter=split_query_genomes_target_genomes_one_vs_group,
