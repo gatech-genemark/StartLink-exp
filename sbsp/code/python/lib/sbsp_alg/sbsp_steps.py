@@ -5,6 +5,7 @@ from typing import *
 
 from sbsp_alg.feature_computation import compute_features
 from sbsp_alg.filtering import filter_orthologs
+from sbsp_alg.msa import run_sbsp_msa
 from sbsp_alg.ortholog_finder import get_orthologs_from_files
 from sbsp_general import Environment
 from sbsp_io.general import read_rows_to_list
@@ -177,7 +178,7 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
                 data={"list_pf_data": list_pf_previous, "group_key": "q-3prime",
                       "pf_output_template": os.path.join(pbs_options["pd-head"],
                                                          pipeline_options["fn-msa"] + "_{}")},
-                func=filter_orthologs,
+                func=run_sbsp_msa,
                 func_kwargs={
                     "env": env,
                     "msa_options": pipeline_options["msa-options"]
