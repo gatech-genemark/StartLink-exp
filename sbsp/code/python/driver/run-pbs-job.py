@@ -54,6 +54,12 @@ def main(env, args):
     pbs_package = PBSJobPackage.load(args.pf_job_input)
     func = pbs_package["func"]
     func_args = pbs_package["func_kwargs"]
+
+    if "env" in func_args:
+        if args.pd_work is not None:
+            func_args["env"] = func_args["env"].duplicate({"pd-work": args.pd_work})
+            logger.critical("{}".format(func_args["env"]["pd-work"]))
+
     logger.critical("{}\n{}".format(func, func_args))
     output = {
         "data": func(**func_args)

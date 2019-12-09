@@ -39,10 +39,15 @@ class Environment:
 
         import os
 
+        if pd_data is not None:
+            pd_data = os.path.abspath(pd_data)
+        if pd_work is not None:
+            pd_data = os.path.abspath(pd_work)
+
         pd_results = kwargs["pd_results"] if "pd_results" in kwargs else None
 
         # path to current file
-        pd_curr = general.get_file_dir(__file__)
+        pd_curr = os.path.abspath(general.get_file_dir(__file__))
 
         pd_base = os.path.join(pd_curr, "../../../../")
         pd_bin = os.path.join(pd_base, "bin")
@@ -58,11 +63,11 @@ class Environment:
             pd_data = os.path.join(pd_base, "data/all")
 
         if pd_work is None:
-            pd_work = "."
+            pd_work = os.path.abspath(".")
 
         pd_work_results = os.path.join(pd_results, os.path.basename(pd_work))
-        if pd_work == ".":
-            pd_work_results = "."
+        if pd_work == os.path.abspath("."):
+            pd_work_results = pd_work
 
         if not os.path.exists(pd_work):
             os.makedirs(pd_work)

@@ -22,8 +22,9 @@ def sbsp_step_get_orthologs(env, pipeline_options):
 
     log.debug("Running: sbsp_step_get_orthologs")
 
+    print(env["pd-work"])
     output = {
-        "pf-list-output": os.path.join(env["pd-work"], "output_summary.txt")
+        "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
     }
 
     if pipeline_options.perform_step("get-orthologs"):

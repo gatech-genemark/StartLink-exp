@@ -157,7 +157,7 @@ class PBS:
             self._wait_for_job_array(array_job_name, pd_head)
 
         # write summary file
-        list_pf_outputs = [PBS.create_concrete_from_template(pf_output_package_template, x) for x in range(num_jobs)]
+        list_pf_outputs = [PBS.create_concrete_from_template(pf_output_package_template, x) for x in range(1,num_jobs)]
         pf_pbs_summary = os.path.join(self._pbs_options["pd-head"], self._pbs_options["fn-pbs-summary"])
         sbsp_io.general.write_string_to_file("\n".join(list_pf_outputs), pf_pbs_summary)
 
@@ -293,11 +293,18 @@ class PBS:
     @staticmethod
     def _generate_call_command(env, pf_job_input, pf_job_output, pbs_options):
 
-        cmd = "{} --pf-job-input {} --pf-job-output {}".format(
+
+        pd_compute = os.path.abspath(os.path.join(pbs_options["pd-root-compute"], pbs_options["dn-compute"]))
+        pd_job_template = os.path.join(pd_compute, "job_${PBS_ARRAYID}")
+
+        cmd = "{} --pf-job-input {} --pf-job-output {} --pd-work {}".format(
             "{}/{}".format(env["pd-bin"], "run-pbs-job_py.sh"),
             pf_job_input,
-            pf_job_output
+            pf_job_output,
+            pd_job_template
         )
+
+        print(cmd)
 
         return cmd
 
