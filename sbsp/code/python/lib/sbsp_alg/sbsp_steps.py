@@ -40,11 +40,12 @@ def sbsp_step_get_orthologs(env, pipeline_options):
             )
 
             pbs.run(
-                data={"pf_q_list": pipeline_options["pf-q-list"], "pf_t_list": pipeline_options["pf-t-list"]},
+                data={"pf_q_list": pipeline_options["pf-q-list"], "pf_t_list": pipeline_options["pf-t-list"],
+                      "pf_output_template": os.path.join(pbs_options["pd-head"], pipeline_options["fn-orthologs"] + "_{}")},
                 func=get_orthologs_from_files,
                 func_kwargs={
                     "env": env,
-                    "pf_output": pipeline_options["fn-orthologs"]
+                    # "pf_output": os.path.join(pbs_options["pd-head"], pipeline_options["fn-orthologs"])
                 }
             )
 
