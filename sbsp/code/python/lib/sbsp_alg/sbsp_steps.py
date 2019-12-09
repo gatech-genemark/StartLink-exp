@@ -40,21 +40,20 @@ def sbsp_step_get_orthologs(env, pipeline_options):
                       merger=merge_identity
             )
 
-            pbs.run(
+            output = pbs.run(
                 data={"pf_q_list": pipeline_options["pf-q-list"], "pf_t_list": pipeline_options["pf-t-list"],
                       "pf_output_template": os.path.join(pbs_options["pd-head"], pipeline_options["fn-orthologs"] + "_{}")},
                 func=get_orthologs_from_files,
                 func_kwargs={
                     "env": env,
-                    # "pf_output": os.path.join(pbs_options["pd-head"], pipeline_options["fn-orthologs"])
                 }
             )
 
     return output
 
 
-def sbsp_step_compute_features(env, pipeline_options):
-    # type: (Environment, PipelineSBSPOptions) -> Dict[str, Any]
+def sbsp_step_compute_features(env, pipeline_options, state):
+    # type: (Environment, PipelineSBSPOptions, List[str]) -> Dict[str, Any]
     """
     Given a list of query and target genomes, find the set of related genes
     for each query
@@ -66,6 +65,7 @@ def sbsp_step_compute_features(env, pipeline_options):
         "pf-list-output": os.path.join(env["pd-work"], "output_summary.txt")
     }
 
+    print(state)
     # TODO
 
     return output

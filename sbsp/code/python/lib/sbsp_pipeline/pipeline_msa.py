@@ -57,7 +57,7 @@ class PipelineMSA:
         curr_env = self.env.duplicate({
             "pd-work": os.path.join(self.env["pd-work"], "features")
         })
-        result = sbsp_step_compute_features(curr_env, self.pipeline_options)
+        result = sbsp_step_compute_features(curr_env, self.pipeline_options, state)
 
         return PipelineMSA.PipelineState.from_file(result["pf-list-output"])
 
