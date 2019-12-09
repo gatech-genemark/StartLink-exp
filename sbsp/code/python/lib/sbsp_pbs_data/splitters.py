@@ -45,7 +45,7 @@ def split_query_genomes_target_genomes_one_vs_group(data, num_splits, pd_work, *
     q_list = GenomeInfoList.init_from_file(pf_q_list)
     t_list = GenomeInfoList.init_from_file(pf_t_list)
 
-    split_number = 0
+    split_number = 1
     for q_genome in q_list:
 
         # split
