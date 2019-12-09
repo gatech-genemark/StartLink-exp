@@ -31,6 +31,25 @@ def generate_splits(elements, num_splits):
         start = end
 
 
+def split_list(data, num_splits, pd_work, **kwargs):
+    # type: (Dict[str, Any], int, str, Dict[str, Any]) -> List[Dict[str, str]]
+
+    list_pf_data = data["list_pf_data"]
+    pf_output_template = data["pf_output_template"]
+
+    list_splits = list()
+
+    split_number = 1
+    for v in list_pf_data:
+        list_splits.append({"pf_data": v, "pf_output": pf_output_template.format(split_number)})
+        split_number += 1
+
+    return list_splits
+
+
+
+
+
 def split_query_genomes_target_genomes_one_vs_group(data, num_splits, pd_work, **kwargs):
     # type: (Dict[str, str], int, str, Dict[str, Any]) -> List[Dict[str, str]]
 

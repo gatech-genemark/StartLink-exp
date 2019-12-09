@@ -5,13 +5,23 @@ from typing import *
 
 from sbsp_alg.ortholog_finder import get_orthologs_from_files
 from sbsp_general import Environment
+from sbsp_options.pbs import PBSOptions
 from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
 from sbsp_parallelization.pbs import PBS
 from sbsp_pbs_data.mergers import merge_identity
-from sbsp_pbs_data.splitters import split_query_genomes_target_genomes_one_vs_group
+from sbsp_pbs_data.splitters import *
 
 log = logging.getLogger(__name__)
 
+
+def duplicate_pbs_options_with_updated_paths(env, pbs_options):
+    # type: (Environment, PBSOptions) -> PBSOptions
+    pbs_options = copy.deepcopy(pbs_options)
+    pbs_options["pd-head"] = os.path.abspath(env["pd-work"])
+    if pbs_options["pd-root-compute"] is None:
+        pbs_options["pd-root-compute"] = os.path.abspath(env["pd-work"])
+
+    return pbs_options
 
 def sbsp_step_get_orthologs(env, pipeline_options):
     # type: (Environment, PipelineSBSPOptions) -> Dict[str, Any]
@@ -22,7 +32,6 @@ def sbsp_step_get_orthologs(env, pipeline_options):
 
     log.debug("Running: sbsp_step_get_orthologs")
 
-    print(env["pd-work"])
     output = {
         "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
     }
@@ -30,10 +39,7 @@ def sbsp_step_get_orthologs(env, pipeline_options):
     if pipeline_options.perform_step("get-orthologs"):
 
         if pipeline_options.use_pbs():
-            pbs_options = copy.deepcopy(pipeline_options["pbs-options"])
-            pbs_options["pd-head"] = os.path.abspath(env["pd-work"])
-            if pbs_options["pd-root-compute"] is None:
-                pbs_options["pd-root-compute"] = os.path.abspath(env["pd-work"])
+            pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
 
             pbs = PBS(env, pbs_options,
                       splitter=split_query_genomes_target_genomes_one_vs_group,
@@ -52,7 +58,7 @@ def sbsp_step_get_orthologs(env, pipeline_options):
     return output
 
 
-def sbsp_step_compute_features(env, pipeline_options, state):
+def sbsp_step_compute_features(env, pipeline_options, list_pf_previous):
     # type: (Environment, PipelineSBSPOptions, List[str]) -> Dict[str, Any]
     """
     Given a list of query and target genomes, find the set of related genes
@@ -62,11 +68,28 @@ def sbsp_step_compute_features(env, pipeline_options, state):
     log.debug("Running: sbsp_step_compute_features")
 
     output = {
-        "pf-list-output": os.path.join(env["pd-work"], "output_summary.txt")
+        "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
     }
 
-    print(state)
-    # TODO
+    if pipeline_options.perform_step("compute-features"):
+
+        if pipeline_options.use_pbs():
+            pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
+
+            pbs = PBS(env, pbs_options,
+                      splitter=split_list,
+                      merger=merge_identity
+                      )
+
+            output = pbs.run(
+                data={"list_pf_data": list_pf_previous,
+                      "pf_output_template": os.path.join(pbs_options["pd-head"],
+                                                         pipeline_options["fn-orthologs"] + "_{}")},
+                func=get_orthologs_from_files,
+                func_kwargs={
+                    "env": env,
+                }
+            )
 
     return output
 
