@@ -93,7 +93,7 @@ def extract_genes_for_multiple_genomes_deprecated(env, genomes, fn_labels, pf_ou
 
 
 def read_sequences_from_genome_labels_pairs(env, genomes_labels_pairs, **kwargs):
-    # type: (dict, dict[str, sbsp_general.labels.Labels], **str) -> dict[str, dict[str, str]]
+    # type: (Environment, dict[str, sbsp_general.labels.Labels], **str) -> dict[str, dict[str, str]]
 
     sequence_type = get_value(kwargs, "sequence_type", "both")
     upstream_length_nt = get_value(kwargs, "upstream_length_nt", None)

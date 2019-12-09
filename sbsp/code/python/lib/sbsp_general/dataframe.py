@@ -9,6 +9,7 @@ import sbsp_io.general
 import sbsp_io.sequences
 from sbsp_alg.phylogeny import k2p_distance, global_alignment_aa_with_gap
 from sbsp_alg.gene_distances import *
+from sbsp_general import Environment
 from sbsp_general.general import get_value, except_if_not_in_set
 from sbsp_options.msa import MSAOptions
 from typing import *
@@ -85,7 +86,7 @@ def _get_genome_to_source_to_indices(df, source):
 
 # @profile
 def df_add_labeled_sequences(env, df, **kwargs):
-    # type: (Dict, pd.DataFrame, Dict[str, Any]) -> pd.DataFrame
+    # type: (Environment, pd.DataFrame, Dict[str, Any]) -> pd.DataFrame
 
     """
     Add labeled sequences to data frame
