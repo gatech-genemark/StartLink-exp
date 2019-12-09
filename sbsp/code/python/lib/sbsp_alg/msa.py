@@ -2206,7 +2206,7 @@ def select_start_for_msa_from_file(env, pf_msa, **kwargs):
 
 
 
-def filter_orthologs(env, pf_data, pf_output, **kwargs):
+def run_sbsp_msa(env, pf_data, pf_output, **kwargs):
     # type: (Environment, str, str, Dict[str, Any]) -> str
 
     df = pd.read_csv(pf_data, header=0)
