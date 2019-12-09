@@ -7,6 +7,7 @@ from sbsp_alg.feature_computation import compute_features
 from sbsp_alg.filtering import filter_orthologs
 from sbsp_alg.ortholog_finder import get_orthologs_from_files
 from sbsp_general import Environment
+from sbsp_io.general import read_rows_to_list
 from sbsp_options.pbs import PBSOptions
 from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
 from sbsp_parallelization.pbs import PBS
@@ -38,16 +39,18 @@ def sbsp_step_get_orthologs(env, pipeline_options):
         "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
     }
 
-    if pipeline_options.perform_step("get-orthologs"):
 
-        if pipeline_options.use_pbs():
-            pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
 
-            pbs = PBS(env, pbs_options,
-                      splitter=split_query_genomes_target_genomes_one_vs_group,
-                      merger=merge_identity
-            )
+    if pipeline_options.use_pbs():
 
+        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
+
+        pbs = PBS(env, pbs_options,
+                  splitter=split_query_genomes_target_genomes_one_vs_group,
+                  merger=merge_identity
+        )
+
+        if pipeline_options.perform_step("get-orthologs"):
             output = pbs.run(
                 data={"pf_q_list": pipeline_options["pf-q-list"], "pf_t_list": pipeline_options["pf-t-list"],
                       "pf_output_template": os.path.join(pbs_options["pd-head"], pipeline_options["fn-orthologs"] + "_{}")},
@@ -56,6 +59,11 @@ def sbsp_step_get_orthologs(env, pipeline_options):
                     "env": env,
                 }
             )
+        else:
+            # read data from file
+            list_pf_output_packages = read_rows_to_list(os.path.join(env["pd-work"], "pbs-summary.txt"))
+            output = pbs.merge_output_package_files(list_pf_output_packages)
+
 
     return output
 
@@ -73,15 +81,16 @@ def sbsp_step_compute_features(env, pipeline_options, list_pf_previous):
         "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
     }
 
-    if pipeline_options.perform_step("compute-features"):
+    if pipeline_options.use_pbs():
 
-        if pipeline_options.use_pbs():
-            pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
+        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
 
-            pbs = PBS(env, pbs_options,
-                      splitter=split_list,
-                      merger=merge_identity
-                      )
+        pbs = PBS(env, pbs_options,
+                  splitter=split_list,
+                  merger=merge_identity
+                  )
+
+        if pipeline_options.perform_step("compute-features"):
 
             output = pbs.run(
                 data={"list_pf_data": list_pf_previous,
@@ -92,6 +101,10 @@ def sbsp_step_compute_features(env, pipeline_options, list_pf_previous):
                     "env": env,
                 }
             )
+        else:
+            # read data from file
+            list_pf_output_packages = read_rows_to_list(os.path.join(env["pd-work"], "pbs-summary.txt"))
+            output = pbs.merge_output_package_files(list_pf_output_packages)
 
     return output
 
@@ -108,15 +121,15 @@ def sbsp_step_filter(env, pipeline_options, list_pf_previous):
         "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
     }
 
-    if pipeline_options.perform_step("filter"):
+    if pipeline_options.use_pbs():
+        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
 
-        if pipeline_options.use_pbs():
-            pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
+        pbs = PBS(env, pbs_options,
+                  splitter=split_list,
+                  merger=merge_identity
+                  )
 
-            pbs = PBS(env, pbs_options,
-                      splitter=split_list,
-                      merger=merge_identity
-                      )
+        if pipeline_options.perform_step("filter"):
 
             output = pbs.run(
                 data={"list_pf_data": list_pf_previous,
@@ -128,6 +141,10 @@ def sbsp_step_filter(env, pipeline_options, list_pf_previous):
                     "msa_options": pipeline_options["msa_options"]
                 }
             )
+        else:
+            # read data from file
+            list_pf_output_packages = read_rows_to_list(os.path.join(env["pd-work"], "pbs-summary.txt"))
+            output = pbs.merge_output_package_files(list_pf_output_packages)
 
     return output
 
