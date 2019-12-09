@@ -125,6 +125,7 @@ def sbsp_step_filter(env, pipeline_options, list_pf_previous):
                 func=filter_orthologs,
                 func_kwargs={
                     "env": env,
+                    "msa_options": pipeline_options["msa_options"]
                 }
             )
 
