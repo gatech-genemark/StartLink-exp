@@ -50,14 +50,14 @@ class PipelineMSA:
         })
         result = sbsp_step_get_orthologs(curr_env, self.pipeline_options)
 
-        return PipelineMSA.PipelineState.from_file(result["pf-list-output"])
+        return PipelineMSA.PipelineState(result)
 
     def _run_compute_features(self, state):
         # type: (PipelineState) -> PipelineState
         curr_env = self.env.duplicate({
             "pd-work": os.path.join(self.env["pd-work"], "features")
         })
-        result = sbsp_step_compute_features(curr_env, self.pipeline_options, state)
+        result = sbsp_step_compute_features(curr_env, self.pipeline_options, state.list_pf_data)
 
         return PipelineMSA.PipelineState.from_file(result["pf-list-output"])
 
