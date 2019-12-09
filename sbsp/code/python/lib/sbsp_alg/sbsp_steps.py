@@ -4,6 +4,7 @@ import logging
 from typing import *
 
 from sbsp_alg.feature_computation import compute_features
+from sbsp_alg.filtering import filter_orthologs
 from sbsp_alg.ortholog_finder import get_orthologs_from_files
 from sbsp_general import Environment
 from sbsp_options.pbs import PBSOptions
@@ -94,8 +95,8 @@ def sbsp_step_compute_features(env, pipeline_options, list_pf_previous):
 
     return output
 
-def sbsp_step_filter(env, pipeline_options):
-    # type: (Environment, PipelineSBSPOptions) -> Dict[str, Any]
+def sbsp_step_filter(env, pipeline_options, list_pf_previous):
+    # type: (Environment, PipelineSBSPOptions, List[str]) -> Dict[str, Any]
     """
     Given a list of query and target genomes, find the set of related genes
     for each query
@@ -104,15 +105,33 @@ def sbsp_step_filter(env, pipeline_options):
     log.debug("Running: sbsp_step_filter")
 
     output = {
-        "pf-list-output": os.path.join(env["pd-work"], "output_summary.txt")
+        "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
     }
 
-    # TODO
+    if pipeline_options.perform_step("filter"):
+
+        if pipeline_options.use_pbs():
+            pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
+
+            pbs = PBS(env, pbs_options,
+                      splitter=split_list,
+                      merger=merge_identity
+                      )
+
+            output = pbs.run(
+                data={"list_pf_data": list_pf_previous,
+                      "pf_output_template": os.path.join(pbs_options["pd-head"],
+                                                         pipeline_options["fn-filter"] + "_{}")},
+                func=filter_orthologs,
+                func_kwargs={
+                    "env": env,
+                }
+            )
 
     return output
 
-def sbsp_step_msa(env, pipeline_options):
-    # type: (Environment, PipelineSBSPOptions) -> Dict[str, Any]
+def sbsp_step_msa(env, pipeline_options, list_pf_previous):
+    # type: (Environment, PipelineSBSPOptions, List[str]) -> Dict[str, Any]
     """
     Given a list of query and target genomes, find the set of related genes
     for each query
@@ -128,8 +147,8 @@ def sbsp_step_msa(env, pipeline_options):
 
     return output
 
-def sbsp_step_accuracy(env, pipeline_options):
-    # type: (Environment, PipelineSBSPOptions) -> Dict[str, Any]
+def sbsp_step_accuracy(env, pipeline_options, list_pf_previous):
+    # type: (Environment, PipelineSBSPOptions, List[str]) -> Dict[str, Any]
     """
     Given a list of query and target genomes, find the set of related genes
     for each query

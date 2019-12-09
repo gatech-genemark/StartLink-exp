@@ -61,13 +61,12 @@ class PipelineMSA:
 
         return PipelineMSA.PipelineState.from_file(result["pf-list-output"])
 
-
     def _run_filter(self, state):
         # type: (PipelineState) -> PipelineState
         curr_env = self.env.duplicate({
             "pd-work": os.path.join(self.env["pd-work"], "filter")
         })
-        result = sbsp_step_filter(curr_env, self.pipeline_options)
+        result = sbsp_step_filter(curr_env, self.pipeline_options, state.list_pf_data)
 
         return PipelineMSA.PipelineState.from_file(result["pf-list-output"])
 
@@ -76,7 +75,7 @@ class PipelineMSA:
         curr_env = self.env.duplicate({
             "pd-work": os.path.join(self.env["pd-work"], "msa")
         })
-        result = sbsp_step_msa(curr_env, self.pipeline_options)
+        result = sbsp_step_msa(curr_env, self.pipeline_options, state.list_pf_data)
 
         return PipelineMSA.PipelineState.from_file(result["pf-list-output"])
 
@@ -85,7 +84,7 @@ class PipelineMSA:
         curr_env = self.env.duplicate({
             "pd-work": os.path.join(self.env["pd-work"], "accuracy")
         })
-        result = sbsp_step_accuracy(curr_env, self.pipeline_options)
+        result = sbsp_step_accuracy(curr_env, self.pipeline_options, state.list_pf_data)
 
         return PipelineMSA.PipelineState.from_file(result["pf-list-output"])
 

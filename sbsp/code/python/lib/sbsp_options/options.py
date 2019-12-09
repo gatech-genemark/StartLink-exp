@@ -40,6 +40,14 @@ class Options:
         pf_default = self.path_to_default_options_file(env)
         return Options.read_from_defaults_file(pf_default)
 
+    def safe_get(self, item):
+        # type: (str) -> Any
+        try:
+            return self[item]
+        except KeyError:
+            return None
+
+
     def __getitem__(self, item):
         # type: (str) -> Any
         return self._options[item]

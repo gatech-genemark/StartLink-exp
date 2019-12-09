@@ -6,7 +6,7 @@ import sbsp_general.dataframe
 import numpy as np
 from sbsp_general.general import get_value
 import sbsp_general.labels
-from sbsp_alg.msaoptions import MSAOptions
+from sbsp_options.msa import MSAOptions
 from typing import *
 import pandas as pd
 import copy
@@ -173,9 +173,39 @@ def convert_using_marked(aa_alignment, marks):
 
     return result
 
+def mark_all_candidate_starts(seq_aa_with_gaps, seq_nt_no_gaps):
+
+    seq_candidates = ""
+
+    pos_in_no_gap_aa = 0
+
+    for i in range(len(seq_aa_with_gaps)):
+
+        if seq_aa_with_gaps[i] == "-":
+            seq_candidates += " "
+            continue
+
+        pos_in_no_gap_nt = pos_in_no_gap_aa * 3
+
+        codon = seq_nt_no_gaps[pos_in_no_gap_nt:pos_in_no_gap_nt+3]
+
+        if codon == "ATG":
+            seq_candidates += "A"
+        elif codon == "GTG":
+            seq_candidates += "G"
+        elif codon == "TTG":
+            seq_candidates += "T"
+        else:
+            seq_candidates += " "
+
+        pos_in_no_gap_aa += 1
+
+    return seq_candidates
+
+
+
 
 def lower_case_everything_except_starts(alignments_aa, list_sequences_aa, list_sequences_nt):
-
     # type: (Bio.Align.MultipleSeqAlignment, list) -> Bio.Align.MultipleSeqAlignment
 
     i = 0
@@ -195,7 +225,6 @@ def lower_case_everything_except_starts(alignments_aa, list_sequences_aa, list_s
             pass
 
         # mark candidate starts
-        from sbsp_viz.phylogeny import mark_all_candidate_starts
         marked_alignment = mark_all_candidate_starts(aa_align_with_stops, nt_seq)
 
         # convert aa alignment to lowercase except marks
@@ -226,7 +255,7 @@ def lower_case_everything_except_starts_deprecated(list_alignments_aa, list_sequ
         aa_align_with_stops = add_stops_to_aa_alignment(aa_align, nt_seq)
 
         # mark candidate starts
-        from sbsp_viz.phylogeny import mark_all_candidate_starts
+        # from sbsp_viz.phylogeny import mark_all_candidate_starts
         marked_alignment = mark_all_candidate_starts(aa_align_with_stops, nt_seq)
 
         # convert aa alignment to lowercase except marks
