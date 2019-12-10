@@ -511,7 +511,7 @@ def df_get_labels_per_genome(df, source, **kwargs):
 
 
 def df_print_labels(env, df, source, **kwargs):
-    # type: (dict, pd.DataFrame, str, **str) -> Dict[str, str]
+    # type: (Environment, pd.DataFrame, str, **str) -> Dict[str, str]
 
     labels_per_genome = df_get_labels_per_genome(df, source, **kwargs)
     suffix_fname = get_value(kwargs, "suffix_fname", "")

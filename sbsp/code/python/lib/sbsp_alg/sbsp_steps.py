@@ -3,12 +3,15 @@ import os
 import logging
 from typing import *
 
+import sbsp_io
 from sbsp_alg.feature_computation import compute_features
 from sbsp_alg.filtering import filter_orthologs
 from sbsp_alg.msa import run_sbsp_msa
 from sbsp_alg.ortholog_finder import get_orthologs_from_files
+from sbsp_alg.sbsp_compute_accuracy import pipeline_step_compute_accuracy, separate_msa_outputs_by_stats
 from sbsp_general import Environment
 from sbsp_io.general import read_rows_to_list
+from sbsp_io.msa_2 import add_true_starts_to_msa_output
 from sbsp_options.pbs import PBSOptions
 from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
 from sbsp_parallelization.pbs import PBS
@@ -27,6 +30,39 @@ def duplicate_pbs_options_with_updated_paths(env, pbs_options):
 
     return pbs_options
 
+
+def run_step_generic(env, pipeline_options, step_name, splitter, merger, data, func, func_kwargs):
+    # type: (Environment, PipelineSBSPOptions, str Callable, Callable, Dict[str, Any], Callable, Dict[str, Any]) -> Dict[str, Any]
+
+    output = {
+        "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
+    }
+
+    if pipeline_options.use_pbs():
+        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
+
+        pbs = PBS(env, pbs_options,
+                  splitter=splitter,
+                  merger=merger
+                  )
+
+        if pipeline_options.perform_step(step_name):
+
+            output = pbs.run(
+                data=data,
+                func=func,
+                func_kwargs=func_kwargs
+            )
+        else:
+            # read data from file
+            list_pf_output_packages = read_rows_to_list(os.path.join(env["pd-work"], "pbs-summary.txt"))
+            output = pbs.merge_output_package_files(list_pf_output_packages)
+
+    return output
+
+
+
+
 def sbsp_step_get_orthologs(env, pipeline_options):
     # type: (Environment, PipelineSBSPOptions) -> Dict[str, Any]
     """
@@ -39,8 +75,6 @@ def sbsp_step_get_orthologs(env, pipeline_options):
     output = {
         "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
     }
-
-
 
     if pipeline_options.use_pbs():
 
@@ -202,10 +236,17 @@ def sbsp_step_accuracy(env, pipeline_options, list_pf_previous):
     log.debug("Running: sbsp_step_accuracy")
 
     output = {
-        "pf-list-output": os.path.join(env["pd-work"], "output_summary.txt")
+        "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
     }
 
-    # TODO
+    df = pd.concat([pd.read_csv(f, header=0) for f in list_pf_previous])
+
+    df = pipeline_step_compute_accuracy(env, df, pipeline_options)
+
+    # copy labels
+    add_true_starts_to_msa_output(env, df, fn_q_labels_true=pipeline_options["fn-q-labels-true"])
+    add_true_starts_to_msa_output(env, df, msa_nt=True, fn_q_labels_true=pipeline_options["fn-q-labels-true"])
+    separate_msa_outputs_by_stats(env, df, pipeline_options["dn-msa-output"])
 
     return output
 
