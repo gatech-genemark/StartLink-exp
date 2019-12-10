@@ -82,6 +82,8 @@ def split_list_and_remerge_by_key(data, num_splits, pd_work, **kwargs):
                         group_to_file_number[name] = file_number
                         file_number += 1
 
+                        list_pf_new.append({"pf_data": pf_new, "pf_output": pf_output_template.format(file_number)})
+
                         df_new = df_group
                     else:
 
@@ -93,7 +95,6 @@ def split_list_and_remerge_by_key(data, num_splits, pd_work, **kwargs):
 
                     df_new.to_csv(pf_new, index=False)
 
-                    list_pf_new.append({"pf_data": pf_new, "pf_output": pf_output_template.format(file_number)})
 
         except IOError:
             pass
