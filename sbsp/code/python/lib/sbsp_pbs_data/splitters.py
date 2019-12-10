@@ -78,11 +78,11 @@ def split_list_and_remerge_by_key(data, num_splits, pd_work, **kwargs):
                     # if group hasn't been tapped yet, create a new file for it
                     if name not in group_to_file_number.keys():
                         pf_new = pf_output_template.format(file_number)
-                        list_pf_new.append(pf_new)
                         group_to_file_number[name] = file_number
-                        file_number += 1
 
-                        list_pf_new.append({"pf_data": pf_new, "pf_output": pf_output_template.format(file_number)})
+                        list_pf_new.append({"pf_data": pf_new, "pf_output": pf_output_template.format(file_number),
+                            "msa_output_start": file_number})
+                        file_number += 1
 
                         df_new = df_group
                     else:

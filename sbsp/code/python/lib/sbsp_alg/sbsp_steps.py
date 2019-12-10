@@ -7,6 +7,7 @@ import sbsp_io
 from sbsp_alg.feature_computation import compute_features
 from sbsp_alg.filtering import filter_orthologs
 from sbsp_alg.msa import run_sbsp_msa
+from sbsp_io.general import mkdir_p
 from sbsp_alg.ortholog_finder import get_orthologs_from_files
 from sbsp_alg.sbsp_compute_accuracy import pipeline_step_compute_accuracy, separate_msa_outputs_by_stats
 from sbsp_general import Environment
@@ -239,9 +240,12 @@ def sbsp_step_accuracy(env, pipeline_options, list_pf_previous):
         "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
     }
 
-    df = pd.concat([pd.read_csv(f, header=0) for f in list_pf_previous])
+    mkdir_p(env["pd-work"])
+
+    df = pd.concat([pd.read_csv(f, header=0) for f in list_pf_previous], ignore_index=True)
 
     df = pipeline_step_compute_accuracy(env, df, pipeline_options)
+
 
     # copy labels
     add_true_starts_to_msa_output(env, df, fn_q_labels_true=pipeline_options["fn-q-labels-true"])

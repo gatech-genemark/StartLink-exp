@@ -147,7 +147,8 @@ def pipeline_step_compute_accuracy(env, df, pipeline_options):
 
     accuracy = LabelsComparison.stringify_genome_accuracies(genome_to_comparison, ",")
     import sbsp_io.general
-    sbsp_io.general.write_string_to_file(accuracy, pipeline_options["pf-accuracy"])
+    pf_accuracy = os.path.join(env["pd-work"], pipeline_options["fn-accuracy"])
+    sbsp_io.general.write_string_to_file(accuracy, pf_accuracy)
 
     return df
 

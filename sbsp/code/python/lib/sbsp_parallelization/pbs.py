@@ -189,8 +189,6 @@ class PBS:
     def _package_and_save_data(self, data, func, func_kwargs, pf_package):
         # type: (Dict[str, Any], Callable, Dict[str, Any], str) -> None
 
-        import pdb
-        pdb.set_trace()
         complete_func_kwargs = FunctionArguments(**func_kwargs).get_arguments(data)
 
         PBSJobPackage.save(

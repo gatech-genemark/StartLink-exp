@@ -524,7 +524,7 @@ def df_print_labels(env, df, source, **kwargs):
 
     for genome in labels_per_genome.keys():
 
-        pf_curr = os.path.join(env['pd-work'], "{}.gff-{}".format(genome, suffix_fname))
+        pf_curr = os.path.join(env['pd-work'], "{}.gff".format(genome))
 
         genome_to_file[genome] = pf_curr
 

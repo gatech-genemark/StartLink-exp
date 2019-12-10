@@ -2181,6 +2181,7 @@ def perform_msa_on_df(env, df, **kwargs):
 
     print_filter_stats(filter_stats)
 
+
     if len(df_result) == 0:
         return df_result
 
@@ -2211,7 +2212,7 @@ def run_sbsp_msa(env, pf_data, pf_output, **kwargs):
 
     df = pd.read_csv(pf_data, header=0)
 
-    perform_msa_on_df(env, df, **kwargs)
+    df = perform_msa_on_df(env, df, **kwargs)
 
     df.to_csv(pf_output, index=False)
 
