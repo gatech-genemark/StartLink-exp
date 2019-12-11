@@ -157,7 +157,8 @@ class PBS:
             self._wait_for_job_array(array_job_name, pd_head)
 
         # write summary file
-        list_pf_outputs = [PBS.create_concrete_from_template(pf_output_package_template, x) for x in range(1,num_jobs)]
+        list_pf_outputs = [PBS.create_concrete_from_template(pf_output_package_template, x) for x in range(1,num_jobs)
+                           if os.path.isfile(PBS.create_concrete_from_template(pf_output_package_template, x))]
         pf_pbs_summary = os.path.join(self._pbs_options["pd-head"], self._pbs_options["fn-pbs-summary"])
         sbsp_io.general.write_string_to_file("\n".join(list_pf_outputs), pf_pbs_summary)
 

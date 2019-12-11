@@ -228,17 +228,13 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
 
 
 def sbsp_step_accuracy(env, pipeline_options, list_pf_previous):
-    # type: (Environment, PipelineSBSPOptions, List[str]) -> Dict[str, Any]
+    # type: (Environment, PipelineSBSPOptions, List[str]) -> List[str]
     """
     Given a list of query and target genomes, find the set of related genes
     for each query
     """
 
     log.debug("Running: sbsp_step_accuracy")
-
-    output = {
-        "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
-    }
 
     mkdir_p(env["pd-work"])
 
@@ -252,7 +248,7 @@ def sbsp_step_accuracy(env, pipeline_options, list_pf_previous):
     add_true_starts_to_msa_output(env, df, msa_nt=True, fn_q_labels_true=pipeline_options["fn-q-labels-true"])
     separate_msa_outputs_by_stats(env, df, pipeline_options["dn-msa-output"])
 
-    return output
+    return list()
 
 
 

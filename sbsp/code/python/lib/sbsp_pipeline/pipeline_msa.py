@@ -10,12 +10,16 @@ from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
 
 
 class PipelineMSA:
-
     class PipelineState:
         def __init__(self, list_pf_data):
-
-            self.use_pbs = True                     # FIXME: allow non-pbs option
+            self.use_pbs = True  # FIXME: allow non-pbs option
             self.list_pf_data = list_pf_data
+
+            self._keep_only_exists()
+
+        def _keep_only_exists(self):
+            # type: () -> ()
+            self.list_pf_data = [curr for curr in self.list_pf_data if os.path.exists(l)]
 
         @classmethod
         def from_file(cls, pf_list_pf_data):
@@ -87,5 +91,3 @@ class PipelineMSA:
         result = sbsp_step_accuracy(curr_env, self.pipeline_options, state.list_pf_data)
 
         return PipelineMSA.PipelineState(result)
-
-
