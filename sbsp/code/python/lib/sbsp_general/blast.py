@@ -3,11 +3,10 @@ import os
 from typing import *
 
 import numpy as np
-import pandas as pd
 import sbsp_general.general
 
 # Generating commands
-from sbsp_containers.genome_list import GenomeInfoList
+from sbsp_container.genome_list import GenomeInfoList
 from sbsp_general import Environment
 from sbsp_io.sequences import extract_genes_for_multiple_genomes
 

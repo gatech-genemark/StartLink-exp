@@ -4,7 +4,7 @@ import Bio.Seq
 import sbsp_general.general
 from typing import *
 
-from sbsp_containers.genome_list import GenomeInfoList
+from sbsp_container.genome_list import GenomeInfoList
 from sbsp_general import Environment
 from sbsp_general.general import get_value, except_if_not_in_set
 import sbsp_general.labels

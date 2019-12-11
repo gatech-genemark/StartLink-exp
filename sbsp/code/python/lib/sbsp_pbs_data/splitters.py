@@ -4,8 +4,7 @@ import logging
 import pandas as pd
 from typing import *
 
-from sbsp_containers.genome_list import GenomeInfoList
-from sbsp_general import Environment
+from sbsp_container.genome_list import GenomeInfoList
 from sbsp_general.general import get_value
 
 log = logging.getLogger(__name__)
