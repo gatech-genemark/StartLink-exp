@@ -31,7 +31,12 @@ parser = argparse.ArgumentParser("Description of driver.")
 parser.add_argument('--pf-taxonomy-tree', required=True, help="Pickle file containing taxonomy tree")
 parser.add_argument('--pf-assembly-summary', required=True, help="Assembly summary file")
 
+parser.add_argument('--valid-assembly-levels', required=False, default=None, nargs="+",
+                    choices=["Complete Genome", "Scaffold", "Contig"])
+
 parser.add_argument('--pf-output', required=True, help="Path to output file")
+
+parser.add_argument('--tag', required=False, help="If set, use tag as name in tree")
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -55,8 +60,8 @@ logging.basicConfig(level=parsed_args.loglevel)
 logger = logging.getLogger("logger")  # type: logging.Logger
 
 
-def count_refseq_under_node(curr_node_attributes, children_attributes, attribute_name, **kwargs):
-    # type: (Dict[str, Any], List[Dict[str, Any]], str, Dict[str, Any]) -> Any
+def count_refseq_under_node(children_attributes, curr_node_attributes, attribute_name, **kwargs):
+    # type: (List[Dict[str, Any]], Dict[str, Any], str, Dict[str, Any]) -> Any
 
     refseq_count_per_taxid = get_value(kwargs, "refseq_count_per_taxid", required=True)
 
@@ -70,24 +75,30 @@ def count_refseq_under_node(curr_node_attributes, children_attributes, attribute
     return num_refseq
 
 
-def print_taxonomy_tree(env, pf_taxonomy_tree, pf_assembly_summary, pf_output):
+def print_taxonomy_tree(env, pf_taxonomy_tree, pf_assembly_summary, pf_output, **kwargs):
     tax_tree = TaxonomyTree.load(pf_taxonomy_tree)
-    taxid_to_info_list = get_rows_by_key(pf_assembly_summary, key="taxid")
+    taxid_to_info_list = get_rows_by_key(pf_assembly_summary, key="taxid", **kwargs)
 
     refseq_count_per_taxid = {
         taxid: len(taxid_to_info_list[taxid]) for taxid in taxid_to_info_list
     }
 
+    refseq_count_per_taxid = {
+        taxid: 1 for taxid in taxid_to_info_list
+    }
+
     out = tax_tree.to_string_tree_with_stats("num_refseq", count_refseq_under_node, {
-        "refseq_count_per_taxid": refseq_count_per_taxid
-    })
+        "refseq_count_per_taxid": refseq_count_per_taxid,
+    }, **kwargs)
 
     write_string_to_file(out, pf_output)
 
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
-    print_taxonomy_tree(env, args.pf_taxonomy_tree, args.pf_assembly_summary, args.pf_output)
+    print_taxonomy_tree(env, args.pf_taxonomy_tree, args.pf_assembly_summary, args.pf_output,
+                        valid_assembly_levels=args.valid_assembly_levels,
+                        tag_name=args.tag)
 
 
 if __name__ == "__main__":

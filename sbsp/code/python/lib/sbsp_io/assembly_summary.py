@@ -1,3 +1,6 @@
+from typing import *
+
+from sbsp_general.general import get_value
 
 
 def read_assembly_summary(fname):
@@ -79,17 +82,20 @@ def write_assembly_summary(summary, fname):
             f.write(out + "\n")
 
 
-def get_rows_by_key(pf_assembly_summary, key):
-    # type: (str, str) -> Dict[int, List[Dict[str, Any]]]
+def get_rows_by_key(pf_assembly_summary, key="taxid", **kwargs):
+    # type: (str, str, Dict[str, Any]) -> Dict[int, List[Dict[str, Any]]]
+
+    valid_assembly_levels = get_value(kwargs, "valid_assembly_levels", {"Complete Genome", "Scaffold", "Contig"},
+                                      default_if_none=True)
 
     assembly_info = read_assembly_summary(pf_assembly_summary)
 
     result = dict()
 
     for d in assembly_info["data"]:
-        taxid = int(d["taxid"])
+        taxid = int(d[key])
 
-        if d["assembly_level"] not in {"Complete Genome", "Scaffold", "Contig"}:
+        if d["assembly_level"] not in valid_assembly_levels:
             continue
 
         if taxid not in result.keys():

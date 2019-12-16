@@ -79,9 +79,25 @@ class TaxonomyTree:
 
         add_attributes_helper(self.root)
 
+
+    @staticmethod
+    def _get_names_per_taxid(df):
+        # type: (pd.DataFrame) -> Dict[int, str]
+
+        taxid_to_name = dict()
+        for index, row in df.iterrows():
+            node_id = row.iloc[0]
+            name_class = row.iloc[3].strip()
+
+            if name_class == "scientific name":
+
+                taxid_to_name[node_id] = row.iloc[1].strip()
+
+        return taxid_to_name
+
     @classmethod
-    def init_from_file(cls, pf_input, file_format=None):
-        # type: (str, str) -> TaxonomyTree
+    def init_from_file(cls, pf_input, pf_names, file_format=None):
+        # type: (str, str, str) -> TaxonomyTree
 
         """
         Create a taxonomy tree from nodes dump file
@@ -91,9 +107,11 @@ class TaxonomyTree:
         """
 
         df_nodes = pd.read_csv(pf_input, header=None, delimiter="|")
+        df_names = pd.read_csv(pf_names, header=None, delimiter="|")
 
         # create node for each value
         dict_tax_id_node = TaxonomyTree._create_node_per_dataframe_row(df_nodes)
+        dict_taxid_names = TaxonomyTree._get_names_per_taxid(df_names)
 
         root_nodes = list()
 
@@ -101,6 +119,9 @@ class TaxonomyTree:
         for tax_id, node in dict_tax_id_node.items():
 
             parent_id = node.attributes["parent_id"]
+
+            if node.tax_id in dict_taxid_names:
+                node.attributes["name_txt"] = dict_taxid_names[node.tax_id]
 
             if parent_id is not None:
 
@@ -127,13 +148,16 @@ class TaxonomyTree:
         for index, row in df_nodes.iterrows():
             node_id = row.iloc[0]
             parent_id = row.iloc[1]
+            rank = row.iloc[2]
+            genetic_code = row.iloc[6]
 
             if parent_id == node_id:
                 parent_id = None
 
             attributes = {
-                "rank": row.iloc[2],
-                "parent_id": parent_id
+                "parent_id": parent_id,
+                "rank": rank,
+                "genetic_code": genetic_code
             }
 
             dict_tax_id_node[node_id] = Node(
@@ -193,7 +217,7 @@ class TaxonomyTree:
         output = TaxonomyTree.to_string_current_level(node, depth, **kwargs) + "\n"
 
         # print for children if not reached max depth
-        if max_depth is not None and depth < max_depth:
+        if max_depth is None or depth < max_depth:
             for child in node.children():
                 output += TaxonomyTree.to_string_helper(
                     child, depth + 1, **kwargs
@@ -216,7 +240,7 @@ class TaxonomyTree:
 
         # update stats for children
         for child in node.children():
-            TaxonomyTree.update_tree_with_stats(child, accumulator, **kwargs)
+            TaxonomyTree.update_tree_with_stats(child, attribute_name, accumulator, func_kwargs, **kwargs)
 
         # update stats for current node
         val = accumulator([c.attributes for c in node.children()], node.attributes, attribute_name, **func_kwargs)
