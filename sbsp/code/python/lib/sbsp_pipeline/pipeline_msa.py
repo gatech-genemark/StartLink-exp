@@ -19,7 +19,7 @@ class PipelineMSA:
 
         def _keep_only_exists(self):
             # type: () -> ()
-            self.list_pf_data = [curr for curr in self.list_pf_data if os.path.exists(l)]
+            self.list_pf_data = [curr for curr in self.list_pf_data if os.path.exists(curr)]
 
         @classmethod
         def from_file(cls, pf_list_pf_data):
