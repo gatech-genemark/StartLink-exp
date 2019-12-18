@@ -6,7 +6,7 @@ from typing import *
 import sbsp_io
 from sbsp_alg.feature_computation import compute_features
 from sbsp_alg.filtering import filter_orthologs
-from sbsp_alg.msa import run_sbsp_msa
+from sbsp_alg.msa import run_sbsp_msa, get_files_per_key, run_sbsp_msa_from_multiple
 from sbsp_io.general import mkdir_p
 from sbsp_alg.ortholog_finder import get_orthologs_from_files
 from sbsp_alg.sbsp_compute_accuracy import pipeline_step_compute_accuracy, separate_msa_outputs_by_stats
@@ -202,34 +202,43 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
     if pipeline_options.use_pbs():
         pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
 
+        # pbs = PBS(env, pbs_options,
+        #           splitter=split_list_and_remerge_by_key,
+        #           merger=merge_identity
+        #           )
+
         pbs = PBS(env, pbs_options,
-                  splitter=split_list_and_remerge_by_key,
+                  splitter=split_q3prime_files,
                   merger=merge_identity
                   )
 
         if pipeline_options.perform_step("build-msa"):
 
-            # regroup
-            output = pbs.run(
-                data={"list_pf_data": list_pf_previous, "group_key": "q-3prime",
-                      "pf_output_template": os.path.join(pbs_options["pd-head"],
-                                                         pipeline_options["fn-msa"] + "_{}")},
-                func=regroup_by_key,
-                func_kwargs={
-                    "env": env
-                }
-            )
+            # get files per 3prime key
+            q3prime_to_list_pf = get_files_per_key(list_pf_previous)
 
             output = pbs.run(
-                data={"list_pf_data": list_pf_previous, "group_key": "q-3prime",
+                data={"q3prime_to_list_pf": q3prime_to_list_pf,
                       "pf_output_template": os.path.join(pbs_options["pd-head"],
                                                          pipeline_options["fn-msa"] + "_{}")},
-                func=run_sbsp_msa,
+                func=run_sbsp_msa_from_multiple,
                 func_kwargs={
                     "env": env,
                     "msa_options": pipeline_options["msa-options"]
                 }
             )
+
+
+            # output = pbs.run(
+            #     data={"list_pf_data": list_pf_previous, "group_key": "q-3prime",
+            #           "pf_output_template": os.path.join(pbs_options["pd-head"],
+            #                                              pipeline_options["fn-msa"] + "_{}")},
+            #     func=run_sbsp_msa,
+            #     func_kwargs={
+            #         "env": env,
+            #         "msa_options": pipeline_options["msa-options"]
+            #     }
+            # )
         else:
             # read data from file
             list_pf_output_packages = read_rows_to_list(os.path.join(env["pd-work"], "pbs-summary.txt"))

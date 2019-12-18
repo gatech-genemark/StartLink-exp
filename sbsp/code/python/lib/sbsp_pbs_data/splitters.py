@@ -46,6 +46,27 @@ def split_list(data, num_splits, pd_work, **kwargs):
 
     return list_splits
 
+
+def split_q3prime_files(data, num_splits, pd_work, **kwargs):
+    # type: (Dict[str, Any], int, str, Dict[str, Any]) -> List[Dict[str, str]]
+
+    file_number = 1
+
+    list_splits = list()
+    q3prime_to_list_pf = data["q3prime_to_list_pf"]
+    pf_output_template = data["pf_output_template"]
+
+    for q3prime_key in q3prime_to_list_pf.keys():
+        list_pf = q3prime_to_list_pf[q3prime_key]
+        list_splits.append({"list_pf_data": list_pf, "pf_output": pf_output_template.format(file_number),
+                            "q3prime": q3prime_key})
+
+        file_number += 1
+
+    return list_splits
+
+
+
 def split_list_and_remerge_by_key(data, num_splits, pd_work, **kwargs):
     # type: (Dict[str, Any], int, str, Dict[str, Any]) -> List[Dict[str, str]]
 

@@ -8,6 +8,7 @@ import numpy as np
 from sbsp_general import Environment
 from sbsp_general.general import get_value
 import sbsp_general.labels
+from sbsp_io.general import read_rows_to_list
 from sbsp_options.msa import MSAOptions
 from typing import *
 import pandas as pd
@@ -2206,6 +2207,28 @@ def select_start_for_msa_from_file(env, pf_msa, **kwargs):
     # read alignment
 
 
+def run_sbsp_msa_from_multiple(env, list_pf_data, pf_output, **kwargs):
+    # type: (Environment, List[str], str, Dict[str, Any]) -> str
+
+    q3prime = get_value(kwargs, "q3prime", required=True)
+
+    list_df = list()
+
+    for pf in list_pf_data:
+        try:
+            curr_df = pd.read_csv(pf, header=0)
+            curr_df = curr_df.loc[curr_df["q-3prime"] == q3prime]
+            if len(curr_df) > 0 or len(list_df) == 0:
+                list_df.append(curr_df)
+
+        except IOError:
+            pass
+
+    df = pd.concat(list_df)
+    df = perform_msa_on_df(env, df, **kwargs)
+    df.to_csv(pf_output, index=False)
+
+    return pf_output
 
 def run_sbsp_msa(env, pf_data, pf_output, **kwargs):
     # type: (Environment, str, str, Dict[str, Any]) -> str
@@ -2218,12 +2241,32 @@ def run_sbsp_msa(env, pf_data, pf_output, **kwargs):
 
     return pf_output
 
-def regroup_by_key(env, list_pf_data, pf_output, **kwargs):
-    # type: (Environment, List[str], str, Dict[str, Any]) -> str
+def get_files_per_key(list_pf):
+    # type: (List[str]) -> Dict[str, List[str]]
 
-    query_
+    result = dict()
 
-    return pf_output
+    for pf in list_pf:
+        pf_map = pf + "_map"
+
+        try:
+            list_q3prime = read_rows_to_list(pf_map)
+
+            for q3prime in list_q3prime:
+                if q3prime not in result:
+                    result[q3prime] = list()
+
+                result[q3prime].append(pf)
+        except IOError:
+            pass
+
+    return result
+
+
+
+
+
+
 
 
 
