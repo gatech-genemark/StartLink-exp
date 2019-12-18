@@ -2218,6 +2218,14 @@ def run_sbsp_msa(env, pf_data, pf_output, **kwargs):
 
     return pf_output
 
+def regroup_by_key(env, list_pf_data, pf_output, **kwargs):
+    # type: (Environment, List[str], str, Dict[str, Any]) -> str
+
+    query_
+
+    return pf_output
+
+
 
 
 
