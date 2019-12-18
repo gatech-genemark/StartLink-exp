@@ -3,10 +3,13 @@ import logging
 import pandas as pd
 from typing import *
 
-from sbsp_general.general import get_value
+from sbsp_general.general import get_value, verify_choice
 from sbsp_io.objects import save_obj, load_obj
 
 logger = logging.getLogger(__name__)
+
+Attributes = NewType("Attributes", Dict[str, Any])
+AttributeUpdater = NewType("AttributeUpdator", Callable[[Attributes, Attributes, List[Attributes], Dict[str, Any]], None])
 
 
 class Node:
@@ -40,7 +43,11 @@ class Node:
             self.add_child(child)
 
     def children(self):
+        # type: () -> ValuesView[Node]
         return self._children.values()
+
+    def parent(self):
+        return self._parent
 
     def set_parent(self, parent):
         # type: (Node) -> None
@@ -79,7 +86,6 @@ class TaxonomyTree:
 
         add_attributes_helper(self.root)
 
-
     @staticmethod
     def _get_names_per_taxid(df):
         # type: (pd.DataFrame) -> Dict[int, str]
@@ -101,6 +107,7 @@ class TaxonomyTree:
 
         """
         Create a taxonomy tree from nodes dump file
+        :param pf_names:
         :param pf_input:
         :param file_format:
         :return:
@@ -186,6 +193,7 @@ class TaxonomyTree:
         tag_name = get_value(kwargs, "tag_name", None)
 
         attribute_name = get_value(kwargs, "attribute_name", None)
+        attribute_format = get_value(kwargs, "attribute_format", "{}", default_if_none=True)
 
         output = ""
 
@@ -203,7 +211,7 @@ class TaxonomyTree:
         output += str(tag_value)
 
         if attribute_name is not None:
-            output += "\t({})".format(node.attributes[attribute_name])
+            output += "\t({})".format(attribute_format).format(node.attributes[attribute_name])
 
         return output
 
@@ -212,13 +220,29 @@ class TaxonomyTree:
         # type: (Node, int, Dict[str, Any]) -> str
 
         max_depth = get_value(kwargs, "max_depth", None)
+        attribute_name = get_value(kwargs, "attribute_name", None)
+
+        check_if_should_print = get_value(kwargs, "check_if_should_print", None)
+
+        should_print = True
+        if check_if_should_print is not None:
+            if not check_if_should_print(node.attributes):
+                should_print = False
 
         # print current node level
-        output = TaxonomyTree.to_string_current_level(node, depth, **kwargs) + "\n"
+        output = ""
+        if should_print:
+            output += TaxonomyTree.to_string_current_level(node, depth, **kwargs) + "\n"
 
         # print for children if not reached max depth
         if max_depth is None or depth < max_depth:
-            for child in node.children():
+
+            if attribute_name is None:
+                children = node.children()
+            else:
+                children = sorted(node.children(), reverse=True, key=lambda x: x.attributes[attribute_name])
+
+            for child in children:
                 output += TaxonomyTree.to_string_helper(
                     child, depth + 1, **kwargs
                 )
@@ -333,3 +357,36 @@ class TaxonomyTree:
 
         for curr_node in TaxonomyTree.get_nodes_under_ancestor(ancestor_node):
             yield curr_node.attributes
+
+    def update_tree_attributes(self, func, func_kwargs, direction="bottom-up", **kwargs):
+        # type: (AttributeUpdater, Dict[str, Any], str Dict[str, Any]) -> None
+
+        verify_choice(direction, {"top-down", "bottom-up"})
+
+        if direction == "top-down":
+            self._update_tree_attributes_top_down(self.root, func, func_kwargs, **kwargs)
+        else:
+            self._update_tree_attributes_bottom_up(self.root, func, func_kwargs, **kwargs)
+
+    def _update_tree_attributes_top_down(self, curr_node, func, func_kwargs, **kwargs):
+        # type: (Node, AttributeUpdater, Dict[str, Any], Dict[str, Any]) -> None
+        parent_attributes = None if curr_node.parent() is None else curr_node.parent().attributes
+        children_attributes = [child.attributes for child in curr_node.children()]
+
+        func(curr_node.attributes, parent_attributes, children_attributes, **func_kwargs)
+
+        for child_node in curr_node.children():
+            self._update_tree_attributes_bottom_up(child_node, func, func_kwargs, **kwargs)
+
+    def _update_tree_attributes_bottom_up(self, curr_node, func, func_kwargs, **kwargs):
+        # type: (Node, AttributeUpdater, Dict[str, Any], Dict[str, Any]) -> None
+
+        for child_node in curr_node.children():
+            self._update_tree_attributes_bottom_up(child_node, func, func_kwargs, **kwargs)
+
+        parent_attributes = None if curr_node.parent() is None else curr_node.parent().attributes
+        children_attributes = [child.attributes for child in curr_node.children()]
+
+        func(curr_node.attributes, parent_attributes, children_attributes, **func_kwargs)
+
+

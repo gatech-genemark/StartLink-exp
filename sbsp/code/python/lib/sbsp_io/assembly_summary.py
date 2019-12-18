@@ -1,3 +1,4 @@
+import pandas as pd
 from typing import *
 
 from sbsp_general.general import get_value
@@ -45,6 +46,12 @@ def read_assembly_summary(fname):
                 data += [name_data_pairs]
 
         return {"column_names": columns, "data": data}
+
+
+def read_assembly_summary_into_dataframe(pf_assembly_summary):
+    # type: (str) -> pd.DataFrame
+    info = read_assembly_summary(pf_assembly_summary)
+    return pd.DataFrame(data=info["data"], columns=info["column_names"])
 
 
 def write_assembly_summary(summary, fname):

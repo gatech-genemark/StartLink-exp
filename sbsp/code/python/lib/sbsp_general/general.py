@@ -12,6 +12,13 @@ import pandas as pd
 ENV = []
 
 
+def verify_choice(value, choices):
+    # type: (Any, Set[Any]) -> None
+    if value not in choices:
+        raise ValueError("Value ({}) not in valid options: {}".format(
+            value, ",".join([str(x) for x in choices])
+        ))
+
 def get_file_dir(file):
     return os.path.dirname(os.path.realpath(file))
 

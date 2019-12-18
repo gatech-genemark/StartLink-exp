@@ -3,6 +3,7 @@ import pandas as pd
 
 from sbsp_general import Environment
 from sbsp_general.general import get_value
+from sbsp_io.general import write_string_to_file
 from sbsp_options.msa import MSAOptions
 
 
@@ -38,4 +39,5 @@ def filter_orthologs(env, pf_data, pf_output, **kwargs):
 
     df.to_csv(pf_output, index=False)
 
+    write_string_to_file("\n".join(set(df["q-3prime"].unique())), pf_output + "_map")
     return pf_output

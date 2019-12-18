@@ -209,6 +209,17 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
 
         if pipeline_options.perform_step("build-msa"):
 
+            # regroup
+            output = pbs.run(
+                data={"list_pf_data": list_pf_previous, "group_key": "q-3prime",
+                      "pf_output_template": os.path.join(pbs_options["pd-head"],
+                                                         pipeline_options["fn-msa"] + "_{}")},
+                func=regroup_by_key,
+                func_kwargs={
+                    "env": env
+                }
+            )
+
             output = pbs.run(
                 data={"list_pf_data": list_pf_previous, "group_key": "q-3prime",
                       "pf_output_template": os.path.join(pbs_options["pd-head"],
