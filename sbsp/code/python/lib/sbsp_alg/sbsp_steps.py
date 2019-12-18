@@ -8,6 +8,7 @@ from sbsp_alg.feature_computation import compute_features
 from sbsp_alg.filtering import filter_orthologs
 from sbsp_alg.msa import run_sbsp_msa, get_files_per_key, run_sbsp_msa_from_multiple
 from sbsp_io.general import mkdir_p
+from sbsp_general.general import get_value
 from sbsp_alg.ortholog_finder import get_orthologs_from_files
 from sbsp_alg.sbsp_compute_accuracy import pipeline_step_compute_accuracy, separate_msa_outputs_by_stats
 from sbsp_general import Environment
@@ -22,18 +23,23 @@ from sbsp_pbs_data.splitters import *
 log = logging.getLogger(__name__)
 
 
-def duplicate_pbs_options_with_updated_paths(env, pbs_options):
-    # type: (Environment, PBSOptions) -> PBSOptions
+def duplicate_pbs_options_with_updated_paths(env, pbs_options, **kwargs):
+    # type: (Environment, PBSOptions, Dict[str, Any]) -> PBSOptions
+    keep_on_head = get_value(kwargs, "keep_on_head", False, default_if_none=True)
+
     pbs_options = copy.deepcopy(pbs_options)
     pbs_options["pd-head"] = os.path.abspath(env["pd-work"])
-    if pbs_options["pd-root-compute"] is None:
+
+    if keep_on_head:
+        pbs_options["pd-root-compute"] = os.path.abspath(env["pd-work"])
+    elif pbs_options["pd-root-compute"] is None:
         pbs_options["pd-root-compute"] = os.path.abspath(env["pd-work"])
 
     return pbs_options
 
 
-def run_step_generic(env, pipeline_options, step_name, splitter, merger, data, func, func_kwargs):
-    # type: (Environment, PipelineSBSPOptions, str Callable, Callable, Dict[str, Any], Callable, Dict[str, Any]) -> Dict[str, Any]
+def run_step_generic(env, pipeline_options, step_name, splitter, merger, data, func, func_kwargs, **kwargs):
+    # type: (Environment, PipelineSBSPOptions, str Callable, Callable, Dict[str, Any], Callable, Dict[str, Any], Dict[str, Any]) -> Dict[str, Any]
 
     output = {
         "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
@@ -200,7 +206,7 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
     }
 
     if pipeline_options.use_pbs():
-        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
+        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"], keep_on_head=True)
 
         # pbs = PBS(env, pbs_options,
         #           splitter=split_list_and_remerge_by_key,
