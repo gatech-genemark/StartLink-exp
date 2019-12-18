@@ -99,6 +99,8 @@ def sbsp_step_get_orthologs(env, pipeline_options):
                 func=get_orthologs_from_files,
                 func_kwargs={
                     "env": env,
+                    "fn_q_labels": pipeline_options["fn-q-labels"], "fn_t_labels": pipeline_options["fn_t_labels"],
+                    "max_evalue": pipeline_options.safe_get("max_evalue")
                 }
             )
         else:

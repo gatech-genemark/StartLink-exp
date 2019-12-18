@@ -69,6 +69,7 @@ def run_blast(env, pf_q_list, pf_t_list, pf_blast_output, **kwargs):
     fn_t_proteins = sbsp_general.general.get_value(kwargs, "fn_t_proteins", "t_proteins.faa")
     fn_blast_db = sbsp_general.general.get_value(kwargs, "fn_blast_db", "db")
     clean = sbsp_general.general.get_value(kwargs, "clean", False)
+    max_evalue = sbsp_general.general.get_value(kwargs, "max_evalue", None)
 
     pd_work = env["pd-work"]
 
@@ -85,7 +86,7 @@ def run_blast(env, pf_q_list, pf_t_list, pf_blast_output, **kwargs):
     create_blast_database(pf_t_proteins, pf_blast_db, seq_type="prot", use_diamond=True)
 
     # run blastp
-    run_blast_alignment(pf_q_proteins, pf_blast_db, pf_blast_output, use_diamond=True)
+    run_blast_alignment(pf_q_proteins, pf_blast_db, pf_blast_output, use_diamond=True, max_evalue=max_evalue)
 
     if clean:
         try:
