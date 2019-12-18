@@ -359,7 +359,7 @@ class TaxonomyTree:
             yield curr_node.attributes
 
     def update_tree_attributes(self, func, func_kwargs, direction="bottom-up", **kwargs):
-        # type: (AttributeUpdater, Dict[str, Any], str Dict[str, Any]) -> None
+        # type: (AttributeUpdater, Dict[str, Any], str, Dict[str, Any]) -> None
 
         verify_choice(direction, {"top-down", "bottom-up"})
 

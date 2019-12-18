@@ -39,7 +39,7 @@ def duplicate_pbs_options_with_updated_paths(env, pbs_options, **kwargs):
 
 
 def run_step_generic(env, pipeline_options, step_name, splitter, merger, data, func, func_kwargs, **kwargs):
-    # type: (Environment, PipelineSBSPOptions, str Callable, Callable, Dict[str, Any], Callable, Dict[str, Any], Dict[str, Any]) -> Dict[str, Any]
+    # type: (Environment, PipelineSBSPOptions, str, Callable, Callable, Dict[str, Any], Callable, Dict[str, Any], Dict[str, Any]) -> Dict[str, Any]
 
     output = {
         "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
