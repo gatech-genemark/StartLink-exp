@@ -18,7 +18,7 @@ class Node:
     """
 
     def __init__(self, tax_id=None, parent=None, attributes=None):
-        # type: (int, Union[Node, None], Dict[str, Any]) -> None
+        # type: (int, Union[int, None], Dict[str, Any]) -> None
 
         self.tax_id = tax_id
         if self.tax_id is None:
@@ -273,9 +273,11 @@ class TaxonomyTree:
     @staticmethod
     def is_node_with_tag(node, tag, tag_type=None):
         # type: (Node, Any, Union[None, str]) -> None
+        if tag_type == "taxid":
+            tag = int(tag)
 
         if tag_type is None:
-            return tag == node.tax_id
+            return int(tag) == node.tax_id
 
         return node.attributes[tag_type] == tag
 
@@ -356,7 +358,8 @@ class TaxonomyTree:
             return (_ for _ in ())
 
         for curr_node in TaxonomyTree.get_nodes_under_ancestor(ancestor_node):
-            yield curr_node.attributes
+            if curr_node is not None:
+                yield curr_node.attributes
 
     def update_tree_attributes(self, func, func_kwargs, direction="bottom-up", **kwargs):
         # type: (AttributeUpdater, Dict[str, Any], str, Dict[str, Any]) -> None

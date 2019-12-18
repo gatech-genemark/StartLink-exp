@@ -62,7 +62,7 @@ class GenomeInfoList:
 
         def attributes_to_string(attributes):
             # type: (Dict[str, Any]) -> str
-            if len(attributes) == 0:
+            if attributes is None or len(attributes) == 0:
                 return "."
             else:
                 return ";".join("{}={}".format(k, v) for k, v in attributes.items())

@@ -43,6 +43,9 @@ def read_assembly_summary(fname):
                 for pair in zip(columns, data_arr):
                     name_data_pairs[pair[0]] = pair[1]
 
+                    if pair[0] == "taxid":
+                        name_data_pairs[pair[0]] = int(pair[1])
+
                 data += [name_data_pairs]
 
         return {"column_names": columns, "data": data}
