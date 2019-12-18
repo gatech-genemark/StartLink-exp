@@ -5,20 +5,22 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 import matplotlib.axes
-from matplotlib_venn import venn3
 from pandas.plotting import scatter_matrix
-from typing import *
 from sbsp_general.general import get_value
 import seaborn as sns
 
+
 def add_identity(axes, *line_args, **line_kwargs):
+    # type: (matplotlib.axes.Axes, List[str], Dict[str, Any]) -> matplotlib.axes.Axes
     identity, = axes.plot([], [], *line_args, **line_kwargs)
-    def callback(axes):
-        low_x, high_x = axes.get_xlim()
-        low_y, high_y = axes.get_ylim()
+
+    def callback(l_axes):
+        low_x, high_x = l_axes.get_xlim()
+        low_y, high_y = l_axes.get_ylim()
         low = max(low_x, low_y)
         high = min(high_x, high_y)
         identity.set_data([low, high], [low, high])
+
     callback(axes)
     axes.callbacks.connect('xlim_changed', callback)
     axes.callbacks.connect('ylim_changed', callback)
@@ -55,34 +57,6 @@ class FigureOptions:
             axis.set_ylim(*figure_options.ylim)
 
 
-
-
-def plot_hist_from_dataframe_column(df, column_name, bins=None, figure_options=None, **kwargs):
-    # type: (pd.DataFrame, str, int, FigureOptions) -> None
-
-    density=get_value(kwargs, "density", False)
-
-    fig = plt.figure()
-    bins=50
-    ax = df.hist(column=column_name, bins=bins)[0][0]      # type: matplotlib.axes.Axes
-
-    FigureOptions.set_properties_for_axis(ax, figure_options)
-
-    if figure_options is not None and figure_options.save_fig is not None:
-        plt.savefig(figure_options.save_fig)
-
-    plt.show()
-
-def plot_hist_from_dataframe_column_subplots(ax, df, column_name, bins=None, figure_options=None):
-
-    ax.hist(df[column_name], bins=bins)
-
-    FigureOptions.set_properties_for_axis(ax, figure_options)
-
-    # if figure_options is not None and figure_options.save_fig is not None:
-    #     plt.savefig(figure_options.save_fig)
-
-    # plt.show()
 
 def plot_scatter_for_dataframe_columns(df, column_names, figure_options=None, **kwargs):
     # type: (pd.DataFrame, list[str], FigureOptions, Dict[basestring, Any]) -> None
@@ -186,39 +160,6 @@ def plot_hist_from_list(mylist, figure_options=None):
     if figure_options is not None and figure_options.save_fig is not None:
         plt.savefig(figure_options.save_fig)
 
-    plt.show()
-
-
-def plot_venn_diagram(venn_diagram_stats, figure_options=None, set_labels=None):
-    # type: (Dict[str, int], FigureOptions) -> None
-
-    # Make a Basic Venn
-    label_value_pair = {
-        "100": venn_diagram_stats["a_v"],
-        "010": venn_diagram_stats["a_s"],
-        "001": venn_diagram_stats["a_g"],
-        "110": venn_diagram_stats["b_vs"],
-        "101": venn_diagram_stats["b_vg"],
-        "011": venn_diagram_stats["b_sg"],
-        "111": venn_diagram_stats["c"],
-    }
-
-    fig, ax = plt.subplots()
-
-    if set_labels is None:
-        set_labels = ('Verified', 'SBSP', 'GMS2')
-    v = venn3(subsets=(1, 1, 1, 1, 1, 1, 1), set_labels=set_labels)
-
-    for key, value in label_value_pair.items():
-        v.get_label_by_id(key).set_text(value)
-
-    # Add title and annotation
-    FigureOptions.set_properties_for_axis(ax, figure_options)
-
-    if figure_options is not None and figure_options.save_fig is not None:
-        plt.savefig(figure_options.save_fig, bbox_inches='tight')
-
-    # Show it
     plt.show()
 
 
