@@ -51,8 +51,8 @@ class LabelsComparisonDetailedViz:
 
         self._histogram_multiple_stats_summary_by_attribute(list_df, pd_output)
 
-        df_numbers.to_csv(os.path.join(pd_output, "numbers.csv"))
-        df_percentages.to_csv(os.path.join(pd_output, "percentages.csv"))
+        df_numbers.to_csv(os.path.join(pd_output, "numbers.csv"), index=False)
+        df_percentages.to_csv(os.path.join(pd_output, "percentages.csv"), index=False)
 
     def _merge_multiple_stats_summary(self, list_df, column_names):
         # type: (List[Tuple[str, pd.DataFrame]], List[str]) -> pd.DataFrame
