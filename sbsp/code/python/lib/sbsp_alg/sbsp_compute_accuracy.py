@@ -7,8 +7,10 @@ import sbsp_general
 from sbsp_general.dataframe import df_print_labels
 from sbsp_general.general import except_if_not_in_set
 from sbsp_general.labels import create_key_3prime_from_label
+from sbsp_general.labels_comparison_detailed import LabelsComparisonDetailed
 from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
 from sbsp_pbs_data.splitters import *
+from sbsp_viz.labels_comparison_detailed import LabelsComparisonDetailedViz
 
 log = logging.getLogger(__name__)
 
@@ -132,6 +134,7 @@ def pipeline_step_compute_accuracy(env, df, pipeline_options):
             df, labels, "q-", "distance-to-true",
             coordinates_suffix="-msa")
 
+
     # get labels
     genome_to_pf_labels = df_print_labels(env, df, "q", suffix_coordinates="msa",
                                            suffix_fname="")
@@ -144,6 +147,17 @@ def pipeline_step_compute_accuracy(env, df, pipeline_options):
         pf_q_labels_true = os.path.join(env["pd-data"], genome, pipeline_options["fn-q-labels-true"])
 
         genome_to_comparison[genome] = LabelsComparison(env, pf_q_labels_true, genome_to_pf_labels[genome])
+
+        labels_a = read_labels_from_file(pf_q_labels_true)
+        labels_b = read_labels_from_file(genome_to_pf_labels[genome])
+
+        lcd = LabelsComparisonDetailed(labels_a, labels_b,
+                                       name_a="Verified",
+                                       name_b="SBSP",
+                                       tag=genome,
+                                       split_on_attributes=["predicted-at-step"])
+
+        LabelsComparisonDetailedViz(lcd).run(env["pd-work"])
 
     accuracy = LabelsComparison.stringify_genome_accuracies(genome_to_comparison, ",")
     import sbsp_io.general
