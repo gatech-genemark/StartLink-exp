@@ -460,12 +460,19 @@ def df_get_label_from_row(df, row_number, source, suffix_coordinates=None):
     if suffix_coordinates is not None:
         suffix = "-{}".format(suffix_coordinates)
 
-    return sbsp_general.labels.Label.from_fields({
-        "left": df.at[row_number, "{}-{}{}".format(source, "left", suffix)] - 1,
-        "right": df.at[row_number, "{}-{}{}".format(source, "right", suffix)] - 1,
-        "strand": df.at[row_number, "{}-{}{}".format(source, "strand", suffix)],
-        "seqname": df.at[row_number, "{}-{}".format(source, "accession")]
-    })
+    attributes = dict()
+    if "predicted-at-step" in df:
+        attributes["predicted-at-step"] = df.at[row_number, "predicted-at-step"]
+
+    return sbsp_general.labels.Label.from_fields(
+        {
+            "left": df.at[row_number, "{}-{}{}".format(source, "left", suffix)] - 1,
+            "right": df.at[row_number, "{}-{}{}".format(source, "right", suffix)] - 1,
+            "strand": df.at[row_number, "{}-{}{}".format(source, "strand", suffix)],
+            "seqname": df.at[row_number, "{}-{}".format(source, "accession")]
+        },
+        attributes=attributes
+    )
 
 
 def df_coordinates_to_row(df, row_number, label, source, suffix_coordinates=None):
