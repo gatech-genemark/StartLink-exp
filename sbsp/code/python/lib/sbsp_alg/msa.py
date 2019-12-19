@@ -1874,6 +1874,8 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
     )
     df_group["q-upstream-pos-in-frag-msa"] = pos_of_upstream_in_msa
 
+    predicted_at_step = ""
+
 
     thresh = msa_options["search-start-selection-threshold"]
     start_position_in_msa = None
@@ -1883,6 +1885,9 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
                                                                         scorer=upstream_block_scorer,
                                                                         msa_options=msa_options,
                                                                         pos_of_upstream_in_msa=pos_of_upstream_in_msa)
+
+        if start_position_in_msa is not None:
+            predicted_at_step = "A"
 
     if start_position_in_msa is None:
         params = msa_options.safe_get("search-candidates-without-upstream-conservation")
@@ -1912,6 +1917,9 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
                                                                    score_on_all_pairs=score_on_all_pairs,
                                                                    upstream_block_scorer=upstream_block_scorer,
                                                                    pos_of_upstream_in_msa=pos_of_upstream_in_msa)
+
+            if start_position_in_msa is not None:
+                predicted_at_step = "D"
         else:
             logger.debug("Run search for candidate positions: {}".format(candidate_positions))
             start_position_in_msa = select_start_position_from_msa(alignments, threshold=thresh,
@@ -1921,6 +1929,9 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
                                                                    upstream_block_scorer=upstream_block_scorer,
                                                                    pos_of_upstream_in_msa=pos_of_upstream_in_msa)
 
+            if start_position_in_msa is not None:
+                predicted_at_step = "B"
+
             # FIXME: remove from else block
             if start_position_in_msa is None and msa_options.safe_get("search-skip-by-standard-aa-score"):
                 logger.debug("No candidate found. Select from right, but skip with high standard aa score")
@@ -1929,6 +1940,9 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
                     candidate_positions,
                     threshold=msa_options.safe_get("search-skip-by-standard-aa-score"),
                 )
+
+                if start_position_in_msa is not None:
+                    predicted_at_step = "C"
 
             if start_position_in_msa is None and msa_options.safe_get("search-select-closest-to-coding-on-fail"):
                 logger.debug("No candidate found. Select rightmost")
@@ -1949,6 +1963,8 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
     # if a start is found
     q_label_msa = None
     if start_position_in_msa is not None:
+
+        df_group["predicted-at-step"] = predicted_at_step
 
         # get label of new start
         q_label_msa = get_label_from_start_position_in_msa(
