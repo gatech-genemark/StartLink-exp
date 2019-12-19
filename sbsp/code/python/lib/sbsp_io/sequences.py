@@ -104,6 +104,8 @@ def read_sequences_from_genome_labels_pairs(env, genomes_labels_pairs, **kwargs)
 
     except_if_not_in_set(sequence_type, ["both", "nucl", "prot"])
 
+    upstream_length_nt = 180
+
     # if upstream_length_nt is not None:
     #     if downstream_length_nt > 0 and upstream_length_nt % 3 != 0:
     #         raise ValueError("Upstream length nt ({}) is not a multiple of 3".format(upstream_length_nt))
