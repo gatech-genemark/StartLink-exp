@@ -212,7 +212,7 @@ def main(env, args):
         dry_run=args.dry_run,
         valid_assembly_levels=args.valid_assembly_levels,
         favor_assembly_level_order=args.favor_assembly_level_order,
-        number_per_taxid=args.number_per_taxid  
+        number_per_taxid=args.number_per_taxid
     )
 
 
