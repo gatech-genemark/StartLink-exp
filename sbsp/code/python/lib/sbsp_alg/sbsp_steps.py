@@ -270,6 +270,8 @@ def sbsp_step_accuracy(env, pipeline_options, list_pf_previous):
 
     df = pipeline_step_compute_accuracy(env, df, pipeline_options)
 
+    df.to_csv(pipeline_options)
+
 
     # copy labels
     add_true_starts_to_msa_output(env, df, fn_q_labels_true=pipeline_options["fn-q-labels-true"])
