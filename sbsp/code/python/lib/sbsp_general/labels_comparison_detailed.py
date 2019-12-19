@@ -33,16 +33,17 @@ class LabelsComparisonDetailed:
             "attribute": dict()
         }
 
-        for attribute_name in split_on_attributes:
-            attribute_to_labels_a, attribute_to_labels_b = LabelsComparisonDetailed._split_labels_by_attribute(
-                self.labels_a, self.labels_b, attribute_name
-            )
-            self.comparison["attribute"][attribute_name] = dict()
-
-            for attribute_value in attribute_to_labels_b.keys():
-                self.comparison["attribute"][attribute_name][attribute_value] = self._compare_labels_helper(
-                    self.labels_a, attribute_to_labels_b[attribute_value]
+        if split_on_attributes is not None:
+            for attribute_name in split_on_attributes:
+                attribute_to_labels_a, attribute_to_labels_b = LabelsComparisonDetailed._split_labels_by_attribute(
+                    self.labels_a, self.labels_b, attribute_name
                 )
+                self.comparison["attribute"][attribute_name] = dict()
+
+                for attribute_value in attribute_to_labels_b.keys():
+                    self.comparison["attribute"][attribute_name][attribute_value] = self._compare_labels_helper(
+                        self.labels_a, attribute_to_labels_b[attribute_value]
+                    )
 
     @staticmethod
     def _split_labels_by_attribute(labels_a, labels_b, attribute_name):

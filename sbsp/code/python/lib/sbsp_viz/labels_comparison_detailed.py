@@ -5,6 +5,8 @@ from typing import *
 
 from sbsp_general.labels_comparison_detailed import LabelsComparisonDetailed
 from sbsp_io.general import mkdir_p
+from sbsp_viz.general import FigureOptions
+from sbsp_viz.hist import plot_catplot
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +49,8 @@ class LabelsComparisonDetailedViz:
         df_numbers = self._merge_multiple_stats_summary(list_df, ["Common 3'", "Common 5'"])
         df_percentages = self._merge_multiple_stats_summary(list_df, ["% Common 3'", "% Common 5'"])
 
+        self._histogram_multiple_stats_summary_by_attribute(list_df, pd_output)
+
         df_numbers.to_csv(os.path.join(pd_output, "numbers.csv"))
         df_percentages.to_csv(os.path.join(pd_output, "percentages.csv"))
 
@@ -63,10 +67,28 @@ class LabelsComparisonDetailedViz:
 
         for cn in column_names:
             for item in list_df:
-                value, df = item
-                df["{} - {}".format(cn, value)] = df[cn]
+                value, curr_df = item
+                df["{} - {}".format(cn, value)] = curr_df[cn]
 
         return df
+
+    def _histogram_multiple_stats_summary_by_attribute(self, list_df, pd_output):
+        # type: (List[Tuple[str, pd.DataFrame]], str) -> None
+
+        # merge df and add value
+        df = pd.DataFrame()
+
+        for item in list_df:
+            value, curr_df = item
+            curr_df["step"] = value
+            df = df.append(curr_df, ignore_index=True)
+
+        plot_catplot(df, "step", "% Common 5'", FigureOptions(
+            save_fig=os.path.join(pd_output, "histogram.pdf")
+        ))
+
+
+
 
 
     def _stats_summary_to_df(self, stats):
@@ -86,12 +108,12 @@ class LabelsComparisonDetailedViz:
         df = pd.DataFrame(dict_summary, index=[0])
 
         df["% Common 3'"] = 0
-        if df[total_a_tag] > 0:
-            df["% Common 3'"] = df["Common 3'"] / df[total_a_tag]
+        if df.at[0, total_a_tag] > 0:
+            df["% Common 3'"] = 100 * df["Common 3'"] / df[total_a_tag]
 
-        df["Common 5'"] = 0
-        if df["Common 3'"] > 0:
-            df["% Common 5'"] = df["Common 5'"] / df["Common 3'"]
+        df["% Common 5'"] = 0
+        if df.at[0, "Common 3'"] > 0:
+            df["% Common 5'"] = 100 * df["Common 5'"] / df["Common 3'"]
 
         df["% Common 3'"].map('${:,.2f}'.format)
         df["% Common 5'"].map('${:,.2f}'.format)

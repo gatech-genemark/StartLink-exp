@@ -30,3 +30,13 @@ def plot_hist_by_group(df_data, column_x, column_group=None, figure_options=None
         plt.savefig(figure_options.save_fig, bbox_index="tight")
 
     plt.show()
+
+def plot_catplot(df, column_x, column_y, figure_options=None):
+    _, ax = plt.subplots()
+    sns.catplot(x=column_x, y=column_y, kind="bar", data=df)
+
+    FigureOptions.set_properties_for_axis(ax, figure_options)
+    if figure_options is not None and figure_options.save_fig is not None:
+        plt.savefig(figure_options.save_fig, bbox_index="tight")
+
+    plt.show()
