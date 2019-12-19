@@ -8,10 +8,11 @@ from sbsp_options.options import Options
 class PipelineSBSPOptions(Options):
     """Options for SBSP pipeline"""
 
-    def __init__(self, env, pf_q_list, pf_t_list, msa_options, pf_options_custom=None, **kwargs):
-        # type: (Environment, str, str, MSAOptions, str, Dict[str, Any]) -> None
+    def __init__(self, env, pf_q_list, pf_t_list, pf_output, msa_options, pf_options_custom=None, **kwargs):
+        # type: (Environment, str, str, str, MSAOptions, str, Dict[str, Any]) -> None
         super(PipelineSBSPOptions, self).__init__(env, pf_options_custom,
                                                   msa_options=msa_options,
+                                                  pf_output=pf_output,
                                                   pf_q_list=pf_q_list,
                                                   pf_t_list=pf_t_list,
                                                   **kwargs)
@@ -29,7 +30,7 @@ class PipelineSBSPOptions(Options):
         # type: () -> Union[Set[str], None]
         return {
             # output files for sbsp steps
-            "fn-orthologs", "fn-compute-features", "fn-filter", "fn-msa", "fn-accuracy",
+            "fn-orthologs", "fn-compute-features", "fn-filter", "fn-msa", "fn-accuracy", "pf-output",
             # input files
             "pf-q-list", "pf-t-list", "fn-q-labels", "fn-t-labels"
         }
