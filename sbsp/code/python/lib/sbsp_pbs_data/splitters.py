@@ -59,7 +59,8 @@ def split_q3prime_files(data, num_splits, pd_work, **kwargs):
     for q3prime_key in q3prime_to_list_pf.keys():
         list_pf = q3prime_to_list_pf[q3prime_key]
         list_splits.append({"list_pf_data": list_pf, "pf_output": pf_output_template.format(file_number),
-                            "q3prime": q3prime_key})
+                            "q3prime": q3prime_key,
+                            "msa_output_start": file_number})
 
         file_number += 1
 
