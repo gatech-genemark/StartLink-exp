@@ -42,7 +42,7 @@ class LabelsComparisonDetailedViz:
         mkdir_p(pd_output)
 
         list_df = list()
-        for value, comparison in value_to_comparison.items():
+        for value, comparison in sorted(value_to_comparison.items(), key=lambda x: x[0]):
             df = self._stats_summary_to_df(comparison["stats"])
             list_df.append((value, df))
 
