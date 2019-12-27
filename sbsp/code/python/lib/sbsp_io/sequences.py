@@ -26,13 +26,10 @@ def write_fasta_hash_to_file(fasta, pf_output):
     # type: (Dict[str, Any], str) -> None
 
     output = ""
-    prefix = ""
     for header in fasta.keys():
-        output += "{}>{}\n{}".format(
-            prefix, header, fasta[header]
+        output += ">{}\n{}\n".format(
+            header, fasta[header]
         )
-
-        prefix = "\n"
 
     write_string_to_file(output, pf_output)
 
