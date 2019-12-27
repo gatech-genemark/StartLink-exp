@@ -270,7 +270,7 @@ def sbsp_step_accuracy(env, pipeline_options, list_pf_previous):
 
     df = pipeline_step_compute_accuracy(env, df, pipeline_options)
 
-    df.to_csv(pipeline_options)
+    df.to_csv(pipeline_options["pf-output"])
 
 
     # copy labels

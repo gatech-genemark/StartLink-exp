@@ -77,11 +77,13 @@ class PBS:
         self._setup_pbs_run()
 
         # 2) Create input packages files, one for every PBS run
-        self.create_input_package_files(
+        list_pf_input_job = self.create_input_package_files(
             data, func, func_kwargs, num_jobs,
             pf_package_template_formatted=pf_input_package_template_formatted,
             **kwargs
         )
+
+        num_jobs = len(list_pf_input_job)
 
         # 3) Run all
         list_pf_output_job_packages = self.execute_function_on_input_packages(
@@ -158,7 +160,7 @@ class PBS:
 
         # write summary file
         list_pf_outputs = [PBS.create_concrete_from_template(pf_output_package_template, x) for x in range(1,num_jobs)
-                           if os.path.isfile(PBS.create_concrete_from_template(pf_output_package_template, x))]
+                           if os.path.isfile(PBS.create_concrete_from_template(pf_output_package_template + ".pkl", x))]
         pf_pbs_summary = os.path.join(self._pbs_options["pd-head"], self._pbs_options["fn-pbs-summary"])
         sbsp_io.general.write_string_to_file("\n".join(list_pf_outputs), pf_pbs_summary)
 
