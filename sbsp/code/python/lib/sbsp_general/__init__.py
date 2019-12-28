@@ -42,7 +42,7 @@ class Environment:
         if pd_data is not None:
             pd_data = os.path.abspath(pd_data)
         if pd_work is not None:
-            pd_data = os.path.abspath(pd_work)
+            pd_work = os.path.abspath(pd_work)
 
         pd_results = kwargs["pd_results"] if "pd_results" in kwargs else None
 
@@ -94,6 +94,7 @@ class Environment:
             "pd-base": pd_base,
             "pd-results": pd_results,
             "pd-work": pd_work,
+            "pd-code": pd_code,
             "pd-data": pd_data,
             "pd-bin": pd_bin,
             "pd-config": pd_config,
