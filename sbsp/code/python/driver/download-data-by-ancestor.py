@@ -17,13 +17,14 @@ import pathmagic                        # add path to custom library
 from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_container.taxonomy_tree import TaxonomyTree
 from sbsp_general import Environment
-from sbsp_general.general import run_shell_cmd, get_value
+from sbsp_general.data_download import set_up_gcfid
+from sbsp_general.general import get_value
 from sbsp_io.assembly_summary import get_rows_by_key
-from sbsp_io.general import mkdir_p
 
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
+from sbsp_options.pbs import PBSOptions
 
 parser = argparse.ArgumentParser("Description of driver.")
 
@@ -62,54 +63,6 @@ ENV = Environment(pd_data=parsed_args.pd_data, pd_work=parsed_args.pd_work,
 # Setup logger
 logging.basicConfig(level=parsed_args.loglevel)
 logger = logging.getLogger("logger")                    # type: logging.Logger
-
-
-def set_up_gcfid(gcfid_info, pd_output):
-    # type: (Dict[str, Any], str) -> None
-
-    # build name
-    gcf = gcfid_info["assembly_accession"]
-    acc = gcfid_info["asm_name"].replace(" ", "_")
-
-    gcfid = "{}_{}".format(gcf, acc)
-
-    pd_gcfid = os.path.join(pd_output, gcfid)
-    pd_runs = os.path.join(pd_gcfid, "runs")
-    mkdir_p(pd_gcfid)
-    mkdir_p(pd_runs)
-
-    ftplink = gcfid_info["ftp_path"]
-    fn_sequence = "{}_genomic.fna".format(gcfid)
-    fn_labels = "{}_genomic.gff".format(gcfid)
-
-    pf_ftp_sequence = os.path.join(ftplink, "{}.gz".format(fn_sequence))
-    pf_ftp_labels = os.path.join(ftplink, "{}.gz".format(fn_labels))
-
-    pf_local_sequence = os.path.join(pd_gcfid, "sequence.fasta")
-    pf_local_labels = os.path.join(pd_gcfid, "ncbi.gff")
-
-    # don't re-download. TODO: add option to force re-download
-    if os.path.isfile(pf_local_sequence) and os.path.isfile(pf_local_labels):
-        return
-
-    run_shell_cmd(
-        "pwd; cd {}; wget --quiet {}; wget --quiet {}; gunzip -f {}; gunzip -f {}".format(
-            pd_gcfid,
-            pf_ftp_sequence,
-            pf_ftp_labels,
-            "{}.gz".format(fn_sequence),
-            "{}.gz".format(fn_labels)
-        ),
-
-    )
-
-    run_shell_cmd(
-        "cd {}; mv {} {}; mv {} {}".format(
-            pd_gcfid,
-            fn_sequence, "sequence.fasta",
-            fn_labels, "ncbi.gff"
-        )
-    )
 
 
 def filter_list(list_info, **kwargs):
@@ -156,6 +109,31 @@ def filter_list(list_info, **kwargs):
     return list_info_filtered
 
 
+def get_genomes_under_ancestor_with_filters(ancestor_tag, tag_type, pf_taxonomy_tree, pf_assembly_summary, **kwargs):
+    # type: (Union[str, int], str, str, str, Dict[str, Any]) -> GenomeInfoList
+
+    tax_tree = TaxonomyTree.load(pf_taxonomy_tree)
+
+    taxid_to_info_list = get_rows_by_key(pf_assembly_summary, key="taxid")
+
+    list_of_genome_infos = list()
+    for genome_node in tax_tree.get_possible_genomes_under_ancestor(ancestor_tag, tag_type):
+
+        # find in assembly summary
+        tax_id = genome_node["taxid"]
+        if tax_id in taxid_to_info_list:
+            info_list = taxid_to_info_list[tax_id]
+
+            for gcfid_info in filter_list(info_list, **kwargs):
+                list_of_genome_infos.append(gcfid_info)
+
+    gil = GenomeInfoList([
+        GenomeInfo("{}_{}".format(d["assembly_accession"], d["asm_name"]), 11) for d in list_of_genome_infos
+    ])
+
+    return gil
+
+
 def download_data_by_ancestor(env, ancestor_tag, tag_type, pf_taxonomy_tree, pf_assembly_summary, pd_output,
                               pf_output_list, **kwargs):
     # type: (Environment, Union[str, int], str, str, str, str, str, Dict[str, Any]) -> None
@@ -198,8 +176,40 @@ def download_data_by_ancestor(env, ancestor_tag, tag_type, pf_taxonomy_tree, pf_
         gil.to_file(pf_output_list)
 
 
+
+
+# def filter_assembly_summary_by_ancestor( )
+
+
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
+
+    pbs_options = PBSOptions.init_from_dict(env, vars(args))
+
+    # if pbs_options["use-pbs"]:
+    #
+    #     gil = get_genomes_under_ancestor_with_filters(
+    #         args.ancestor_id, args.ancestor_id_type,
+    #         args.pf_taxonomy_tree,
+    #         args.pf_assembly_summary,
+    #         valid_assembly_levels=args.valid_assembly_levels,
+    #         favor_assembly_level_order=args.favor_assembly_level_order,
+    #         number_per_taxid=args.number_per_taxid
+    #     )
+    #
+    #     pbs = PBS(
+    #         env, pbs_options,
+    #         splitter=split_dataframe,
+    #         merger=merge_genome_info_lists
+    #     )
+    #
+    #     pbs.run(
+    #         data={"gil": gil, },
+    #         func=download_data,
+    #
+    #
+    #
+    #     )
 
     download_data_by_ancestor(
         env,
