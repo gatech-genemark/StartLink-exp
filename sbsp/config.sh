@@ -22,7 +22,7 @@ export lists=$base/lists
 
 export tmp=$base/tmp               # it is suggested that runs be performed in tmp directory (under some subdirectory)
 export config=$base/config
-export exp=$base/exp
+export exp=$base/experiments
 
 export code=$base/code
 
