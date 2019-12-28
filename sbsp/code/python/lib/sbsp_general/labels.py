@@ -79,6 +79,15 @@ class Label:
 
         self._attributes = get_value(kwargs, "attributes", dict(), defualt_if_none=True)
 
+
+    def left(self):
+        # type: () -> int
+        return self.coordinates().left
+
+    def right(self):
+        # type: () -> int
+        return self.coordinates().right
+
     def to_string(self, shift_coordinates_by=0):
         # FIXME: prints in GFF format only for now
         # seqname, source, feature, left, right, score, strand, frame, attributes
@@ -123,6 +132,14 @@ class Label:
 
         return False
 
+    def is_hypothetical(self):
+        # type: () -> bool
+        if self.get_attribute_value("product") is not None and "hypothetical" in self.get_attribute_value("product"):
+            return True
+
+        return False
+
+
     def is_frameshifted(self):
         # type: () -> bool
 
@@ -134,6 +151,8 @@ class Label:
             return True
 
         return False
+
+
 
 
     @classmethod

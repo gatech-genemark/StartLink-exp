@@ -18,12 +18,12 @@ from sbsp_general import Environment
 from sbsp_container.taxonomy_tree import TaxonomyTree, Attributes, AttributeUpdater
 from sbsp_general.general import get_value
 from sbsp_io.assembly_summary import get_rows_by_key
+from sbsp_io.general import write_string_to_file, read_rows_to_list
 
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
-from sbsp_io.general import write_string_to_file, read_rows_to_list
-from sbsp_pipeline.pipeline_msa import PipelineMSA
+
 
 parser = argparse.ArgumentParser("Description of driver.")
 

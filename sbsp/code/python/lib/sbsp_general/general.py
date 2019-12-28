@@ -199,6 +199,8 @@ def get_value(key_value_pairs, key, default_value=None, **kwargs):
     default_if_none = get_value_DEPRECATED(kwargs, "default_if_none", False)
     value_type = get_value_DEPRECATED(kwargs, "type", None)
 
+    init = get_value_DEPRECATED(kwargs, "init", None)
+
     value = key_value_pairs[key] if key in key_value_pairs else default_value
 
     if default_if_none and value is None:
@@ -209,6 +211,9 @@ def get_value(key_value_pairs, key, default_value=None, **kwargs):
 
     if value_type:
         value = value_type(value)
+
+    if value is None and init is not None:
+        value = init()
 
     return value
 
