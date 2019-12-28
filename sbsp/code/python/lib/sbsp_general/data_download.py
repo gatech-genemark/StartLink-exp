@@ -1,5 +1,7 @@
 import os
 import logging
+import shutil
+
 import pandas as pd
 from typing import *
 
@@ -22,41 +24,56 @@ def set_up_gcfid(gcfid_info, pd_output):
 
     pd_gcfid = os.path.join(pd_output, gcfid)
     pd_runs = os.path.join(pd_gcfid, "runs")
-    mkdir_p(pd_gcfid)
-    mkdir_p(pd_runs)
 
-    ftplink = gcfid_info["ftp_path"]
-    fn_sequence = "{}_genomic.fna".format(gcfid)
-    fn_labels = "{}_genomic.gff".format(gcfid)
+    try:
+        mkdir_p(pd_gcfid)
+        mkdir_p(pd_runs)
 
-    pf_ftp_sequence = os.path.join(ftplink, "{}.gz".format(fn_sequence))
-    pf_ftp_labels = os.path.join(ftplink, "{}.gz".format(fn_labels))
+        ftplink = gcfid_info["ftp_path"]
+        fn_sequence = "{}_genomic.fna".format(gcfid)
+        fn_labels = "{}_genomic.gff".format(gcfid)
 
-    pf_local_sequence = os.path.join(pd_gcfid, "sequence.fasta")
-    pf_local_labels = os.path.join(pd_gcfid, "ncbi.gff")
+        pf_ftp_sequence = os.path.join(ftplink, "{}.gz".format(fn_sequence))
+        pf_ftp_labels = os.path.join(ftplink, "{}.gz".format(fn_labels))
 
-    # don't re-download. TODO: add option to force re-download
-    if os.path.isfile(pf_local_sequence) and os.path.isfile(pf_local_labels):
-        return
+        for not_allowed in {"#", "(", ")", ","}:
+            if not_allowed in pf_ftp_sequence or not_allowed in pf_ftp_labels:
+                raise ValueError("Invalid character in path")
 
-    run_shell_cmd(
-        "pwd; cd {}; wget --quiet {}; wget --quiet {}; gunzip -f {}; gunzip -f {}".format(
-            pd_gcfid,
-            pf_ftp_sequence,
-            pf_ftp_labels,
-            "{}.gz".format(fn_sequence),
-            "{}.gz".format(fn_labels)
-        ),
+        for not_allowed in {"#", "(", ")", "/", ":", ","}:
+            if not_allowed in fn_sequence or not_allowed in fn_labels:
+                raise ValueError("Invalid character in path")
 
-    )
+        pf_local_sequence = os.path.join(pd_gcfid, "sequence.fasta")
+        pf_local_labels = os.path.join(pd_gcfid, "ncbi.gff")
 
-    run_shell_cmd(
-        "cd {}; mv {} {}; mv {} {}".format(
-            pd_gcfid,
-            fn_sequence, "sequence.fasta",
-            fn_labels, "ncbi.gff"
+        # don't re-download. TODO: add option to force re-download
+        if os.path.isfile(pf_local_sequence) and os.path.isfile(pf_local_labels):
+            return
+
+
+        run_shell_cmd(
+            "pwd; cd {}; wget --quiet {}; wget --quiet {}; gunzip -f {}; gunzip -f {}".format(
+                pd_gcfid,
+                pf_ftp_sequence,
+                pf_ftp_labels,
+                "{}.gz".format(fn_sequence),
+                "{}.gz".format(fn_labels)
+            ),
+
         )
-    )
+
+        run_shell_cmd(
+            "cd {}; mv {} {}; mv {} {}".format(
+                pd_gcfid,
+                fn_sequence, "sequence.fasta",
+                fn_labels, "ncbi.gff"
+            )
+        )
+    except (IOError, OSError, ValueError):
+        # cleanup failed attempt
+        if os.path.exists(pd_gcfid) and os.path.isdir(pd_gcfid):
+            shutil.rmtree(pd_gcfid)
 
 
 def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs):

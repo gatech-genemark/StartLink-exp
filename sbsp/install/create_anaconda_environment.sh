@@ -1,8 +1,8 @@
 
 # packages
-conda install -c conda-forge biopython
-conda install pandas
-conda install -c anaconda pyyaml
-conda install -c conda-forge cloudpickle
-conda install -c conda-forge matplotlib 
-conda install seaborn
+conda install -y -c conda-forge biopython
+conda install -y pandas
+conda install -y -c anaconda pyyaml
+conda install -y -c conda-forge cloudpickle
+conda install -y -c conda-forge matplotlib 
+conda install -y seaborn

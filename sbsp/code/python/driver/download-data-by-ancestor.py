@@ -4,6 +4,8 @@
 # Created:
 
 import os
+import sys
+import shutil
 import logging
 import argparse
 from datetime import datetime
@@ -63,6 +65,10 @@ ENV = Environment(pd_data=parsed_args.pd_data, pd_work=parsed_args.pd_work,
 # Setup logger
 logging.basicConfig(level=parsed_args.loglevel)
 logger = logging.getLogger("logger")                    # type: logging.Logger
+
+
+
+
 
 
 def filter_list(list_info, **kwargs):
@@ -148,6 +154,9 @@ def download_data_by_ancestor(env, ancestor_tag, tag_type, pf_taxonomy_tree, pf_
 
     counter = 0
 
+    successful = 0
+    failed = 0
+
     success_downloads = list()
     for genome_node in tax_tree.get_possible_genomes_under_ancestor(ancestor_tag, tag_type):
 
@@ -163,14 +172,21 @@ def download_data_by_ancestor(env, ancestor_tag, tag_type, pf_taxonomy_tree, pf_
                 try:
                     set_up_gcfid(gcfid_info, pd_output)
                     success_downloads.append(gcfid_info)
+
+                    successful += 1
+                    sys.stdout.write("Download progress: {} / {} \r".format(successful, successful + failed))
+                    sys.stdout.flush()
                 except (IOError, OSError):
+                    failed += 1
+                    sys.stdout.write("Download progress: {} / {} \r".format(successful, successful + failed))
+                    sys.stdout.flush()
                     pass
 
     if dry_run:
         print("Number of genomes: {}".format(counter))
     else:
         gil = GenomeInfoList([
-            GenomeInfo("{}_{}".format(d["assembly_accession"], d["asm_name"]), 11) for d in success_downloads
+            GenomeInfo("{}_{}".format(d["assembly_accession"], d["asm_name"].replace(" ", "_")), 11) for d in success_downloads
         ])
 
         gil.to_file(pf_output_list)
