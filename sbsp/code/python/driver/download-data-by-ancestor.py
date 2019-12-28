@@ -4,6 +4,8 @@
 # Created:
 
 import os
+import sys
+import shutil
 import logging
 import argparse
 from datetime import datetime
@@ -75,41 +77,56 @@ def set_up_gcfid(gcfid_info, pd_output):
 
     pd_gcfid = os.path.join(pd_output, gcfid)
     pd_runs = os.path.join(pd_gcfid, "runs")
-    mkdir_p(pd_gcfid)
-    mkdir_p(pd_runs)
 
-    ftplink = gcfid_info["ftp_path"]
-    fn_sequence = "{}_genomic.fna".format(gcfid)
-    fn_labels = "{}_genomic.gff".format(gcfid)
+    try:
+        mkdir_p(pd_gcfid)
+        mkdir_p(pd_runs)
 
-    pf_ftp_sequence = os.path.join(ftplink, "{}.gz".format(fn_sequence))
-    pf_ftp_labels = os.path.join(ftplink, "{}.gz".format(fn_labels))
+        ftplink = gcfid_info["ftp_path"]
+        fn_sequence = "{}_genomic.fna".format(gcfid)
+        fn_labels = "{}_genomic.gff".format(gcfid)
 
-    pf_local_sequence = os.path.join(pd_gcfid, "sequence.fasta")
-    pf_local_labels = os.path.join(pd_gcfid, "ncbi.gff")
+        pf_ftp_sequence = os.path.join(ftplink, "{}.gz".format(fn_sequence))
+        pf_ftp_labels = os.path.join(ftplink, "{}.gz".format(fn_labels))
 
-    # don't re-download. TODO: add option to force re-download
-    if os.path.isfile(pf_local_sequence) and os.path.isfile(pf_local_labels):
-        return
+        for not_allowed in {"#", "(", ")", ","}:
+            if not_allowed in pf_ftp_sequence or not_allowed in pf_ftp_labels:
+                raise ValueError("Invalid character in path")
 
-    run_shell_cmd(
-        "pwd; cd {}; wget --quiet {}; wget --quiet {}; gunzip -f {}; gunzip -f {}".format(
-            pd_gcfid,
-            pf_ftp_sequence,
-            pf_ftp_labels,
-            "{}.gz".format(fn_sequence),
-            "{}.gz".format(fn_labels)
-        ),
+        for not_allowed in {"#", "(", ")", "/", ":", ","}:
+            if not_allowed in fn_sequence or not_allowed in fn_labels:
+                raise ValueError("Invalid character in path")
 
-    )
+        pf_local_sequence = os.path.join(pd_gcfid, "sequence.fasta")
+        pf_local_labels = os.path.join(pd_gcfid, "ncbi.gff")
 
-    run_shell_cmd(
-        "cd {}; mv {} {}; mv {} {}".format(
-            pd_gcfid,
-            fn_sequence, "sequence.fasta",
-            fn_labels, "ncbi.gff"
+        # don't re-download. TODO: add option to force re-download
+        if os.path.isfile(pf_local_sequence) and os.path.isfile(pf_local_labels):
+            return
+
+
+        run_shell_cmd(
+            "pwd; cd {}; wget --quiet {}; wget --quiet {}; gunzip -f {}; gunzip -f {}".format(
+                pd_gcfid,
+                pf_ftp_sequence,
+                pf_ftp_labels,
+                "{}.gz".format(fn_sequence),
+                "{}.gz".format(fn_labels)
+            ),
+
         )
-    )
+
+        run_shell_cmd(
+            "cd {}; mv {} {}; mv {} {}".format(
+                pd_gcfid,
+                fn_sequence, "sequence.fasta",
+                fn_labels, "ncbi.gff"
+            )
+        )
+    except (IOError, OSError, ValueError):
+        # cleanup failed attempt
+        if os.path.exists(pd_gcfid) and os.path.isdir(pd_gcfid):
+            shutil.rmtree(pd_gcfid)
 
 
 def filter_list(list_info, **kwargs):
@@ -170,6 +187,9 @@ def download_data_by_ancestor(env, ancestor_tag, tag_type, pf_taxonomy_tree, pf_
 
     counter = 0
 
+    successful = 0
+    failed = 0
+
     success_downloads = list()
     for genome_node in tax_tree.get_possible_genomes_under_ancestor(ancestor_tag, tag_type):
 
@@ -185,14 +205,21 @@ def download_data_by_ancestor(env, ancestor_tag, tag_type, pf_taxonomy_tree, pf_
                 try:
                     set_up_gcfid(gcfid_info, pd_output)
                     success_downloads.append(gcfid_info)
+
+                    successful += 1
+                    sys.stdout.write("Download progress: {} / {} \r".format(successful, successful + failed))
+                    sys.stdout.flush()
                 except (IOError, OSError):
+                    failed += 1
+                    sys.stdout.write("Download progress: {} / {} \r".format(successful, successful + failed))
+                    sys.stdout.flush()
                     pass
 
     if dry_run:
         print("Number of genomes: {}".format(counter))
     else:
         gil = GenomeInfoList([
-            GenomeInfo("{}_{}".format(d["assembly_accession"], d["asm_name"]), 11) for d in success_downloads
+            GenomeInfo("{}_{}".format(d["assembly_accession"], d["asm_name"].replace(" ", "_")), 11) for d in success_downloads
         ])
 
         gil.to_file(pf_output_list)
