@@ -1,24 +1,26 @@
 import os
 import logging
 import shutil
+from datetime import datetime
 
 import pandas as pd
 from typing import *
 
 from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
-from sbsp_general import Environment
+from sbsp_container.taxonomy_tree import TaxonomyTree
 from sbsp_general.general import get_value, run_shell_cmd
-from sbsp_io.general import mkdir_p
+from sbsp_io.assembly_summary import get_rows_by_key, get_rows_by_key_from_dataframe, filter_entries_with_equal_taxid
+from sbsp_io.general import mkdir_p, print_progress
 
 logger = logging.getLogger(__name__)
 
 
-def set_up_gcfid(gcfid_info, pd_output):
+def download_assembly_summary_entry(entry, pd_output):
     # type: (Dict[str, Any], str) -> None
 
     # build name
-    gcf = gcfid_info["assembly_accession"]
-    acc = gcfid_info["asm_name"].replace(" ", "_")
+    gcf = entry["assembly_accession"]
+    acc = entry["asm_name"].replace(" ", "_")
 
     gcfid = "{}_{}".format(gcf, acc)
 
@@ -29,7 +31,7 @@ def set_up_gcfid(gcfid_info, pd_output):
         mkdir_p(pd_gcfid)
         mkdir_p(pd_runs)
 
-        ftplink = gcfid_info["ftp_path"]
+        ftplink = entry["ftp_path"]
         fn_sequence = "{}_genomic.fna".format(gcfid)
         fn_labels = "{}_genomic.gff".format(gcfid)
 
@@ -78,15 +80,32 @@ def set_up_gcfid(gcfid_info, pd_output):
 
 def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs):
     # type: (pd.DataFrame, str, Dict[str, Any]) -> GenomeInfoList
+    """
+    Attempt to download all genomes from assembly summary.
+    :param df_assembly_summary: Data frame containing assembly summary entries
+    :param pd_output: Path to download directory
+    :param kwargs:
+        - pf_output: path to output file which will contain list of downloaded genomes
+    :return: Genome information list of successfully downloaded entries
+    """
 
-    pf_output = get_value(kwargs, "pf_output", None)
+    pf_output_list = get_value(kwargs, "pf_output_list", None)
+
+    df_assembly_summary = filter_entries_with_equal_taxid(
+        df_assembly_summary, **kwargs
+    )
 
     pd_output = os.path.abspath(pd_output)
     success_downloads = list()
+    total = 0
     for _, gcfid_info in df_assembly_summary.iterrows():
+        total += 1
+
         try:
-            set_up_gcfid(gcfid_info, pd_output)
+            download_assembly_summary_entry(gcfid_info, pd_output)
             success_downloads.append(gcfid_info)
+
+            print_progress("Download", len(success_downloads), total)
         except (IOError, OSError):
             pass
 
@@ -94,7 +113,42 @@ def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs
         GenomeInfo("{}_{}".format(d["assembly_accession"], d["asm_name"]), 11) for d in success_downloads
     ])
 
-    if pf_output is not None:
-        gil.to_file(pf_output)
+    if pf_output_list is not None:
+        gil.to_file(pf_output_list)
 
     return gil
+
+
+def filter_assembly_summary_by_ancestor(ancestor_tag, tag_type, taxonomy_tree, df_assembly_summary):
+    # type: (str, str, TaxonomyTree, pd.DataFrame) -> pd.DataFrame
+
+    taxid_to_list_of_rows = get_rows_by_key_from_dataframe(df_assembly_summary, key="taxid")
+
+    list_rows = list()
+    df_filtered = pd.DataFrame(columns=df_assembly_summary.columns)
+
+    for genome_node in taxonomy_tree.get_possible_genomes_under_ancestor(ancestor_tag, tag_type):
+
+        # find rows for taxid in assembly summary
+        tax_id = genome_node["taxid"]
+
+        # append rows to dataframe
+        if tax_id in taxid_to_list_of_rows:
+            info_list = taxid_to_list_of_rows[tax_id]
+
+            list_rows += info_list
+
+    df_filtered = df_filtered.append(list_rows)
+
+    return df_filtered
+
+
+def download_data_by_ancestor(ancestor_tag, tag_type, taxonomy_tree, df_assembly_summary, pd_output, **kwargs):
+    # type: (str, str, TaxonomyTree, pd.DataFrame, str, Dict[str, Any]) -> GenomeInfoList
+
+    # get assembly summary entries for genomes under ancestor
+    df_assembly_summary_filtered = filter_assembly_summary_by_ancestor(
+        ancestor_tag, tag_type, taxonomy_tree, df_assembly_summary
+    )
+
+    return download_data_from_assembly_summary(df_assembly_summary_filtered, pd_output, **kwargs)

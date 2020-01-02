@@ -92,17 +92,15 @@ def write_assembly_summary(summary, fname):
             f.write(out + "\n")
 
 
-def get_rows_by_key(pf_assembly_summary, key="taxid", **kwargs):
-    # type: (str, str, Dict[str, Any]) -> Dict[int, List[Dict[str, Any]]]
+def get_rows_by_key_from_dataframe(df_assembly_summary, key="taxid", **kwargs):
+    # type: (pd.DataFrame, str, Dict[str, Any]) -> Dict[int, List[Dict[str, Any]]]
 
     valid_assembly_levels = get_value(kwargs, "valid_assembly_levels", {"Complete Genome", "Scaffold", "Contig"},
                                       default_if_none=True)
 
-    assembly_info = read_assembly_summary(pf_assembly_summary)
-
     result = dict()
 
-    for d in assembly_info["data"]:
+    for _, d in df_assembly_summary.iterrows():
         taxid = int(d[key])
 
         if d["assembly_level"] not in valid_assembly_levels:
@@ -113,3 +111,65 @@ def get_rows_by_key(pf_assembly_summary, key="taxid", **kwargs):
         result[taxid].append(d)
 
     return result
+
+
+def get_rows_by_key(pf_assembly_summary, key="taxid", **kwargs):
+    # type: (str, str, Dict[str, Any]) -> Dict[int, List[Dict[str, Any]]]
+
+    valid_assembly_levels = get_value(kwargs, "valid_assembly_levels", {"Complete Genome", "Scaffold", "Contig"},
+                                      default_if_none=True)
+
+    df_assembly_summary = read_assembly_summary_into_dataframe(pf_assembly_summary)
+
+    return get_rows_by_key_from_dataframe(df_assembly_summary, key, **kwargs)
+
+
+def filter_entries_with_equal_taxid(df_assembly_summary, **kwargs):
+    # type: (pd.DataFrame, Dict[str, Any]) -> pd.DataFrame
+
+    possible_assembly_levels = {"Complete Genome", "Scaffold", "Contig"}
+
+    valid_assembly_levels = get_value(kwargs, "valid_assembly_levels", possible_assembly_levels, default_if_none=True)
+    favor_assembly_level_order = get_value(kwargs, "favor_assembly_level_order", False)
+    number_per_taxid = get_value(kwargs, "number_per_taxid", None)
+
+    if len(df_assembly_summary) == 0:
+        return pd.DataFrame()
+
+    def select_from_list(local_list_info, n):
+        # type: (pd.DataFrame, Union[None, int]) -> pd.DataFrame
+
+        if n is None:
+            return local_list_info
+
+        if len(local_list_info) <= n:
+            return local_list_info
+
+        return local_list_info.iloc[0:n]
+
+    df_filtered = pd.DataFrame(columns=df_assembly_summary.columns)
+
+    # for each group of entries of equal taxid
+    for taxid, df_group in df_assembly_summary.groupby("taxid", as_index=False):
+
+        # sort by latest first
+        df_group["sort-by"] = pd.to_datetime(df_group["seq_rel_date"], format="%Y/%m/%d")
+        df_group = df_group.sort_values("sort-by", ascending=False)
+        df_group.drop("sort-by", inplace=True)
+
+        if favor_assembly_level_order:
+
+            # go in order of assembly levels
+            for assembly_level in valid_assembly_levels:
+
+                df_filtered = df_filtered.append(select_from_list(
+                    df_group[df_assembly_summary["assembly_level"] == assembly_level],
+                    number_per_taxid - len(df_filtered)
+                ))
+
+                if len(df_filtered) == number_per_taxid:
+                    break
+        else:
+            df_filtered = df_filtered.append(select_from_list(df_group, number_per_taxid))
+
+    return df_filtered
