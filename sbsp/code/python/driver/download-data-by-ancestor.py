@@ -8,6 +8,8 @@ import sys
 import shutil
 import logging
 import argparse
+import subprocess
+
 from datetime import datetime
 
 from typing import *
@@ -123,10 +125,11 @@ def set_up_gcfid(gcfid_info, pd_output):
                 fn_labels, "ncbi.gff"
             )
         )
-    except (IOError, OSError, ValueError):
+    except (IOError, OSError, ValueError, subprocess.CalledProcessError):
         # cleanup failed attempt
         if os.path.exists(pd_gcfid) and os.path.isdir(pd_gcfid):
             shutil.rmtree(pd_gcfid)
+        raise ValueError("Could not download data for genome: {}".format(gcfid)) from None
 
 
 def filter_list(list_info, **kwargs):
@@ -209,7 +212,7 @@ def download_data_by_ancestor(env, ancestor_tag, tag_type, pf_taxonomy_tree, pf_
                     successful += 1
                     sys.stdout.write("Download progress: {} / {} \r".format(successful, successful + failed))
                     sys.stdout.flush()
-                except (IOError, OSError):
+                except (IOError, OSError, ValueError):
                     failed += 1
                     sys.stdout.write("Download progress: {} / {} \r".format(successful, successful + failed))
                     sys.stdout.flush()
