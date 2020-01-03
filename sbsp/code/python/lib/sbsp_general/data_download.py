@@ -1,6 +1,7 @@
 import os
 import logging
 import shutil
+import subprocess
 from datetime import datetime
 
 import pandas as pd
@@ -14,6 +15,14 @@ from sbsp_io.general import mkdir_p, print_progress
 
 logger = logging.getLogger(__name__)
 
+def create_ftplink_from_gcf_acc(gcf, acc):
+    # type: (str, str) -> str
+    link = "ftp://ftp.ncbi.nlm.nih.gov/genomes/all"
+    gc, remaining = gcf.split("_")
+    if len(remaining) < 9:
+        raise ValueError("Wrong info {}".format(gcf))
+
+    return os.path.join(link, gc, remaining[0:3], remaining[3:6], remaining[6:9], "{}_{}".format(gcf, acc))
 
 def download_assembly_summary_entry(entry, pd_output):
     # type: (Dict[str, Any], str) -> None
@@ -22,16 +31,23 @@ def download_assembly_summary_entry(entry, pd_output):
     gcf = entry["assembly_accession"]
     acc = entry["asm_name"].replace(" ", "_")
 
-    gcfid = "{}_{}".format(gcf, acc)
+    ftplink = entry["ftp_path"]
 
+    # if genbank and has refseq, prefer refseq
+    if "GCA" in gcf and entry["gbrs_paired_asm"] != "na" and len(entry["gbrs_paired_asm"]) > 0:
+        gcf = entry["gbrs_paired_asm"]
+        ftplink = create_ftplink_from_gcf_acc(gcf, acc)
+
+    gcfid = "{}_{}".format(gcf, acc)
     pd_gcfid = os.path.join(pd_output, gcfid)
     pd_runs = os.path.join(pd_gcfid, "runs")
 
     try:
+
         mkdir_p(pd_gcfid)
         mkdir_p(pd_runs)
 
-        ftplink = entry["ftp_path"]
+
         fn_sequence = "{}_genomic.fna".format(gcfid)
         fn_labels = "{}_genomic.gff".format(gcfid)
 
@@ -72,10 +88,11 @@ def download_assembly_summary_entry(entry, pd_output):
                 fn_labels, "ncbi.gff"
             )
         )
-    except (IOError, OSError, ValueError):
+    except (IOError, OSError, ValueError, subprocess.CalledProcessError):
         # cleanup failed attempt
         if os.path.exists(pd_gcfid) and os.path.isdir(pd_gcfid):
             shutil.rmtree(pd_gcfid)
+        raise ValueError("Could not download data for genome: {}".format(gcfid)) from None
 
 
 def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs):
@@ -106,7 +123,7 @@ def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs
             success_downloads.append(gcfid_info)
 
             print_progress("Download", len(success_downloads), total)
-        except (IOError, OSError):
+        except (IOError, OSError, ValueError):
             pass
 
     gil = GenomeInfoList([

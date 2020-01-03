@@ -1,7 +1,13 @@
+import ftplib
+import os
+from ftplib import FTP
+import logging
+
 import pandas as pd
 from typing import *
 
 from sbsp_general.general import get_value
+logger = logging.getLogger(__name__)
 
 
 def read_assembly_summary(fname):
@@ -124,28 +130,92 @@ def get_rows_by_key(pf_assembly_summary, key="taxid", **kwargs):
     return get_rows_by_key_from_dataframe(df_assembly_summary, key, **kwargs)
 
 
+def ncbi_ftp_file_exists(ftp_gff, ftp_socket):
+    # type: (str, FTP) -> bool
+
+    path_on_remote = ftp_gff.split("ftp.ncbi.nlm.nih.gov")[1]
+    try:
+        if len(ftp_socket.nlst(path_on_remote)) > 0:
+            return True
+    except ftplib.error_temp:
+        return False
+    except BrokenPipeError:
+        return False
+    except EOFError:
+        return False
+
+    return False
+
+
 def filter_entries_with_equal_taxid(df_assembly_summary, **kwargs):
     # type: (pd.DataFrame, Dict[str, Any]) -> pd.DataFrame
 
     possible_assembly_levels = {"Complete Genome", "Scaffold", "Contig"}
 
     valid_assembly_levels = get_value(kwargs, "valid_assembly_levels", possible_assembly_levels, default_if_none=True)
+    favor_refseq_version = get_value(kwargs, "favor_refseq_version", False)
     favor_assembly_level_order = get_value(kwargs, "favor_assembly_level_order", False)
     number_per_taxid = get_value(kwargs, "number_per_taxid", None)
+
+    ftp = FTP("ftp.ncbi.nlm.nih.gov")
+    ftp.login()
 
     if len(df_assembly_summary) == 0:
         return pd.DataFrame()
 
     def select_from_list(local_list_info, n):
         # type: (pd.DataFrame, Union[None, int]) -> pd.DataFrame
+        candidate_list = local_list_info
+        # if n is not None and len(candidate_list) > n:
+        #
+        #     if len(local_list_info) <= n:
+        #         candidate_list local_list_info
+        #
+        # # return local_list_info.iloc[0:n]
 
         if n is None:
-            return local_list_info
+            n = len(local_list_info)
+        elif n > len(local_list_info):
+            n = len(local_list_info)
 
-        if len(local_list_info) <= n:
-            return local_list_info
+        num_valid = 0
+        final_df = pd.DataFrame(columns=local_list_info.columns)
 
-        return local_list_info.iloc[0:n]
+        for index, row in local_list_info.iterrows():
+            if num_valid == n:
+                break
+            should_add = False
+
+            # if is refseq (guaranteed download)
+            if "GCF" in row["assembly_accession"]:
+                logger.debug("Refseq")
+                should_add = True
+
+            # if is genbank and has refseq
+            elif row["gbrs_paired_asm"] != "na" and len(row["gbrs_paired_asm"]) > 0:
+                should_add = True
+                logger.debug("Genbank but has Refseq")
+            # if only genbank but has GFF file
+            else:
+
+                gcf = row["assembly_accession"]
+                acc = row["asm_name"].replace(" ", "_")
+
+                gcfid = "{}_{}".format(gcf, acc)
+                ftp_gff = os.path.join(row["ftp_path"],  "{}_genomic.gff.gz".format(gcfid))
+
+                logger.debug("Genbank only, {}".format(ftp_gff))
+
+                if ncbi_ftp_file_exists(ftp_gff, ftp):
+                    should_add = True
+                    logger.debug("Genbank only, with GFF")
+                else:
+                    logger.debug("Genbank only, No GFF - ignoring")
+
+            if should_add:
+                final_df = final_df.append(row, ignore_index=True)
+
+        return final_df
 
     df_filtered = pd.DataFrame(columns=df_assembly_summary.columns)
 
@@ -155,7 +225,7 @@ def filter_entries_with_equal_taxid(df_assembly_summary, **kwargs):
         # sort by latest first
         df_group["sort-by"] = pd.to_datetime(df_group["seq_rel_date"], format="%Y/%m/%d")
         df_group = df_group.sort_values("sort-by", ascending=False)
-        df_group.drop("sort-by", inplace=True)
+        df_group.drop("sort-by", inplace=True, axis=1)
 
         if favor_assembly_level_order:
 

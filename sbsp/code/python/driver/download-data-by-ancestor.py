@@ -5,7 +5,6 @@
 
 import logging
 import argparse
-from datetime import datetime
 
 from typing import *
 
@@ -13,12 +12,10 @@ from typing import *
 import pathmagic                        # add path to custom library
 
 # Custom library imports
-from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_container.taxonomy_tree import TaxonomyTree
 from sbsp_general import Environment
 from sbsp_general.data_download import download_data_by_ancestor
-from sbsp_general.general import get_value
-from sbsp_io.assembly_summary import get_rows_by_key, read_assembly_summary_into_dataframe
+from sbsp_io.assembly_summary import read_assembly_summary_into_dataframe
 
 # ------------------------------ #
 #           Parse CMD            #
@@ -67,8 +64,8 @@ logger = logging.getLogger("logger")                    # type: logging.Logger
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
 
-    pbs_options = PBSOptions.init_from_dict(env, vars(args))
-
+    # pbs_options = PBSOptions.init_from_dict(env, vars(args))
+    #
     # if pbs_options["use-pbs"]:
     #
     #     gil = get_genomes_under_ancestor_with_filters(
