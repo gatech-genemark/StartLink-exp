@@ -4,6 +4,7 @@ import errno
 import random
 import string
 import json
+import sys
 from typing import *
 
 
@@ -245,3 +246,16 @@ def read_json(pf_json):
 def write_json(my_dict, pf_json):
     # type: (Dict[str, Any], str) -> None
     json.dump(my_dict, pf_json)
+
+
+def print_progress(name, numer, denom=None):
+    # type: (str, int, Union[int, None]) -> None
+
+    sys.stdout.write("{} progress: {} / {} \r".format(name, numer, denom))
+
+    sys.stdout.write("{} progress: {}".format(name, numer))
+    if denom is not None:
+        sys.stdout.write(" / {}".format(denom))
+    sys.stdout.write("\r")
+
+    sys.stdout.flush()

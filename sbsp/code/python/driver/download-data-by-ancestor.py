@@ -3,14 +3,8 @@
 #
 # Created:
 
-import os
-import sys
-import shutil
 import logging
 import argparse
-import subprocess
-
-from datetime import datetime
 
 from typing import *
 
@@ -18,16 +12,15 @@ from typing import *
 import pathmagic                        # add path to custom library
 
 # Custom library imports
-from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_container.taxonomy_tree import TaxonomyTree
 from sbsp_general import Environment
-from sbsp_general.general import run_shell_cmd, get_value
-from sbsp_io.assembly_summary import get_rows_by_key
-from sbsp_io.general import mkdir_p
+from sbsp_general.data_download import download_data_by_ancestor
+from sbsp_io.assembly_summary import read_assembly_summary_into_dataframe
 
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
+from sbsp_options.pbs import PBSOptions
 
 parser = argparse.ArgumentParser("Description of driver.")
 
@@ -68,182 +61,44 @@ logging.basicConfig(level=parsed_args.loglevel)
 logger = logging.getLogger("logger")                    # type: logging.Logger
 
 
-def set_up_gcfid(gcfid_info, pd_output):
-    # type: (Dict[str, Any], str) -> None
-
-    # build name
-    gcf = gcfid_info["assembly_accession"]
-    acc = gcfid_info["asm_name"].replace(" ", "_")
-
-    gcfid = "{}_{}".format(gcf, acc)
-
-    pd_gcfid = os.path.join(pd_output, gcfid)
-    pd_runs = os.path.join(pd_gcfid, "runs")
-
-    try:
-        mkdir_p(pd_gcfid)
-        mkdir_p(pd_runs)
-
-        ftplink = gcfid_info["ftp_path"]
-        fn_sequence = "{}_genomic.fna".format(gcfid)
-        fn_labels = "{}_genomic.gff".format(gcfid)
-
-        pf_ftp_sequence = os.path.join(ftplink, "{}.gz".format(fn_sequence))
-        pf_ftp_labels = os.path.join(ftplink, "{}.gz".format(fn_labels))
-
-        for not_allowed in {"#", "(", ")", ","}:
-            if not_allowed in pf_ftp_sequence or not_allowed in pf_ftp_labels:
-                raise ValueError("Invalid character in path")
-
-        for not_allowed in {"#", "(", ")", "/", ":", ","}:
-            if not_allowed in fn_sequence or not_allowed in fn_labels:
-                raise ValueError("Invalid character in path")
-
-        pf_local_sequence = os.path.join(pd_gcfid, "sequence.fasta")
-        pf_local_labels = os.path.join(pd_gcfid, "ncbi.gff")
-
-        # don't re-download. TODO: add option to force re-download
-        if os.path.isfile(pf_local_sequence) and os.path.isfile(pf_local_labels):
-            return
-
-
-        run_shell_cmd(
-            "pwd; cd {}; wget --quiet {}; wget --quiet {}; gunzip -f {}; gunzip -f {}".format(
-                pd_gcfid,
-                pf_ftp_sequence,
-                pf_ftp_labels,
-                "{}.gz".format(fn_sequence),
-                "{}.gz".format(fn_labels)
-            ),
-
-        )
-
-        run_shell_cmd(
-            "cd {}; mv {} {}; mv {} {}".format(
-                pd_gcfid,
-                fn_sequence, "sequence.fasta",
-                fn_labels, "ncbi.gff"
-            )
-        )
-    except (IOError, OSError, ValueError, subprocess.CalledProcessError):
-        # cleanup failed attempt
-        if os.path.exists(pd_gcfid) and os.path.isdir(pd_gcfid):
-            shutil.rmtree(pd_gcfid)
-        raise ValueError("Could not download data for genome: {}".format(gcfid)) from None
-
-
-def filter_list(list_info, **kwargs):
-    # type: (List[Dict[str, Any]], Dict[str, Any]) -> List[Dict[str, Any]]
-
-    if len(list_info) == 0:
-        return list()
-
-    possible_assembly_levels = {"Complete Genome", "Scaffold", "Contig"}
-
-    valid_assembly_levels = get_value(kwargs, "valid_assembly_levels", possible_assembly_levels, default_if_none=True)
-    favor_assembly_level_order = get_value(kwargs, "favor_assembly_level_order", False)
-    number_per_taxid = get_value(kwargs, "number_per_taxid", None)
-
-    list_info_filtered = list()
-
-    def select_from_list(local_list_info, n):
-        # type: (List[Dict[str, Any]], Union[None, int]) -> List[Dict[str, Any]]
-
-        if n is None:
-            return local_list_info
-
-        if len(local_list_info) <= n:
-            return local_list_info
-
-        return local_list_info[0:n]
-
-    list_info = sorted(list_info, reverse=True, key=lambda x: datetime.strptime(x["seq_rel_date"], "%Y/%m/%d"))
-
-    if favor_assembly_level_order:
-
-        for assembly_level in valid_assembly_levels:
-
-            list_info_filtered += select_from_list(
-                [x for x in list_info if x["assembly_level"] == assembly_level],
-                number_per_taxid - len(list_info_filtered)
-            )
-
-            if len(list_info_filtered) == number_per_taxid:
-                break
-    else:
-        list_info_filtered += select_from_list(list_info, number_per_taxid)
-
-    return list_info_filtered
-
-
-def download_data_by_ancestor(env, ancestor_tag, tag_type, pf_taxonomy_tree, pf_assembly_summary, pd_output,
-                              pf_output_list, **kwargs):
-    # type: (Environment, Union[str, int], str, str, str, str, str, Dict[str, Any]) -> None
-
-    pd_output = os.path.abspath(pd_output)
-
-    tax_tree = TaxonomyTree.load(pf_taxonomy_tree)
-
-    taxid_to_info_list = get_rows_by_key(pf_assembly_summary, key="taxid")
-
-    dry_run = get_value(kwargs, "dry_run", False)
-
-    counter = 0
-
-    successful = 0
-    failed = 0
-
-    success_downloads = list()
-    for genome_node in tax_tree.get_possible_genomes_under_ancestor(ancestor_tag, tag_type):
-
-        # find in assembly summary
-        tax_id = genome_node["taxid"]
-        if tax_id in taxid_to_info_list:
-            info_list = taxid_to_info_list[tax_id]
-
-            for gcfid_info in filter_list(info_list, **kwargs):
-                if dry_run:
-                    counter += 1
-                    continue
-                try:
-                    set_up_gcfid(gcfid_info, pd_output)
-                    success_downloads.append(gcfid_info)
-
-                    successful += 1
-                    sys.stdout.write("Download progress: {} / {} \r".format(successful, successful + failed))
-                    sys.stdout.flush()
-                except (IOError, OSError, ValueError):
-                    failed += 1
-                    sys.stdout.write("Download progress: {} / {} \r".format(successful, successful + failed))
-                    sys.stdout.flush()
-                    pass
-
-    if dry_run:
-        print("Number of genomes: {}".format(counter))
-    else:
-        gil = GenomeInfoList([
-            GenomeInfo("{}_{}".format(d["assembly_accession"], d["asm_name"].replace(" ", "_")), 11) for d in success_downloads
-        ])
-
-        gil.to_file(pf_output_list)
-
-
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
 
-    download_data_by_ancestor(
-        env,
-        args.ancestor_id,
-        args.ancestor_id_type,
-        args.pf_taxonomy_tree,
-        args.pf_assembly_summary,
-        args.pd_output,
-        args.pf_output_list,
-        dry_run=args.dry_run,
-        valid_assembly_levels=args.valid_assembly_levels,
-        favor_assembly_level_order=args.favor_assembly_level_order,
-        number_per_taxid=args.number_per_taxid
-    )
+    # pbs_options = PBSOptions.init_from_dict(env, vars(args))
+    #
+    # if pbs_options["use-pbs"]:
+    #
+    #     gil = get_genomes_under_ancestor_with_filters(
+    #         args.ancestor_id, args.ancestor_id_type,
+    #         args.pf_taxonomy_tree,
+    #         args.pf_assembly_summary,
+    #         valid_assembly_levels=args.valid_assembly_levels,
+    #         favor_assembly_level_order=args.favor_assembly_level_order,
+    #         number_per_taxid=args.number_per_taxid
+    #     )
+    #
+    #     pbs = PBS(
+    #         env, pbs_options,
+    #         splitter=split_dataframe,
+    #         merger=merge_genome_info_lists
+    #     )
+    #
+    #     pbs.run(
+    #         data={"gil": gil, },
+    #         func=download_data,
+    #
+    #
+    #
+    #     )
+
+    taxonomy_tree = TaxonomyTree.load(args.pf_taxonomy_tree)
+    df_assembly_summary = read_assembly_summary_into_dataframe(args.pf_assembly_summary)
+
+    download_data_by_ancestor(args.ancestor_id, args.ancestor_id_type, taxonomy_tree, df_assembly_summary,
+                              args.pd_output, pf_output_list=args.pf_output_list, dry_run=args.dry_run,
+                              valid_assembly_levels=args.valid_assembly_levels,
+                              favor_assembly_level_order=args.favor_assembly_level_order,
+                              number_per_taxid=args.number_per_taxid)
 
 
 
