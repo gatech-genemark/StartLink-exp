@@ -17,6 +17,8 @@ source install.sh       # create executables
 # This step downloads genomes (one per taxa id) under the given ancestors.
 # The genomes are located in $data
 # For each ancestor, the list of downloaded genomes will be located at: $lists/${database}_${ancestor}.list
+# NOTE: If this loop fails (due to resource allocation), run each command separately, waiting until its done
+# before running the next (hint: put an "echo" around the inner command to get all the download commands)
 for database in refseq genbank; do
     for ancestor in Enterobacterales "Cyanobacteria/Melainabacteria group" Corynebacteriales Actinobacteria Alphaproteobacteria Archaea; do
         $bin/download_data_under_ancestor_sh.sh -a "Enterobacterales" -d $database
@@ -24,7 +26,8 @@ for database in refseq genbank; do
 done
 
 # Download data for representative genomes
-$bin/download_data_under_ancestor_sh.sh -a "root" -d refseq_representative
+$bin/download_data_under_ancestor_sh.sh -a "Bacteria" -d refseq_representative
+$bin/download_data_under_ancestor_sh.sh -a "Archaea" -d refseq_representative
 
 
 ### Step 2: Running SBSP
@@ -47,4 +50,42 @@ $bin/run_pipeline_sbsp_sh.sh  -q verified_synechocystis -t genbank_cyanobacteria
 # In each directory is a subdirectory called "accuracy", and in it is a file called accuracy.csv which contains
 # the accuracy of SBSP compared to the set of verified genes.
 # Also in that directory are subdirectories msa_false and msa_true which contain the MSA for the true and false predictions
+
+### Stats: GMS2 vs NCBI on representative set of genomes
+$bin/run_gms2_on_list_sh.sh -l $lists/refseq_representative_bacteria.list --type bacteria
+$bin/run_gms2_on_list_sh.sh -l $lists/refseq_representative_archaea.list --type archaea
+
+function collect_gms2_vs_ncbi_stats() {
+    local pf_list="$1"              # list of genomes
+    local pf_output="$2"            # Path to output file 
+
+    echo "GCFID,Group,GC,Found,Identical" > $pf_output
+
+    # for each genome
+    awk -F "," '{if (NR > 1) print $1}' $pf_list | while read -r gcfid; do
+
+        pd_genome=$data/$gcfid
+
+        group=$(grep group $pd_genome/runs/${dn_gms2}/GMS2.mod | cut -f 2 -d "-")        
+        gc=$(probuild --stat --gc --seq $pd_genome/sequence.fasta | awk '{print $3}')
+
+        v=$(compp -q -a $pd_genome/ncbi.gff -b $pd_genome/runs/${dn_gms2}/gms2.gff -v)
+
+        found=$(echo "$v" | grep "found_in_A" | awk '{print $2}')
+        ident=$(echo "$v" | grep "identical_in_A" | awk '{print $2}')
+
+        echo -e "$gcfid,$group,$gc,$found,$ident"   
+    done >> $pf_output
+}
+
+mkdir -p $experiments/gms2_vs_ncbi_representative
+for domain in bacteria archaea; do
+    collect_gms2_vs_ncbi_stats $lists/refseq_representative_${domain}.list $experiments/gms2_vs_ncbi_representative/stats_${domain}.csv
+done
+
+
+
+
+
+
 
