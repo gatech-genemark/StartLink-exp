@@ -51,6 +51,20 @@ $bin/run_pipeline_sbsp_sh.sh  -q verified_synechocystis -t genbank_cyanobacteria
 # the accuracy of SBSP compared to the set of verified genes.
 # Also in that directory are subdirectories msa_false and msa_true which contain the MSA for the true and false predictions
 
+### Stats: Date of annotation for representative set
+function get_hist_of_annotation_dates() {
+    local pf_list="$1"
+
+    echo "Date,Num Genomes"
+    awk -F "," '{if (NR > 1) print $1}' $pf_list | while read -r gcfid; do
+        curr_date=$(grep annotation-date $data/$gcfid/ncbi.gff | sed -E 's/^#[^ ]+\s([0-9]+)\/([0-9]+)\/([^ ]+).+/\1\/\3/g')
+
+        echo "$curr_date"
+    done | sort | uniq -c | awk '{print $2","$1}'
+}
+
+get_hist_of_annotation_dates $lists/refseq_representative_archaea.list
+
 ### Stats: GMS2 vs NCBI on representative set of genomes
 $bin/run_gms2_on_list_sh.sh -l $lists/refseq_representative_bacteria.list --type bacteria
 $bin/run_gms2_on_list_sh.sh -l $lists/refseq_representative_archaea.list --type archaea
@@ -60,6 +74,7 @@ function collect_gms2_vs_ncbi_stats() {
     local pf_output="$2"            # Path to output file 
 
     echo "GCFID,Group,GC,Found,Identical" > $pf_output
+    dn_gms2=gms2
 
     # for each genome
     awk -F "," '{if (NR > 1) print $1}' $pf_list | while read -r gcfid; do
@@ -78,13 +93,29 @@ function collect_gms2_vs_ncbi_stats() {
     done >> $pf_output
 }
 
-mkdir -p $experiments/gms2_vs_ncbi_representative
+mkdir -p $exp/gms2_vs_ncbi_representative
 for domain in bacteria archaea; do
-    collect_gms2_vs_ncbi_stats $lists/refseq_representative_${domain}.list $experiments/gms2_vs_ncbi_representative/stats_${domain}.csv
+    collect_gms2_vs_ncbi_stats $lists/refseq_representative_${domain}.list $exp/gms2_vs_ncbi_representative/stats_${domain}.csv
 done
 
 
 
+
+function get_2020_genomes() {
+    local pf_list="$1"
+
+    head -n 1 $pf_list
+    awk -F "," '{if (NR > 1) print }' $pf_list | while read -r line ; do
+        gcfid=$(echo "$line" | awk -F "," '{print $1}')
+        year=$(grep annotation-date $data/$gcfid/ncbi.gff | sed -E 's/^#[^ ]+\s([0-9]+)\/([0-9]+)\/([^ ]+).+/\3/g')
+
+        if [ "$year" == "2020" ]; then
+            echo $line
+        fi
+
+        # echo "$curr_date"
+    done 
+}
 
 
 
