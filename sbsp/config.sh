@@ -11,10 +11,13 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 export base=$DIR
 export bin=$base/bin
+export bin_external=$base/bin_external
 
-export data=$base/data
-export all_data=$data/all
-export verified_data=$data/verified
+export data_root=$base/data
+export data=${data_root}/all
+export data_verified=${data_root}/verified
+
+export metadata=$base/metadata
 
 export matrices=$base/matrices
 
