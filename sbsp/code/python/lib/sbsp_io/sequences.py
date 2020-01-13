@@ -99,6 +99,8 @@ def read_sequences_from_genome_labels_pairs(env, genomes_labels_pairs, **kwargs)
     leave_out_gene_stop = get_value(kwargs, "leave_out_gene_stop", False)
     limit_upstream_to_first_candidate = get_value(kwargs, "limit_upstream_to_first_candidate", False)
 
+    force_multiple_of_3 = get_value(kwargs, "force_multiple_of_3", True)
+
     except_if_not_in_set(sequence_type, ["both", "nucl", "prot"])
 
     upstream_length_nt = 180
@@ -228,8 +230,14 @@ def read_sequences_from_genome_labels_pairs(env, genomes_labels_pairs, **kwargs)
             pos_5prime_in_frag_aa = pos_5prime_in_frag_nt / 3
             key = create_gene_key(genome_name, seqname, left + 1, right + 1, strand)
 
+            if force_multiple_of_3:
+                if len(frag_nt) % 3 != 0:
+                    continue
+
             if key not in key_to_sequence.keys():
                 key_to_sequence[key] = dict()
+
+
 
             if sequence_type == "nucl" or sequence_type == "both":
                 key_to_sequence[key]["nucl"] = frag_nt._data

@@ -306,6 +306,12 @@ class PBS:
             pf_job_output,
             pd_job_template
         )
+        cmd = "{} --pf-job-input {} --pf-job-output {} --pd-work {}".format(
+            "python {}".format(os.path.join(env["pd-code"], "python/driver", "run-pbs-job.py")),
+            pf_job_input,
+            pf_job_output,
+            pd_job_template
+        )
 
         print(cmd)
 

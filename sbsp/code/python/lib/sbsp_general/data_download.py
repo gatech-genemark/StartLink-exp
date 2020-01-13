@@ -25,17 +25,23 @@ def create_ftplink_from_gcf_acc(gcf, acc):
     return os.path.join(link, gc, remaining[0:3], remaining[3:6], remaining[6:9], "{}_{}".format(gcf, acc))
 
 def download_assembly_summary_entry(entry, pd_output):
-    # type: (Dict[str, Any], str) -> None
+    # type: (Dict[str, Any], str) -> Dict[str, Any]
 
     # build name
     gcf = entry["assembly_accession"]
     acc = entry["asm_name"].replace(" ", "_")
+
+    output = {
+            "assembly_accession": gcf,
+            "asm_name": acc
+            }
 
     ftplink = entry["ftp_path"]
 
     # if genbank and has refseq, prefer refseq
     if "GCA" in gcf and entry["gbrs_paired_asm"] != "na" and len(entry["gbrs_paired_asm"]) > 0:
         gcf = entry["gbrs_paired_asm"]
+        output["assembly_accession"] = gcf
         ftplink = create_ftplink_from_gcf_acc(gcf, acc)
 
     gcfid = "{}_{}".format(gcf, acc)
@@ -67,7 +73,7 @@ def download_assembly_summary_entry(entry, pd_output):
 
         # don't re-download. TODO: add option to force re-download
         if os.path.isfile(pf_local_sequence) and os.path.isfile(pf_local_labels):
-            return
+            return output
 
 
         run_shell_cmd(
@@ -94,6 +100,8 @@ def download_assembly_summary_entry(entry, pd_output):
             shutil.rmtree(pd_gcfid)
         raise ValueError("Could not download data for genome: {}".format(gcfid)) from None
 
+    return output
+
 
 def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs):
     # type: (pd.DataFrame, str, Dict[str, Any]) -> GenomeInfoList
@@ -108,6 +116,7 @@ def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs
 
     pf_output_list = get_value(kwargs, "pf_output_list", None)
 
+
     df_assembly_summary = filter_entries_with_equal_taxid(
         df_assembly_summary, **kwargs
     )
@@ -117,13 +126,15 @@ def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs
     total = 0
     for _, gcfid_info in df_assembly_summary.iterrows():
         total += 1
+        logger.debug("Trying {}".format(gcfid_info["assembly_accession"]))
 
         try:
-            download_assembly_summary_entry(gcfid_info, pd_output)
+            gcfid_info = download_assembly_summary_entry(gcfid_info, pd_output)
             success_downloads.append(gcfid_info)
 
             print_progress("Download", len(success_downloads), total)
         except (IOError, OSError, ValueError):
+            print_progress("Download", len(success_downloads), total)
             pass
 
     gil = GenomeInfoList([

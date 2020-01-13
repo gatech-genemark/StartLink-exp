@@ -61,6 +61,7 @@ class Environment:
 
         if pd_data is None:
             pd_data = os.path.join(pd_base, "data/all")
+#            pd_data = os.path.join("/storage4/karl/sbsp/similarity-based-start-prediction/data/large")
 
         if pd_work is None:
             pd_work = os.path.abspath(".")

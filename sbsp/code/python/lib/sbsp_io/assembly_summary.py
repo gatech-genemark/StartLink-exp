@@ -213,6 +213,7 @@ def filter_entries_with_equal_taxid(df_assembly_summary, **kwargs):
                     logger.debug("Genbank only, No GFF - ignoring")
 
             if should_add:
+                num_valid += 1
                 final_df = final_df.append(row, ignore_index=True)
 
         return final_df
@@ -227,18 +228,25 @@ def filter_entries_with_equal_taxid(df_assembly_summary, **kwargs):
         df_group = df_group.sort_values("sort-by", ascending=False)
         df_group.drop("sort-by", inplace=True, axis=1)
 
+        logger.debug("Filtering: {}".format(df_group["assembly_accession"]))
+
         if favor_assembly_level_order:
+
+            df_filtered_current = pd.DataFrame(columns=df_assembly_summary.columns)
 
             # go in order of assembly levels
             for assembly_level in valid_assembly_levels:
 
-                df_filtered = df_filtered.append(select_from_list(
-                    df_group[df_assembly_summary["assembly_level"] == assembly_level],
-                    number_per_taxid - len(df_filtered)
+                df_filtered_current = df_filtered_current.append(select_from_list(
+                    df_group[df_group["assembly_level"] == assembly_level],
+                    number_per_taxid - len(df_filtered_current)
                 ))
 
-                if len(df_filtered) == number_per_taxid:
+                if len(df_filtered_current) == number_per_taxid:
                     break
+
+            if len(df_filtered_current) > 0:
+                df_filtered = df_filtered.append(df_filtered_current)
         else:
             df_filtered = df_filtered.append(select_from_list(df_group, number_per_taxid))
 

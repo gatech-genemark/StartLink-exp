@@ -168,6 +168,7 @@ def df_add_labeled_sequences(env, df, **kwargs):
     sources = ["q", "t"]
     if source != "both":
         sources = [source]
+    df["remove"] = False
 
     # add to dataframe
     for index, row in df.iterrows():
@@ -185,7 +186,9 @@ def df_add_labeled_sequences(env, df, **kwargs):
             )
 
             if key not in sequences_per_genome[s].keys():
-                raise ValueError("Couldn't find sequence of key ({})".format(key))
+                df.at[index, "remove"] = True
+                # raise ValueError("Couldn't find sequence of key ({})".format(key))
+                continue
 
             # for types of sequence
             for sequence_type in ["prot", "nucl"]:           # FIXME: change prot nucl to aa/nt
@@ -198,6 +201,8 @@ def df_add_labeled_sequences(env, df, **kwargs):
 
                     df.at[index, "{}-{}-position-of-5prime-in-msa-fragment-no-gaps".format(s, sequence_type)] = \
                         sequences_per_genome[s][key]["{}-pos-5prime-in-frag".format(sequence_type)]
+
+    df = df[df["remove"] == False]
 
     return df
 
