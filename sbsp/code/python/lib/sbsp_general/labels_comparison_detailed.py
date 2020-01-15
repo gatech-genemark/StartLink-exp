@@ -191,7 +191,7 @@ class LabelsComparisonDetailed:
 
         except_if_not_in_set(source, {"a", "b"})
 
-        return self.comparison["all"]["stats"]["labels"]["match-3p-5p"][source]
+        return self.comparison["all"]["labels"]["match-3p-5p"][source]
 
 
 
