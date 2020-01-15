@@ -1,7 +1,7 @@
 import logging
 from typing import *
 
-from sbsp_general.general import get_value
+from sbsp_general.general import get_value, except_if_not_in_set
 from sbsp_general.labels import Labels, create_key_3prime_from_label, Label, create_gene_key_from_label
 
 logger = logging.getLogger(__name__)
@@ -109,6 +109,12 @@ class LabelsComparisonDetailed:
         stats["match-3p-5p"] = len(compare_3p_5p["match"])
 
         comparison["stats"] = stats
+
+        comparison["labels"] = dict()
+        comparison["labels"]["match-3p-5p"] = {
+            "a": Labels([x[0] for x in compare_3p_5p["match"].values()]),
+            "b": Labels([x[0] for x in compare_3p_5p["match"].values()])
+        }
         return comparison
 
     @staticmethod
@@ -179,6 +185,15 @@ class LabelsComparisonDetailed:
             ]
 
         self.stats = {goodname: d[badname] for goodname, badname in good_and_bad}
+
+    def intersection(self, source):
+        # type: (str) -> Labels
+
+        except_if_not_in_set(source, {"a", "b"})
+
+        return self.comparison["all"]["stats"]["labels"]["match-3p-5p"][source]
+
+
 
 
 
