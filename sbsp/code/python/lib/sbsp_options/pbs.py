@@ -29,8 +29,8 @@ class PBSOptions(Options):
         # type: (Environment, Dict[str, Any]) -> TypeVar('T', bound=Options)
 
         pf_custom_options = None
-        if "pf_msa_options" in dict_options:
-            pf_custom_options = dict_options["pf_msa_options"]
+        if "pf_pbs_options" in dict_options:
+            pf_custom_options = dict_options["pf_pbs_options"]
 
         msa_options = PBSOptions(env, pf_custom_options)
 
