@@ -49,7 +49,7 @@ logger = logging.getLogger("logger")                    # type: logging.Logger
 
 
 def main(env, args):
-    # type: (Dict[str, Any], argparse.Namespace) -> None
+    # type: (Environment, argparse.Namespace) -> None
 
     pbs_package = PBSJobPackage.load(args.pf_job_input)
     func = pbs_package["func"]
