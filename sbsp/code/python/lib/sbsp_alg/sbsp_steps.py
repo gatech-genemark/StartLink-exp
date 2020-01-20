@@ -48,6 +48,9 @@ def run_step_generic(env, pipeline_options, step_name, splitter, merger, data, f
     if pipeline_options.use_pbs():
         pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
 
+        if pbs_options.safe_get("pd-data-compute"):
+            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
+
         pbs = PBS(env, pbs_options,
                   splitter=splitter,
                   merger=merger
@@ -86,6 +89,9 @@ def sbsp_step_get_orthologs(env, pipeline_options):
     if pipeline_options.use_pbs():
 
         pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
+
+        if pbs_options.safe_get("pd-data-compute"):
+            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
 
         pbs = PBS(env, pbs_options,
                   splitter=split_query_genomes_target_genomes_one_vs_group,
@@ -129,6 +135,9 @@ def sbsp_step_compute_features(env, pipeline_options, list_pf_previous):
 
         pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
 
+        if pbs_options.safe_get("pd-data-compute"):
+            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
+
         pbs = PBS(env, pbs_options,
                   splitter=split_list,
                   merger=merge_identity
@@ -167,6 +176,9 @@ def sbsp_step_filter(env, pipeline_options, list_pf_previous):
 
     if pipeline_options.use_pbs():
         pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
+
+        if pbs_options.safe_get("pd-data-compute"):
+            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
 
         pbs = PBS(env, pbs_options,
                   splitter=split_list,
@@ -209,6 +221,9 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
 
     if pipeline_options.use_pbs():
         pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"], keep_on_head=True)
+
+        if pbs_options.safe_get("pd-data-compute"):
+            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
 
         # pbs = PBS(env, pbs_options,
         #           splitter=split_list_and_remerge_by_key,
