@@ -1,4 +1,5 @@
 import os
+import timeit
 from typing import *
 
 from sbsp_alg.sbsp_steps import sbsp_step_get_orthologs, sbsp_step_compute_features, sbsp_step_filter, sbsp_step_msa, \
@@ -37,15 +38,36 @@ class PipelineMSA:
     def run(self):
         # type: () -> None
 
+        elapsed_times = dict()
+
+        curr_time = timeit.default_timer()
         state = self._run_get_orthologs()
+        elapsed_times["1-orthologs"] = timeit.default_timer() - curr_time
 
+        curr_time = timeit.default_timer()
         state = self._run_compute_features(state)
+        elapsed_times["2-features"] = timeit.default_timer() - curr_time
 
+        curr_time = timeit.default_timer()
         state = self._run_filter(state)
+        elapsed_times["3-filter"] = timeit.default_timer() - curr_time
 
+        curr_time = timeit.default_timer()
         state = self._run_msa(state)
+        elapsed_times["4-msa"] = timeit.default_timer() - curr_time
 
+        curr_time = timeit.default_timer()
         state = self._accuracy(state)
+        elapsed_times["5-accuracy"] = timeit.default_timer() - curr_time
+
+        time_string = "\n".join([
+                "{},{}".format(key, value) for key, value in elapsed_times.items()
+        ])
+
+        pf_time = os.path.join(self.env["pd-work"], "time.csv")
+        with open(pf_time, "w") as f:
+            f.write(time_string)
+            f.close()
 
     def _run_get_orthologs(self):
         # type: () -> PipelineState
