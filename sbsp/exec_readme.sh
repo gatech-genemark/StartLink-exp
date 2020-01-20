@@ -118,5 +118,28 @@ function get_2020_genomes() {
 }
 
 
+#### Validate: On single-candidate genes
+
+function collect_genes_with_ssc_from_list() {
+    pf_list="$1"
+    ancestor_name=$(basename $pf_list .list)
+
+    gcfid=ssc_${ancestor_name}
+    pd_gcfid=$data/$gcfid
+
+    mkdir -p $pd_gcfid
+
+    $bin/collect_genes_with_single_start_candidate_py.sh --pf-genome-list $pf_list --pd-output $pd_gcfid
+}
+
+
+
+
+
+
+
+
+
+
 
 
