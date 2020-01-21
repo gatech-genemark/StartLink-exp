@@ -30,11 +30,11 @@ def create_attribute_dict(attribute_string, delimiter=";"):
 
     return attributes
 
-def read_labels_from_file(filename, shift=-1):
-    # type: (str) -> sbsp_general.labels.Labels
+def read_labels_from_file(filename, shift=-1, name=None):
+    # type: (str,  int, Union[str, None]) -> sbsp_general.labels.Labels
     # FIXME: only supports gff
 
-    labels = sbsp_general.labels.Labels()
+    labels = sbsp_general.labels.Labels(name=name)
 
     pattern = re.compile(r"([^\t]+)\t([^\t]+)\t(CDS)\t(\d+)\t(\d+)\t([^\t]+)\t([+-])\t([^\t]+)\t([^\t]+)")
 

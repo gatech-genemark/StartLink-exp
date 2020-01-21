@@ -247,6 +247,21 @@ class Labels:
 
         return None
 
+    def get_multiple_by_3prime_keys(self, keys):
+        # type: (Iterable[str]) -> Labels
+
+        labels = Labels(name=self.name)
+
+        for l in self._labels:
+            if create_key_3prime_from_label(l) in keys:
+                labels.add(l)
+
+        return labels
+
+
+
+
+
     def __next__(self):
         # type: () -> Label
         if self._iter_idx == self._iter_max:

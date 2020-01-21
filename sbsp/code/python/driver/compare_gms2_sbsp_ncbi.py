@@ -2,9 +2,9 @@
 # Georgia Institute of Technology
 #
 # Created: 1/15/20
-
 import logging
 import argparse
+import os
 from typing import *
 
 # noinspection All
@@ -19,8 +19,11 @@ from sbsp_general import Environment
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
+from sbsp_general.general import get_value
 from sbsp_general.labels_comparison_detailed import LabelsComparisonDetailed
 from sbsp_io.labels import read_labels_from_file
+from sbsp_viz.general import FigureOptions
+from sbsp_viz.labels_venn import venn_diagram_5prime
 
 parser = argparse.ArgumentParser("Description of driver.")
 
@@ -53,9 +56,11 @@ logger = logging.getLogger("logger")  # type: logging.Logger
 def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
     # type: (Environment, str, str, str, Dict[str, Any]) -> None
 
-    labels_gms2 = read_labels_from_file(pf_gms2)
-    labels_sbsp = read_labels_from_file(pf_sbsp)
-    labels_ncbi = read_labels_from_file(pf_ncbi)
+    venn_title = get_value(kwargs, "venn_title", None)
+
+    labels_gms2 = read_labels_from_file(pf_gms2, name="GMS2")
+    labels_sbsp = read_labels_from_file(pf_sbsp, name="SBSP")
+    labels_ncbi = read_labels_from_file(pf_ncbi, name="NCBI")
 
     lcd = LabelsComparisonDetailed(labels_gms2, labels_sbsp,
                                    name_a="gms2",
@@ -76,6 +81,15 @@ def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
     )
 
     print(out)
+
+    pf_vennn = os.path.join(env["pd-work"], "venn.pdf")
+
+    venn_diagram_5prime(labels_gms2, labels_sbsp, labels_ncbi, FigureOptions(
+        title=venn_title,
+        save_fig=pf_vennn
+    ))
+
+
 
 
 def main(env, args):

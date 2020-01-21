@@ -138,7 +138,13 @@ def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs
             pass
 
     gil = GenomeInfoList([
-        GenomeInfo("{}_{}".format(d["assembly_accession"], d["asm_name"]), 11) for d in success_downloads
+        GenomeInfo(
+            "{}_{}".format(d["assembly_accession"], d["asm_name"]),
+            11,
+            attributes={
+                "name": d["name"]
+            }
+        ) for d in success_downloads
     ])
 
     if pf_output_list is not None:
@@ -164,6 +170,9 @@ def filter_assembly_summary_by_ancestor(ancestor_tag, tag_type, taxonomy_tree, d
         if tax_id in taxid_to_list_of_rows:
             info_list = taxid_to_list_of_rows[tax_id]
 
+            # add name to all genomes
+            for i in range(len(info_list)):
+                info_list[i]["name"] = genome_node["name_txt"]
             list_rows += info_list
 
     df_filtered = df_filtered.append(list_rows)
