@@ -121,16 +121,37 @@ function get_2020_genomes() {
 #### Validate: On single-candidate genes
 
 function collect_genes_with_ssc_from_list() {
-    pf_list="$1"
-    ancestor_name=$(basename $pf_list .list)
+    local pf_list="$1"
+    local ancestor_name=$(basename $pf_list .list)
 
-    gcfid=ssc_${ancestor_name}
-    pd_gcfid=$data/$gcfid
+    local gcfid=ssc_${ancestor_name}
+    local pd_gcfid=$data/$gcfid
 
     mkdir -p $pd_gcfid
 
     $bin/collect_genes_with_single_start_candidate_py.sh --pf-genome-list $pf_list --pd-output $pd_gcfid
+
+    # create list
+    pf_gcfid_list=$lists/{$gcfid}.list
+    echo "gcfid,genetic-code,attributes" > $pf_gcfid_list
+    echo "$gcfid,11,." >> $pf_gcfid_list
+
+    echo $gcfid
 }
+
+# Example: corynebacteriales
+
+target_id=genbank_corynebacteriales
+pf_list=$lists/${target_id}.list
+
+gcfid=$(collect_genes_with_ssc_from_list $pf_list)
+pf_gcfid_list=$lists/${gcfid}.list
+
+$bin/run_pipeline_sbsp_sh.sh  -q $gcfid -t $target_id -s 1 -p 1
+
+
+
+
 
 
 
