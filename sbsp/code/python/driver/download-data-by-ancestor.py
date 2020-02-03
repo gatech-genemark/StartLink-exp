@@ -39,6 +39,8 @@ parser.add_argument('--pf-output-list', required=True, help="Path to list file c
 
 parser.add_argument('--dry-run', default=False, action="store_true")
 
+parser.add_argument('--force-download', type=str, choices=["any", "annotation_changed"], default=None)
+
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
 parser.add_argument('--pd-results', required=False, default=None, help="Path to results directory")
@@ -98,7 +100,8 @@ def main(env, args):
                               args.pd_output, pf_output_list=args.pf_output_list, dry_run=args.dry_run,
                               valid_assembly_levels=args.valid_assembly_levels,
                               favor_assembly_level_order=args.favor_assembly_level_order,
-                              number_per_taxid=args.number_per_taxid)
+                              number_per_taxid=args.number_per_taxid,
+                              force_download=args.force_download)
 
 
 

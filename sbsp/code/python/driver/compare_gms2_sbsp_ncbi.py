@@ -31,6 +31,9 @@ parser.add_argument('--pf-gms2', required=True, help="GMS2 prediction")
 parser.add_argument('--pf-sbsp', required=True, help="SBSP prediction")
 parser.add_argument('--pf-ncbi', required=True, help="NCBI annotation")
 
+parser.add_argument('--venn-title', required=False, default=None, help="Title for venn diagram")
+parser.add_argument('--pf-venn', required=False, default=None, help="Name of venn diagram file")
+
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
 parser.add_argument('--pd-results', required=False, default=None, help="Path to results directory")
@@ -57,6 +60,8 @@ def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
     # type: (Environment, str, str, str, Dict[str, Any]) -> None
 
     venn_title = get_value(kwargs, "venn_title", None)
+    pf_venn = get_value(kwargs, "pf_venn", os.path.join(env["pd-work"], "venn.pdf"))
+
 
     labels_gms2 = read_labels_from_file(pf_gms2, name="GMS2")
     labels_sbsp = read_labels_from_file(pf_sbsp, name="SBSP")
@@ -82,19 +87,16 @@ def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
 
     print(out)
 
-    pf_vennn = os.path.join(env["pd-work"], "venn.pdf")
-
     venn_diagram_5prime(labels_gms2, labels_sbsp, labels_ncbi, FigureOptions(
         title=venn_title,
-        save_fig=pf_vennn
+        save_fig=pf_venn
     ))
-
-
 
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
-    compare_gms2_sbsp_ncbi(env, args.pf_gms2, args.pf_sbsp, args.pf_ncbi)
+    compare_gms2_sbsp_ncbi(env, args.pf_gms2, args.pf_sbsp, args.pf_ncbi, venn_title=args.venn_title,
+                           pf_venn=args.pf_venn)
 
 
 if __name__ == "__main__":

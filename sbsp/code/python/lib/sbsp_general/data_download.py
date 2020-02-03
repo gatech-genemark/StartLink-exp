@@ -24,8 +24,22 @@ def create_ftplink_from_gcf_acc(gcf, acc):
 
     return os.path.join(link, gc, remaining[0:3], remaining[3:6], remaining[6:9], "{}_{}".format(gcf, acc))
 
-def download_assembly_summary_entry(entry, pd_output):
-    # type: (Dict[str, Any], str) -> Dict[str, Any]
+def files_are_different(pf_1, pf_2):
+    # type: (str, str) -> bool
+
+    try:
+        output = run_shell_cmd(
+            "diff {} {}".format(pf_1, pf_2)
+        )
+
+        return len(output.strip()) != 0
+    except Exception:
+        return True
+
+def download_assembly_summary_entry(entry, pd_output, **kwargs):
+    # type: (Dict[str, Any], str, Dict[str, Any]) -> Dict[str, Any]
+
+    force_download = get_value(kwargs, "force_download", None, valid={"all", "annotation_changed"})
 
     # build name
     gcf = entry["assembly_accession"]
@@ -33,7 +47,8 @@ def download_assembly_summary_entry(entry, pd_output):
 
     output = {
             "assembly_accession": gcf,
-            "asm_name": acc
+            "asm_name": acc,
+            "name": entry["name"]
             }
 
     ftplink = entry["ftp_path"]
@@ -72,28 +87,73 @@ def download_assembly_summary_entry(entry, pd_output):
         pf_local_labels = os.path.join(pd_gcfid, "ncbi.gff")
 
         # don't re-download. TODO: add option to force re-download
-        if os.path.isfile(pf_local_sequence) and os.path.isfile(pf_local_labels):
-            return output
+        if force_download != "any" and os.path.isfile(pf_local_sequence) and os.path.isfile(pf_local_labels):
+            if force_download is None:
+                return output
 
+            if force_download == "annotation_changed":
+                run_shell_cmd(
+                    "cd {}; mkdir temporary; cd temporary; wget --quiet {}; gunzip -f {};".format(
+                        pd_gcfid,
+                        pf_ftp_labels,
+                        "{}.gz".format(fn_labels)
+                    )
+                )
 
-        run_shell_cmd(
-            "pwd; cd {}; wget --quiet {}; wget --quiet {}; gunzip -f {}; gunzip -f {}".format(
-                pd_gcfid,
-                pf_ftp_sequence,
-                pf_ftp_labels,
-                "{}.gz".format(fn_sequence),
-                "{}.gz".format(fn_labels)
-            ),
+                update = files_are_different(
+                    pf_1=os.path.join(pd_gcfid, "temporary", fn_labels),
+                    pf_2=os.path.join(pd_gcfid, "ncbi.gff")
+                )
 
-        )
+                if update:
+                    run_shell_cmd("cd {}; mv {} ../ncbi.gff".format(
+                        os.path.join(pd_gcfid, "temporary"),
+                        fn_labels
+                    ))
 
-        run_shell_cmd(
-            "cd {}; mv {} {}; mv {} {}".format(
-                pd_gcfid,
-                fn_sequence, "sequence.fasta",
-                fn_labels, "ncbi.gff"
+                    # download sequence file again
+                    run_shell_cmd(
+                        "pwd; cd {}; wget --quiet {}; gunzip -f {};".format(
+                            pd_gcfid,
+                            pf_ftp_sequence,
+                            "{}.gz".format(fn_sequence),
+                        ),
+                    )
+
+                    run_shell_cmd(
+                        "cd {}; mv {} {};".format(
+                            pd_gcfid,
+                            fn_sequence, "sequence.fasta",
+                        )
+                    )
+
+                # cleanup
+                run_shell_cmd(
+                    "cd {}; rm -r temporary".format(
+                        pd_gcfid
+                    )
+                )
+            else:       # FIXME: it's getting out of control. Create different lists: updated, all valid, etc...
+                raise ValueError("nope")
+        else:
+            run_shell_cmd(
+                "pwd; cd {}; wget --quiet {}; wget --quiet {}; gunzip -f {}; gunzip -f {}".format(
+                    pd_gcfid,
+                    pf_ftp_sequence,
+                    pf_ftp_labels,
+                    "{}.gz".format(fn_sequence),
+                    "{}.gz".format(fn_labels)
+                ),
+
             )
-        )
+
+            run_shell_cmd(
+                "cd {}; mv {} {}; mv {} {}".format(
+                    pd_gcfid,
+                    fn_sequence, "sequence.fasta",
+                    fn_labels, "ncbi.gff"
+                )
+            )
     except (IOError, OSError, ValueError, subprocess.CalledProcessError):
         # cleanup failed attempt
         if os.path.exists(pd_gcfid) and os.path.isdir(pd_gcfid):
@@ -129,7 +189,7 @@ def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs
         logger.debug("Trying {}".format(gcfid_info["assembly_accession"]))
 
         try:
-            gcfid_info = download_assembly_summary_entry(gcfid_info, pd_output)
+            gcfid_info = download_assembly_summary_entry(gcfid_info, pd_output, **kwargs)
             success_downloads.append(gcfid_info)
 
             print_progress("Download", len(success_downloads), total)
@@ -172,7 +232,7 @@ def filter_assembly_summary_by_ancestor(ancestor_tag, tag_type, taxonomy_tree, d
 
             # add name to all genomes
             for i in range(len(info_list)):
-                info_list[i]["name"] = genome_node["name_txt"]
+                info_list[i]["name"] = genome_node["name_txt"].replace(",", " ")
             list_rows += info_list
 
     df_filtered = df_filtered.append(list_rows)
