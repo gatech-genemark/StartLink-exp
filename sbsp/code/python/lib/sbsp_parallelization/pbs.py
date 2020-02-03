@@ -267,7 +267,7 @@ class PBS:
         pbs_text += "#PBS -N " + str(job_name) + "\n"
         pbs_text += "#PBS -o " + "{}/{}".format(pd_job_template, "error_${PBS_ARRAYID}") + "\n"
         pbs_text += "#PBS -j oe" + "\n"
-        pbs_text += "#PBS -l nodes=" + str(num_nodes) + ":ppn=" + str(ppn) + "\n"
+        pbs_text += "#PBS -l nodes=" + str(num_nodes) + ":ppn=" + str(ppn) + ":hdd\n"
         pbs_text += "#PBS -l walltime=" + str(walltime) + "\n"
 
         if pbs_options:
