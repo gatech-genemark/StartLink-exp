@@ -89,7 +89,7 @@ class GenomeInfoList:
             loc_attributes = dict()
             for kv in my_str.strip().split(';'):
                 if "=" in kv:
-                    k, v = kv.split("=")
+                    k, v = kv.split("=", 1)
                     loc_attributes[k] = v
             return loc_attributes
 
