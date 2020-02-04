@@ -10,7 +10,7 @@ class PBSOptions(Options):
 
     def path_to_default_options_file(self, env):
         # type: (Environment) -> str
-        return os.path.join(env["pd-config"], "pbs-defaults.conf")
+        return os.path.join(env["pd-config"], "pbs_defaults.conf")
 
     def required(self):
         # type: () -> Union[Set[str], None]
@@ -32,13 +32,13 @@ class PBSOptions(Options):
         if "pf_pbs_options" in dict_options:
             pf_custom_options = dict_options["pf_pbs_options"]
 
-        msa_options = PBSOptions(env, pf_custom_options)
+        options = PBSOptions(env, pf_custom_options)
 
-        valid_keys = msa_options._options.keys()
+        valid_keys = options._options.keys()
 
         for k in valid_keys:
             k_in_args = k.replace("-", "_")
             if k_in_args in dict_options and dict_options[k_in_args] is not None:
-                msa_options[k] = dict_options[k_in_args]
+                options[k] = dict_options[k_in_args]
 
-        return msa_options
+        return options

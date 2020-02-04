@@ -24,7 +24,7 @@ class PipelineSBSPOptions(Options):
 
     def path_to_default_options_file(self, env):
         # type: (Environment) -> str
-        return os.path.join(env["pd-config"], "pipeline-sbsp-defaults.conf")
+        return os.path.join(env["pd-config"], "pipeline_sbsp_defaults.conf")
 
     def required(self):
         # type: () -> Union[Set[str], None]

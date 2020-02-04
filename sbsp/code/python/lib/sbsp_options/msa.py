@@ -9,7 +9,7 @@ class MSAOptions(Options):
 
     def path_to_default_options_file(self, env):
         # type: (Environment) -> str
-        return os.path.join(env["pd-config"], "msa-defaults.conf")
+        return os.path.join(env["pd-config"], "msa_defaults.conf")
 
     @staticmethod
     def init_from_dict(env, dict_options):

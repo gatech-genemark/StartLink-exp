@@ -19,4 +19,7 @@ def add_pbs_options(parser):
     add_processor_parallelization_options(parser)
     parser.add_argument('--pd-work-pbs-node', required=False, default=None,
                         help="Path to working directory on PBS node")
+    parser.add_argument('--node-property', required=False, type=str, default=None, help="Property for selecting"
+                                                                                        "PBS nodes")
+    parser.add_argument('--dn-compute', required=False, default=None, help="Name of working directory on compute nodes")
 
