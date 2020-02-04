@@ -261,13 +261,21 @@ class PBS:
 
         pd_job_template = os.path.join(pd_compute, "job_${PBS_ARRAYID}")
 
+        pd_pbs_logs = os.path.join(pbs_options["pd-head"], "pbs_logs")
+        mkdir_p(pd_pbs_logs)
 
-        pbs_text = " "
+        node_property = pbs_options.safe_get("node-property")
+        if node_property is not None:
+            node_property = ":" + node_property
+        else:
+            node_property = ""
+
+        pbs_text = ""
 
         pbs_text += "#PBS -N " + str(job_name) + "\n"
-        pbs_text += "#PBS -o " + "{}/{}".format(pd_job_template, "error_${PBS_ARRAYID}") + "\n"
+        pbs_text += "#PBS -o " + "{}/{}".format(pd_pbs_logs, "error_${PBS_ARRAYID}") + "\n"
         pbs_text += "#PBS -j oe" + "\n"
-        pbs_text += "#PBS -l nodes=" + str(num_nodes) + ":ppn=" + str(ppn) + ":hdd\n"
+        pbs_text += "#PBS -l nodes=" + str(num_nodes) + ":ppn=" + str(ppn) + "{}\n".format(node_property)
         pbs_text += "#PBS -l walltime=" + str(walltime) + "\n"
 
         if pbs_options:
@@ -286,6 +294,7 @@ class PBS:
 
         pbs_text += "PBS_O_WORKDIR=" + pd_job_template + "\n"
         pbs_text += "cd $PBS_O_WORKDIR \n"
+        pbs_text += "sleep 60\n"
 
         pbs_text += "echo The working directory is `echo $PBS_O_WORKDIR`" + "\n"
         pbs_text += "echo This job runs on the following nodes:" + "\n"
