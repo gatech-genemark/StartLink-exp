@@ -9,6 +9,7 @@ fn_q_labels_true=verified.gff
 fn_t_labels=ncbi.gff
 pbs_conf=defaults
 steps=""
+email_on_complete=
 
 # getopts string
 # This string needs to be updated with the single character options (e.g. -f)
@@ -39,6 +40,7 @@ echo "\
 -p, --pbs-conf;  Configuration number of PBS options (found in pbs_NUM.conf) (default: ${pbs_conf})
 --q-labels; Name of labels file for query genomes (default: ${fn_q_labels})
 --t-labels; Name of labels file for target genomes (default: ${fn_t_labels})
+-e; Sends email when job completes
 -v, --verbose; Enable verbose output (include multiple times for more
              ; verbosity, e.g. -vvv)
 " | column -t -s ";"
@@ -69,6 +71,7 @@ for pass in 1 2; do
                 --q-labels)         fn_q_labels=$2; shift;;
                 --t-labels)         fn_t_labels=$2; shift;;
                 -v|--verbose)       VERBOSE=$(($VERBOSE + 1));;
+                -e)                 email_on_complete=1; shift;;
                 --*)                error $1;;
                 -*)                 if [ $pass -eq 1 ]; then ARGS="$ARGS $1";
                                     else error $1; fi;;
@@ -103,6 +106,7 @@ fn_q_labels_no_ext="${fn_q_labels%.*}"
 fn_t_labels_no_ext="${fn_t_labels%.*}"
 
 pd_run=$exp/q_${query}_t_${target}_sbsp_${sbsp_conf}_ql_${fn_q_labels_no_ext}_tl_${fn_t_labels_no_ext}
+dn_compute=pbs_q_${query}_t_${target}_sbsp_${sbsp_conf}_ql_${fn_q_labels_no_ext}_tl_${fn_t_labels_no_ext}
 pf_output=${pd_run}/output.csv
 
 mkdir -p $pd_run
@@ -111,4 +115,9 @@ if verbose $INFO; then
     echo "Working directory: $pd_run"
 fi
 
-$bin/pipeline_msa_py.sh --pf-q-list $pf_q_list --pf-t-list $pf_t_list --fn-q-labels $fn_q_labels --fn-t-labels $fn_t_labels --pf-msa-options $pf_sbsp_conf --pf-pbs-options $pf_pbs_conf --pf-output $pf_output --pd-work $pd_run --fn-q-labels-true $fn_q_labels_true $steps
+$bin/pipeline_msa_py.sh --pf-q-list $pf_q_list --pf-t-list $pf_t_list --fn-q-labels $fn_q_labels --fn-t-labels $fn_t_labels --pf-msa-options $pf_sbsp_conf --pf-pbs-options $pf_pbs_conf --pf-output $pf_output --pd-work $pd_run --fn-q-labels-true $fn_q_labels_true --dn-compute ${dn_compute} $steps
+
+if [ ! -z ${email_on_complete} ]; then
+    mail -s "Done" <<< "Job at ${pd_run}"  2> /dev/null
+fi
+
