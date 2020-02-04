@@ -106,7 +106,8 @@ def sbsp_step_get_orthologs(env, pipeline_options):
                 func_kwargs={
                     "env": env,
                     "fn_q_labels": pipeline_options["fn-q-labels"], "fn_t_labels": pipeline_options["fn-t-labels"],
-                    "max_evalue": pipeline_options.safe_get("max-evalue")
+                    "max_evalue": pipeline_options.safe_get("max-evalue"),
+                    "clean": True
                 }
             )
         else:
@@ -152,6 +153,7 @@ def sbsp_step_compute_features(env, pipeline_options, list_pf_previous):
                 func=compute_features,
                 func_kwargs={
                     "env": env,
+                    "clean": True
                 }
             )
         else:
@@ -195,7 +197,8 @@ def sbsp_step_filter(env, pipeline_options, list_pf_previous):
                 func=filter_orthologs,
                 func_kwargs={
                     "env": env,
-                    "msa_options": pipeline_options["msa-options"]
+                    "msa_options": pipeline_options["msa-options"],
+                    "clean": True
                 }
             )
         else:
@@ -247,7 +250,8 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
                 func=run_sbsp_msa_from_multiple,
                 func_kwargs={
                     "env": env,
-                    "msa_options": pipeline_options["msa-options"]
+                    "msa_options": pipeline_options["msa-options"],
+                    "clean": True
                 }
             )
 
