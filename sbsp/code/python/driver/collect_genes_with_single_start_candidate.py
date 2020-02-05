@@ -36,6 +36,11 @@ parser.add_argument('--pf-genome-list', required=True, help="List of genome name
 parser.add_argument('--upstream-length-nt', required=True, help="Length of upstream region. "
                                                                 "Stop codons will be removed")
 
+parser.add_argument('--add-candidates-in-upstream-length', type=int, default=99)
+parser.add_argument('--add-candidates-in-downstream-length', type=int, default=99)
+parser.add_argument('--num-starts-upstream', type=int, default=0)
+parser.add_argument('--num-starts-downstream', type=int, default=0)
+
 parser.add_argument('--pd-output', required=True, help="Directory in which sequence.fasta and ncbi.gff will be created")
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
