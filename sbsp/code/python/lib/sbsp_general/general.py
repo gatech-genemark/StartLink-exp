@@ -198,12 +198,13 @@ def get_value(key_value_pairs, key, default_value=None, **kwargs):
     perform_copy = get_value_DEPRECATED(kwargs, "copy", False)
     default_if_none = get_value_DEPRECATED(kwargs, "default_if_none", False)
     value_type = get_value_DEPRECATED(kwargs, "type", None)
+    required = get_value_DEPRECATED(kwargs, "required", False)
 
     init = get_value_DEPRECATED(kwargs, "init", None)
 
     value = key_value_pairs[key] if key in key_value_pairs else default_value
 
-    if default_if_none and value is None:
+    if not required and default_if_none and value is None:
         return default_value
 
     if perform_copy:
@@ -211,6 +212,9 @@ def get_value(key_value_pairs, key, default_value=None, **kwargs):
 
     if value_type:
         value = value_type(value)
+
+    if required and value is None:
+        raise ValueError("Required argument: {}".format(key))
 
     if value is None and init is not None:
         value = init()

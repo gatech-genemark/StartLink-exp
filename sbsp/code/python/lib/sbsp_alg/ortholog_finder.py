@@ -10,6 +10,7 @@ from Bio.Seq import Seq
 
 from sbsp_alg.phylogeny import k2p_distance
 from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
+from sbsp_general import Environment
 from sbsp_general.blast import run_blast, convert_blast_output_to_csv, create_blast_database, run_blast_alignment
 from sbsp_general.general import get_value
 from sbsp_general.labels import Labels, Label
@@ -149,6 +150,8 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
     # type: (str, str, Dict[str, Any]) -> None
 
     hsp_criteria = get_value(kwargs, "hsp_criteria", None)
+    pf_q_original_nt = get_value(kwargs, "pf_q_original_nt", required=True)
+    pf_t_original_nt = get_value(kwargs, "pf_t_original_nt", required=True)
 
     # open csv file for writing
     try:
@@ -162,6 +165,10 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
     except OSError as e:
         log.warning("Could not open blast results file: {}".format(pf_blast_results))
         raise e
+
+    # read original nucleotide sequences (for computing distances)
+    q_original_sequences_nt = read_fasta_into_hash(pf_q_original_nt)
+    t_original_sequences_nt = read_fasta_into_hash(pf_t_original_nt)
 
     # open blast stream
     records = NCBIXML.parse(f_blast_results)
@@ -179,7 +186,13 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
 
             target_info = unpack_fasta_header(alignment.hit_id)
 
-            distance = compute_distance_based_on_local_alignment(query_info, target_info, hsp, **kwargs)
+            original_q_nt = q_original_sequences_nt[r.query]
+            original_t_nt = t_original_sequences_nt[alignment.hit_id]
+
+            distance = compute_distance_based_on_local_alignment(query_info, target_info, hsp,
+                                                                 original_q_nt=original_q_nt,
+                                                                 original_t_nt=original_t_nt,
+                                                                 **kwargs)
 
             # FIXME: thresholds should be from input configuration files
             # if distance < 0.001 or distance > 0.4:
@@ -492,7 +505,10 @@ def get_orthologs_from_files(env, pf_q_list, pf_t_list, pf_output, **kwargs):
     run_blast_on_sequences(env, pf_q_aa, pf_blast_db, pf_blast_results, **kwargs)
 
     # Parse data, filter, and write to CSV
-    parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs)
+    parse_filter_and_convert_to_csv(pf_blast_results, pf_output,
+                                    pf_q_original_nt=pf_q_nt,
+                                    pf_t_original_nt=pf_t_nt,
+                                    **kwargs)
 
     return pf_output
 
