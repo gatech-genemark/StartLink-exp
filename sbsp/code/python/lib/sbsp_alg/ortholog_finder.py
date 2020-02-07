@@ -185,6 +185,7 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
             # FIXME: thresholds should be from input configuration files
             # if distance < 0.001 or distance > 0.4:
             if True:
+
                 output_info = create_info_for_query_target_pair(query_info, target_info, hsp, distance_blast=distance,
                                                                 distance=distance)
 
