@@ -3,6 +3,7 @@ import copy
 from typing import *
 from sbsp_general import general
 
+KWARGS = TypeVar("KWARGS", Dict[str, Any])
 
 class Environment:
     """A class representing the project environment variables, including

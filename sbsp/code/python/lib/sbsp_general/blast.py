@@ -67,6 +67,10 @@ def run_blast(env, pf_q_list, pf_t_list, pf_blast_output, **kwargs):
     fn_t_labels = sbsp_general.general.get_value(kwargs, "fn_t_labels", "ncbi.gff")
     fn_q_proteins = sbsp_general.general.get_value(kwargs, "fn_q_proteins", "q_proteins.faa")
     fn_t_proteins = sbsp_general.general.get_value(kwargs, "fn_t_proteins", "t_proteins.faa")
+
+    fn_q_nucl = "q.fnt"
+    fn_t_nucl = "t.fnt"
+
     fn_blast_db = sbsp_general.general.get_value(kwargs, "fn_blast_db", "db")
     clean = sbsp_general.general.get_value(kwargs, "clean", False)
     max_evalue = sbsp_general.general.get_value(kwargs, "max_evalue", None)
