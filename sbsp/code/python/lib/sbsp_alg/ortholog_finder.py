@@ -311,13 +311,13 @@ def append_sequences_to_file(sequences, f):
 def get_pf_sequences_for_genome(env, gi, **kwargs):
     # type: (Environment, GenomeInfo, Dict[str, Any]) -> str
     fn_sequences = get_value(kwargs, "fn_sequences", "sequence.fasta")
-    return os.path.join(env['pd-work'], gi.name, fn_sequences)
+    return os.path.join(env['pd-data'], gi.name, fn_sequences)
 
 
 def get_pf_labels_for_genome(env, gi, **kwargs):
     # type: (Environment, GenomeInfo, Dict[str, Any]) -> str
     fn_labels = get_value(kwargs, "fn_labels", "ncbi.gff")
-    return os.path.join(env['pd-work'], gi.name, fn_labels)
+    return os.path.join(env['pd-data'], gi.name, fn_labels)
 
 
 def extract_labeled_sequence(label, sequences, **kwargs):
@@ -337,7 +337,7 @@ def pack_fasta_header(label, gi, **kwargs):
     gc = get_value(kwargs, "gc", 0)
     seq_type = get_value(kwargs, "seq_type", "")
 
-    return "{}:tag={};:gc={}:pos={};{};{}:cds={};{};{}:type={}:key={};{};{}".format(
+    return "{}:tag={};11;:gc={}:pos={};{};{}:cds={};{};{}:type={}:key={};{};{}".format(
         label.seqname(),
         gi.name,
         gc,
@@ -386,7 +386,7 @@ def extract_labeled_sequences_for_genome(env, gi, **kwargs):
 
     try:
         sequences = read_fasta_into_hash(pf_sequences)
-        labels = read_labels_from_file(pf_labels)
+        labels = read_labels_from_file(pf_labels, **kwargs)
     except IOError as e:
         log.warning("Could not read sequence/labels files for genome: {}".format(gi.name))
         raise e
@@ -475,8 +475,14 @@ def get_orthologs_from_files(env, pf_q_list, pf_t_list, pf_output, **kwargs):
     pf_t_aa = os.path.join(pd_work, "t.faa")
     pf_t_nt = os.path.join(pd_work, "t.fnt")
 
-    extract_labeled_sequences_for_genomes(env, q_gil, pf_q_nt, pf_q_aa, reverse_complement=True, **kwargs)
-    extract_labeled_sequences_for_genomes(env, t_gil, pf_t_nt, pf_t_aa, reverse_complement=True, **kwargs)
+    custom = {
+            "reverse_complement": True,
+            "ignore_frameshifted": True,
+            "ignore_partial": True
+            }
+
+    extract_labeled_sequences_for_genomes(env, q_gil, pf_q_nt, pf_q_aa, **custom, **kwargs)
+    extract_labeled_sequences_for_genomes(env, t_gil, pf_t_nt, pf_t_aa, **custom, **kwargs)
 
     pf_blast_db = os.path.join(pd_work, "blast.db")
     create_blast_database(pf_t_aa, pf_blast_db, seq_type="prot", use_diamond=True)      # FIXME: cleanup
