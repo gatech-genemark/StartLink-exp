@@ -10,7 +10,6 @@ from Bio.Seq import Seq
 
 from sbsp_alg.phylogeny import k2p_distance
 from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
-from sbsp_general import Environment, KWARGS
 from sbsp_general.blast import run_blast, convert_blast_output_to_csv, create_blast_database, run_blast_alignment
 from sbsp_general.general import get_value
 from sbsp_general.labels import Labels, Label
@@ -445,7 +444,7 @@ def extract_labeled_sequences_for_genomes(env, gil, pf_nt, pf_aa, **kwargs):
                 **kwargs
             )
             sequences_aa = translate_sequences_to_aa(sequences_nt)
-            
+
             # only keep sequences that have been translated
             dict_intersection_by_key(sequences_nt, sequences_aa)
 
