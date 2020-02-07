@@ -200,6 +200,8 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
                     ",".join([str(output_info[x]) for x in sorted_header])
                 ))
 
+    f_output.close()
+
 
 # def convert_blast_output_to_csv(pf_blast_output, pf_csv, select_best_alignment_per_qt_pair=True, delimiter=",", **kwargs):
 #     # type: (str, str, bool) -> None
