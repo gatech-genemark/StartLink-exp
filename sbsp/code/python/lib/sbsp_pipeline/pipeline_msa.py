@@ -44,9 +44,9 @@ class PipelineMSA:
         state = self._run_get_orthologs()
         elapsed_times["1-orthologs"] = timeit.default_timer() - curr_time
 
-        curr_time = timeit.default_timer()
-        state = self._run_compute_features(state)
-        elapsed_times["2-features"] = timeit.default_timer() - curr_time
+        # curr_time = timeit.default_timer()
+        # state = self._run_compute_features(state)
+        # elapsed_times["2-features"] = timeit.default_timer() - curr_time
 
         curr_time = timeit.default_timer()
         state = self._run_filter(state)

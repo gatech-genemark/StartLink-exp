@@ -7,8 +7,11 @@ from Bio.Blast import NCBIXML
 from Bio.Blast.Applications import NcbiblastpCommandline
 from Bio.Blast.Record import Alignment, HSP
 from Bio.Seq import Seq
+from Bio.SubsMat import MatrixInfo as matlist
 
-from sbsp_alg.phylogeny import k2p_distance
+
+from sbsp_alg.feature_computation import add_gaps_to_nt_based_on_aa
+from sbsp_alg.phylogeny import k2p_distance, global_alignment_aa_with_gap
 from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_general import Environment
 from sbsp_general.blast import run_blast, convert_blast_output_to_csv, create_blast_database, run_blast_alignment
@@ -123,6 +126,7 @@ def compute_distance_based_on_local_alignment(query_info, target_info, hsp, **kw
 
 
 def create_info_for_query_target_pair(query_info, target_info, hsp, **kwargs):
+    # type: (Dict[str, Any], Dict[str, Any], HSP, Dict[str, Any]) -> Dict[str, Any]
     output = {
         "evalue": hsp.expect,
     }
@@ -149,6 +153,22 @@ def unpack_fasta_header(header):
     return output
 
 
+def compute_distance_based_on_global_alignment_from_sequences(q_sequence, t_sequence, q_sequence_nt, t_sequence_nt, matrix):
+    [q_align, t_align, _, _, _] = \
+        global_alignment_aa_with_gap(q_sequence, t_sequence, matrix)
+
+    q_align_nt = add_gaps_to_nt_based_on_aa(q_sequence_nt, q_align)
+    t_align_nt = add_gaps_to_nt_based_on_aa(t_sequence_nt, t_align)
+
+    # count number of positions without gaps
+    len_without_gaps = sum([1 for i in range(len(q_align)) if q_align[i] != "-" and t_align[i] != "-"])
+
+    try:
+        distance = k2p_distance(q_align_nt, t_align_nt)
+    except ValueError:
+        distance = 100
+
+    return (distance, len(q_align), len_without_gaps)
 
 def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
     # type: (str, str, Dict[str, Any]) -> None
@@ -156,6 +176,8 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
     hsp_criteria = get_value(kwargs, "hsp_criteria", None)
     pf_q_original_nt = get_value(kwargs, "pf_q_original_nt", required=True)
     pf_t_original_nt = get_value(kwargs, "pf_t_original_nt", required=True)
+    pf_q_original_aa = get_value(kwargs, "pf_q_original_aa", required=True)
+    pf_t_original_aa = get_value(kwargs, "pf_t_original_aa", required=True)
 
     # open csv file for writing
     try:
@@ -173,6 +195,14 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
     # read original nucleotide sequences (for computing distances)
     q_original_sequences_nt = read_fasta_into_hash(pf_q_original_nt)
     t_original_sequences_nt = read_fasta_into_hash(pf_t_original_nt)
+
+    # read original sequences for trying out pairwise alignment ;)
+    q_original_sequences_aa = read_fasta_into_hash(pf_q_original_aa)
+    t_original_sequences_aa = read_fasta_into_hash(pf_t_original_aa)
+
+    matrix = matlist.blosum62
+    import sbsp_alg.phylogeny
+    sbsp_alg.phylogeny.add_stop_codon_to_blosum(matrix)
 
     # open blast stream
     records = NCBIXML.parse(f_blast_results)
@@ -198,12 +228,29 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
                                                                  original_t_nt=original_t_nt,
                                                                  **kwargs)
 
+            original_q_aa = q_original_sequences_aa[r.query]
+            original_t_aa = t_original_sequences_aa[alignment.hit_id]
+
+            global_distance, global_length, global_length_without_gaps = compute_distance_based_on_global_alignment_from_sequences(
+                original_q_aa, original_t_aa, original_q_nt, original_t_nt, matrix
+            )
+
+
             # FIXME: thresholds should be from input configuration files
             # if distance < 0.001 or distance > 0.4:
             if True:
 
-                output_info = create_info_for_query_target_pair(query_info, target_info, hsp, distance_blast=distance,
-                                                                distance=distance)
+                output_info = create_info_for_query_target_pair(
+                    query_info, target_info, hsp,
+                    distance_blast=distance,
+                    distance=distance,
+                    global_distance=global_distance,
+                    global_length=global_length,
+                    global_length_without_gaps=global_length_without_gaps,
+                    local_distance=distance,
+                    local_length=hsp.align_length,
+                    local_length_without_gaps=len(hsp.match) - hsp.match.count("-")
+                )
 
                 sorted_header = sorted(output_info.keys())
 
@@ -512,6 +559,8 @@ def get_orthologs_from_files(env, pf_q_list, pf_t_list, pf_output, **kwargs):
     parse_filter_and_convert_to_csv(pf_blast_results, pf_output,
                                     pf_q_original_nt=pf_q_nt,
                                     pf_t_original_nt=pf_t_nt,
+                                    pf_q_original_aa=pf_q_aa,
+                                    pf_t_original_aa=pf_t_aa,
                                     **kwargs)
 
     return pf_output
