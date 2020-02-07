@@ -75,7 +75,7 @@ def map_aligned_aa_to_aligned_nt(q_aligned_seq_aa, original_q_nt, q_start_aa, q_
             len(original_q_nt), (q_end_aa - q_start_aa + 1) * 3
         ))
 
-    output = ""
+    output = Seq("")
     pos_nt_no_gaps = q_start_aa * 3
     max_pos_nt_no_gaps = (q_end_aa + 1) * 3
 
@@ -91,7 +91,7 @@ def map_aligned_aa_to_aligned_nt(q_aligned_seq_aa, original_q_nt, q_start_aa, q_
         if pos_nt_no_gaps >= max_pos_nt_no_gaps:
             break
 
-    return Seq(output)
+    return output
 
 
 
@@ -106,8 +106,8 @@ def compute_distance_based_on_local_alignment(query_info, target_info, hsp, **kw
     t_aligned_seq_aa = hsp.sbjct
 
     # indices of where alignment starts in original sequences
-    q_start, q_end = hsp.query_start - 1, hsp.query_end - 1
-    t_start, t_end = hsp.sbjct_start - 1, hsp.sbjct_end - 1
+    q_start, q_end = hsp.query_start - 1, hsp.query_end - 2     # -2 to make inclusive
+    t_start, t_end = hsp.sbjct_start - 1, hsp.sbjct_end - 1     # -2 to make inclusive
 
     # aligned fragments (nt)
     q_aligned_seq_nt = map_aligned_aa_to_aligned_nt(q_aligned_seq_aa, original_q_nt, q_start, q_end)
@@ -133,7 +133,7 @@ def create_info_for_query_target_pair(query_info, target_info, hsp, **kwargs):
     source_to_info = {"q": query_info, "t": target_info}
     for source in ["q", "t"]:
 
-        for key in ["accession", "def", "gc", "gcode", "left", "right", "strand", "type"]:
+        for key in ["genome", "accession", "def", "gc", "gcode", "left", "right", "strand", "type"]:
             output["{}-{}".format(source, key)] = source_to_info[source][key]
 
     return output
@@ -142,7 +142,11 @@ def create_info_for_query_target_pair(query_info, target_info, hsp, **kwargs):
 def unpack_fasta_header(header):
     # type: (str) -> Dict[str, Any]
     import sbsp_general.general
-    return sbsp_general.general.expand_definition_line(header)
+    output = sbsp_general.general.expand_definition_line(header)
+    output["def"] = header
+
+    output["genome"] = sbsp_general.general.get_genome_name_from_defition_line(header)
+    return output
 
 
 
