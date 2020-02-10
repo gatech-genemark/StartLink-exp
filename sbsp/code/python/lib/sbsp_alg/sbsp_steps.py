@@ -6,7 +6,8 @@ from typing import *
 import sbsp_io
 from sbsp_alg.feature_computation import compute_features
 from sbsp_alg.filtering import filter_orthologs
-from sbsp_alg.msa import run_sbsp_msa, get_files_per_key, run_sbsp_msa_from_multiple
+from sbsp_alg.msa import run_sbsp_msa, get_files_per_key, run_sbsp_msa_from_multiple, \
+    run_sbsp_msa_from_multiple_for_multiple_queries
 from sbsp_io.general import mkdir_p
 from sbsp_general.general import get_value
 from sbsp_alg.ortholog_finder import get_orthologs_from_files
@@ -234,7 +235,7 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
         #           )
 
         pbs = PBS(env, pbs_options,
-                  splitter=split_q3prime_files,
+                  splitter=split_q3prime_to_list_of_data_files,
                   merger=merge_identity
                   )
 
@@ -242,16 +243,20 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
 
             # get files per 3prime key
             q3prime_to_list_pf = get_files_per_key(list_pf_previous)
+            pd_msa = os.path.join(pbs_options["pd-head"], "msa")
+            mkdir_p(pd_msa)
+
 
             output = pbs.run(
                 data={"q3prime_to_list_pf": q3prime_to_list_pf,
                       "pf_output_template": os.path.join(pbs_options["pd-head"],
                                                          pipeline_options["fn-msa"] + "_{}")},
-                func=run_sbsp_msa_from_multiple,
+                func=run_sbsp_msa_from_multiple_for_multiple_queries,
                 func_kwargs={
                     "env": env,
                     "msa_options": pipeline_options["msa-options"],
-                    "clean": True
+                    "clean": True,
+                    "pd_msa_final": pd_msa
                 }
             )
 

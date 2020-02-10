@@ -1162,10 +1162,10 @@ def filter_df(df, msa_options, **kwargs):
 
         before = len(df)
 
-        sbsp_general.general.df_add_3prime_key(df, "q-")
+        # sbsp_general.general.df_add_3prime_key(df, "q-")
         df = df.groupby(["q-3prime", column_distance_rounded], as_index=False).agg("first").reset_index(drop=True)
 
-        df.drop("q-3prime", inplace=True, axis=1)
+        # df.drop("q-3prime", inplace=True, axis=1)
         df.drop(column_distance_rounded, inplace=True, axis=1)
 
         after = len(df)
@@ -1181,7 +1181,7 @@ def filter_df(df, msa_options, **kwargs):
 
         before = len(df)
 
-        sbsp_general.general.df_add_3prime_key(df, "q-")
+        # sbsp_general.general.df_add_3prime_key(df, "q-")
         # df = df.groupby(["q-3prime"], as_index=False).head(number)
         print ("Length = {}".format(len(df)))
 
@@ -1194,10 +1194,10 @@ def filter_df(df, msa_options, **kwargs):
                 df = df.groupby(["q-3prime"], as_index=False).apply(lambda x: x.sample(n=number, random_state=1) if len(x) > number else x)
             elif sample_method == "closest-distance":
                 logger.debug("Closest samples by distance")
-                df = df.groupby(["q-3prime"], as_index=False).apply(lambda x: x.sort_values("kimura").head(number)).reset_index(drop=True)
+                df = df.groupby(["q-3prime"], as_index=False).apply(lambda x: x.sort_values(column_distance).head(number)).reset_index(drop=True)
 
 
-        df.drop("q-3prime", inplace=True, axis=1)
+        # df.drop("q-3prime", inplace=True, axis=1)
 
         after = len(df)
         if filter_stats is not None:
@@ -1206,8 +1206,8 @@ def filter_df(df, msa_options, **kwargs):
             logger.critical(
                 "Filter ({}): {} - {} = {}".format("filter-max-number-orthologs", before, after, before - after))
 
-    if len(df) > 0:
-        sbsp_general.general.df_add_3prime_key(df, "q-")
+    # if len(df) > 0:
+    #     sbsp_general.general.df_add_3prime_key(df, "q-")
 
     #  # filter based on upstream
     # filter-min-upstream-distance: null
@@ -2159,9 +2159,6 @@ def perform_msa_on_df(env, df, **kwargs):
 
     df_result = pd.DataFrame()
 
-    if column_k2p_distance not in df.columns.values:
-        df[column_k2p_distance] = df["evalue"]
-
     # get all file labels in order to compute
 
     # for each ortholog group
@@ -2221,6 +2218,60 @@ def select_start_for_msa_from_file(env, pf_msa, **kwargs):
     msa_options = get_value(kwargs, "msa_options", MSAOptions(env))
 
     # read alignment
+
+
+def move_files_using_scp(df, pd_msa):
+    # type: (pd.DataFrame, str) -> None
+    from shutil import copyfile
+
+    for pf_msa_old, df_group in df.groupby("pf-msa-output", as_index=False):
+
+        fn_msa = os.path.basename(pf_msa_old)
+        pf_msa_new = os.path.join(pd_msa, fn_msa)
+
+        copyfile(pf_msa_old, pf_msa_new)
+        df.loc[df["pf-msa-output"] == pf_msa_old, "pf-msa-output"] = pf_msa_new
+
+
+def run_sbsp_msa_from_multiple_for_multiple_queries(env, dict_qkey_to_list_pf_data, pf_output, **kwargs):
+    # type: (Environment, Dict[str, List[str]], str, Dict[str, Any]) -> str
+
+    # read in required data
+    pd_msa_final = get_value(kwargs, "pd_msa_final", default=None)
+
+    list_df = list()
+
+    logger.debug("Reading Data")
+
+    list_pf_data = set(
+        [x for y in dict_qkey_to_list_pf_data.values() for x in y]
+    )
+
+    unique_qkey = dict_qkey_to_list_pf_data.keys()
+    list_dfs = list()
+
+    for pf in list_pf_data:
+        try:
+            curr_df = pd.read_csv(pf, header=0)
+            for q3prime in unique_qkey:
+                df_qkey = curr_df.loc[curr_df["q-3prime"] == q3prime]
+                if len(df_qkey) > 0 or len(list_df) == 0:
+                    list_dfs.append(df_qkey)
+        except IOError:
+            pass
+
+    df = pd.concat(list_dfs, ignore_index=True)
+    df = perform_msa_on_df(env, df, **kwargs)
+
+    if pd_msa_final is not None:
+        try:
+            move_files_using_scp(df, pd_msa_final)
+        except Exception:
+            pass
+
+    df.to_csv(pf_output, index=False)
+
+    return pf_output
 
 
 def run_sbsp_msa_from_multiple(env, list_pf_data, pf_output, **kwargs):

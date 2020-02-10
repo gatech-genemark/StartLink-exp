@@ -11,6 +11,7 @@ log = logging.getLogger(__name__)
 
 T = TypeVar('T')
 
+
 def get_number_elements_per_split(total_elements, num_splits):
     # type: (int, int) -> int
     return math.ceil(total_elements / float(num_splits))
@@ -25,7 +26,6 @@ def generate_splits(elements, num_splits):
     start = 0
 
     while start < num_elements:
-
         end = min(num_elements, start + num_per_split)
         yield elements[start:end]
         start = end
@@ -67,11 +67,10 @@ def split_q3prime_files(data, num_splits, pd_work, **kwargs):
     return list_splits
 
 
-
 def split_list_and_remerge_by_key(data, num_splits, pd_work, **kwargs):
     # type: (Dict[str, Any], int, str, Dict[str, Any]) -> List[Dict[str, str]]
 
-# def copy_files_to_new_dir_by_group(list_pf_data, pf_new_data_format, group_key):
+    # def copy_files_to_new_dir_by_group(list_pf_data, pf_new_data_format, group_key):
     # type: # (List[str], str, str) -> List[str]
 
     # goal: move data from one directory to another, such that new files are one per group_key, and
@@ -102,7 +101,7 @@ def split_list_and_remerge_by_key(data, num_splits, pd_work, **kwargs):
                         group_to_file_number[name] = file_number
 
                         list_pf_new.append({"pf_data": pf_new, "pf_output": pf_output_template.format(file_number),
-                            "msa_output_start": file_number})
+                                            "msa_output_start": file_number})
                         file_number += 1
 
                         df_new = df_group
@@ -123,7 +122,49 @@ def split_list_and_remerge_by_key(data, num_splits, pd_work, **kwargs):
     return list_pf_new
 
 
+def split_q3prime_to_list_of_data_files(data, num_splits, pd_work, **kwargs):
+    # type: (Dict[str, Any], int, str, Dict[str, Any]) -> List[Dict[str, str]]
 
+    q3prime_to_list_pf = data["q3prime_to_list_pf"]
+    pf_output_template = data["pf_output_template"]
+
+    total_queries = len(q3prime_to_list_pf.keys())
+
+    if total_queries < num_splits:
+        num_splits = total_queries
+
+    dict_splitid_to_list_q3prime = {
+        x: list() for x in range(1, num_splits + 1)
+    }  # type: Dict[int, List[str]]
+
+    # assign each q3prime to worker
+    worker_index = 0
+    for q3prime in q3prime_to_list_pf.keys():
+
+        dict_splitid_to_list_q3prime[worker_index + 1].append(q3prime)
+
+        worker_index += 1
+        if worker_index == num_splits:
+            worker_index = 0
+
+    # for each worker, create data entry
+
+    list_splits = list()
+    for split_id, list_q3prime in dict_splitid_to_list_q3prime.items():
+        dict_qkey_to_list_pf_data = {
+            qkey: q3prime_to_list_pf[qkey] for qkey in list_q3prime
+        }
+
+        list_splits.append(
+            {"dict_qkey_to_list_pf_data": dict_qkey_to_list_pf_data,
+             "pf_output": pf_output_template.format(split_id),
+             "fn_msa_tag": split_id,
+             "file_tag": split_id,
+             "msa_output_start": split_id
+             }
+        )
+
+    return list_splits
 
 
 def split_query_genomes_target_genomes_one_vs_group(data, num_splits, pd_work, **kwargs):
