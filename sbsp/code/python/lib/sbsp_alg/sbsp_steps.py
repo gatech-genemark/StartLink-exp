@@ -224,7 +224,7 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
     }
 
     if pipeline_options.use_pbs():
-        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"], keep_on_head=True)
+        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"], keep_on_head=False)
 
         if pbs_options.safe_get("pd-data-compute"):
             env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
