@@ -1110,6 +1110,7 @@ def filter_df(df, msa_options, **kwargs):
     filter_non_group_only = get_value(kwargs, "filter_non_group_only", False)
 
     sbsp_general.general.df_add_5prime_3prime_key(df, "q-")
+    sbsp_general.general.df_add_3prime_key(df, "q-")
 
     # remove frameshifted
     before = len(df)

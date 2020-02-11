@@ -234,7 +234,7 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
             # global_distance, global_length, global_length_without_gaps = compute_distance_based_on_global_alignment_from_sequences(
             #     original_q_aa, original_t_aa, original_q_nt, original_t_nt, matrix
             # )
-            global_distance, global_length, global_length_without_gaps = 0
+            global_distance = global_length = global_length_without_gaps = 0
 
 
             # FIXME: thresholds should be from input configuration files
