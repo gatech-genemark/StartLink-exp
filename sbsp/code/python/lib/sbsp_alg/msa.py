@@ -1602,7 +1602,7 @@ def find_rightmost_by_standard_aa_score(alignments, candidates, threshold=0.5):
     logger.debug("Func: find-rightmost-by-standard-aa-score")
     for i in reversed(candidates):
 
-        penalized_start_score = sbsp_ml.msa_features_2.compute_simple_saas(alignments, i)
+        penalized_start_score = sbsp_ml.msa_features_2.compute_simple_saas(MSAType(alignments), i)
 
         logger.debug("Candidate {}, SAAS = {}".format(i, penalized_start_score))
 
