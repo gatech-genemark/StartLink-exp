@@ -1599,10 +1599,9 @@ def find_rightmost_by_standard_aa_score(alignments, candidates, threshold=0.5):
     # type: (Bio.Align.MultipleSeqAlignment, List[int], float) -> Union[int, None]
 
     logger.debug("Func: find-rightmost-by-standard-aa-score")
-    import sbsp_ml.msa_features
     for i in reversed(candidates):
 
-        penalized_start_score = sbsp_ml.msa_features.compute_simple_saas(alignments, i, 0, 0)
+        penalized_start_score = sbsp_ml.msa_features_2.compute_simple_saas(alignments, i)
 
         logger.debug("Candidate {}, SAAS = {}".format(i, penalized_start_score))
 
