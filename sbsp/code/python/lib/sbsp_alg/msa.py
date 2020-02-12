@@ -2229,8 +2229,10 @@ def move_files_using_scp(df, pd_msa):
         fn_msa = os.path.basename(pf_msa_old)
         pf_msa_new = os.path.join(pd_msa, fn_msa)
 
-        copyfile(pf_msa_old, pf_msa_new)
         df.loc[df["pf-msa-output"] == pf_msa_old, "pf-msa-output"] = pf_msa_new
+        copyfile(pf_msa_old, pf_msa_new)
+        copyfile(pf_msa_old + "_nt", pf_msa_new + "_nt")
+
 
 
 def run_sbsp_msa_from_multiple_for_multiple_queries(env, dict_qkey_to_list_pf_data, pf_output, **kwargs):
