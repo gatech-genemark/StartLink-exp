@@ -20,6 +20,7 @@ from sbsp_general.labels import Labels, Label
 from sbsp_io.general import mkdir_p
 from sbsp_io.labels import read_labels_from_file
 from sbsp_io.sequences import read_fasta_into_hash
+from sbsp_options.msa import MSAOptions
 
 log = logging.getLogger(__name__)
 
@@ -178,6 +179,8 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
     pf_t_original_nt = get_value(kwargs, "pf_t_original_nt", required=True)
     pf_q_original_aa = get_value(kwargs, "pf_q_original_aa", required=True)
     pf_t_original_aa = get_value(kwargs, "pf_t_original_aa", required=True)
+    distance_min = get_value(kwargs, "distance_min", 0.001, default_if_none=True)
+    distance_max = get_value(kwargs, "distance_max", 0.4, default_if_none=True)
 
     # open csv file for writing
     try:
@@ -238,7 +241,7 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
 
 
             # FIXME: thresholds should be from input configuration files
-            if distance > 0.001 and distance < 0.5:
+            if distance > distance_min and distance < distance_max:
             # if True:
 
                 output_info = create_info_for_query_target_pair(
@@ -529,6 +532,8 @@ def run_blast_on_sequences(env, pf_q_aa, pf_db, pf_blast_output, **kwargs):
 def get_orthologs_from_files(env, pf_q_list, pf_t_list, pf_output, **kwargs):
     # type: (Environment, str, str, str, Dict[str, Any]) -> str
 
+    sbsp_options = get_value(kwargs, "sbsp_options", MSAOptions(env))       # type: MSAOptions
+
     q_gil = GenomeInfoList.init_from_file(pf_q_list)
     t_gil = GenomeInfoList.init_from_file(pf_t_list)
 
@@ -562,6 +567,8 @@ def get_orthologs_from_files(env, pf_q_list, pf_t_list, pf_output, **kwargs):
                                     pf_t_original_nt=pf_t_nt,
                                     pf_q_original_aa=pf_q_aa,
                                     pf_t_original_aa=pf_t_aa,
+                                    distance_min=sbsp_options.safe_get("filter-min-distance"),
+                                    distance_max=sbsp_options.safe_get("filter-max-distance"),
                                     **kwargs)
 
     return pf_output
