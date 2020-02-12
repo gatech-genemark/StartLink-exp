@@ -175,6 +175,7 @@ def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs
     """
 
     pf_output_list = get_value(kwargs, "pf_output_list", None)
+    attributes = get_value(kwargs, "attributes", dict(), default_if_none=True)
 
 
     df_assembly_summary = filter_entries_with_equal_taxid(
@@ -202,7 +203,8 @@ def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs
             "{}_{}".format(d["assembly_accession"], d["asm_name"]),
             11,
             attributes={
-                "name": d["name"]
+                "name": d["name"],
+                **attributes
             }
         ) for d in success_downloads
     ])
@@ -248,4 +250,5 @@ def download_data_by_ancestor(ancestor_tag, tag_type, taxonomy_tree, df_assembly
         ancestor_tag, tag_type, taxonomy_tree, df_assembly_summary
     )
 
-    return download_data_from_assembly_summary(df_assembly_summary_filtered, pd_output, **kwargs)
+    return download_data_from_assembly_summary(df_assembly_summary_filtered, pd_output,
+                                               attributes={"ancestor": ancestor_tag}, **kwargs)
