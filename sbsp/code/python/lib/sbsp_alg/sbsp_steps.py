@@ -108,7 +108,8 @@ def sbsp_step_get_orthologs(env, pipeline_options):
                     "env": env,
                     "fn_q_labels": pipeline_options["fn-q-labels"], "fn_t_labels": pipeline_options["fn-t-labels"],
                     "max_evalue": pipeline_options.safe_get("max-evalue"),
-                    "clean": True
+                    "clean": True,
+                    "sbsp_options": pipeline_options.safe_get("msa-options")
                 }
             )
         else:
