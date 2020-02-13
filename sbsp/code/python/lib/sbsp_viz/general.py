@@ -29,7 +29,10 @@ def add_identity(axes, *line_args, **line_kwargs):
 
 class FigureOptions:
 
-    def __init__(self, title=None, xlabel=None, ylabel=None, xlim=None, ylim=None, save_fig=None):
+    def __init__(self, title=None, xlabel=None, ylabel=None, xlim=None, ylim=None, save_fig=None, **kwargs):
+        # type: (str, str, str, Tuple(int, int), Tuple(int, int), str, Dict[str, Any]) -> None
+        self.balanced = get_value(kwargs, "balanced", False)
+
         self.title = title
         self.xlabel = xlabel
         self.ylabel = ylabel
@@ -55,6 +58,13 @@ class FigureOptions:
             axis.set_xlim(*figure_options.xlim)
         if figure_options.ylim:
             axis.set_ylim(*figure_options.ylim)
+
+        if figure_options.balanced:
+            min_xy = min(axis.get_xlim()[0], axis.get_ylim()[0])
+            max_xy = max(axis.get_xlim()[1], axis.get_ylim()[1])
+
+            axis.set_xlim(min_xy, max_xy)
+            axis.set_ylim(min_xy, max_xy)
 
 
 
