@@ -101,7 +101,6 @@ def compare_distance_local_vs_global(env, df, **kwargs):
         xlabel="Ratio of lengths",
         ylabel="Difference in distance",
         save_fig=pf_diff_distance_vs_ratio_length,
-        balanced=True
     ))
 
     scatter(df, "ratio_ungapped_length", "diff_distance", figure_options=FigureOptions(
@@ -109,7 +108,6 @@ def compare_distance_local_vs_global(env, df, **kwargs):
         xlabel="Ratio of ungapped lengths",
         ylabel="Difference in distance",
         save_fig=pf_diff_distance_vs_ratio_ungapped_length,
-        balanced=True
     ))
 
 
