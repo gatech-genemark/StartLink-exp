@@ -81,6 +81,7 @@ def compare_distance_local_vs_global(env, df, **kwargs):
     ))
 
     # compare ungapped alignment length of local vs global
+
     scatter(df, "global_length_without_gaps", "local_length_without_gaps", figure_options=FigureOptions(
         title="Ungapped alignment length of local vs global",
         xlabel="Global",
@@ -91,6 +92,7 @@ def compare_distance_local_vs_global(env, df, **kwargs):
 
     # compare difference in alignment length versus difference in local/global
     df["diff_distance"] = df["global_distance"] - df["local_distance"]
+
     df["ratio_ungapped_length"] = df["local_length_without_gaps"] / df["global_length_without_gaps"]
     df["ratio_length"] = df["local_length"] / df["global_length"]
 
