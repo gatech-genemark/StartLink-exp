@@ -8,6 +8,7 @@ fn_q_labels=verified.gff
 fn_q_labels_true=verified.gff
 fn_t_labels=ncbi.gff
 pbs_conf=defaults
+tag=
 steps=""
 email_on_complete=
 
@@ -70,8 +71,9 @@ for pass in 1 2; do
                 --q-labels-true)    fn_q_labels_true=$2; shift;;
                 --q-labels)         fn_q_labels=$2; shift;;
                 --t-labels)         fn_t_labels=$2; shift;;
+                --tag)              tag="$2"; shift;;
                 -v|--verbose)       VERBOSE=$(($VERBOSE + 1));;
-                -e)                 email_on_complete=1; shift;;
+                -e)                 email_on_complete=1;;
                 --*)                error $1;;
                 -*)                 if [ $pass -eq 1 ]; then ARGS="$ARGS $1";
                                     else error $1; fi;;
@@ -105,8 +107,12 @@ pf_pbs_conf=$config/pbs_${pbs_conf}.conf
 fn_q_labels_no_ext="${fn_q_labels%.*}"
 fn_t_labels_no_ext="${fn_t_labels%.*}"
 
-pd_run=$exp/q_${query}_t_${target}_sbsp_${sbsp_conf}_ql_${fn_q_labels_no_ext}_tl_${fn_t_labels_no_ext}
-dn_compute=pbs_q_${query}_t_${target}_sbsp_${sbsp_conf}_ql_${fn_q_labels_no_ext}_tl_${fn_t_labels_no_ext}
+if [ ! -z "$tag" ]; then
+    tag="${tag}_"
+fi
+
+pd_run=$exp/${tag}q_${query}_t_${target}_sbsp_${sbsp_conf}_ql_${fn_q_labels_no_ext}_tl_${fn_t_labels_no_ext}
+dn_compute=pbs_${tag}q_${query}_t_${target}_sbsp_${sbsp_conf}_ql_${fn_q_labels_no_ext}_tl_${fn_t_labels_no_ext}
 pf_output=${pd_run}/output.csv
 
 mkdir -p $pd_run
