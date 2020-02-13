@@ -69,7 +69,8 @@ def compare_distance_local_vs_global(env, df, **kwargs):
         ylabel="Local",
         save_fig=pf_distance,
         balanced=True
-    ))
+    ),
+    identity=True)
 
     # compare alignment length of local vs global
     scatter(df, "global_length", "local_length", figure_options=FigureOptions(
@@ -78,7 +79,8 @@ def compare_distance_local_vs_global(env, df, **kwargs):
         ylabel="Local",
         save_fig=pf_alignment_length,
         balanced=True
-    ))
+    ),
+    identity=True)
 
     # compare ungapped alignment length of local vs global
 
@@ -88,7 +90,8 @@ def compare_distance_local_vs_global(env, df, **kwargs):
         ylabel="Local",
         save_fig=pf_ungapped_alignment_length,
         balanced=True
-    ))
+    ),
+    identity=True)
 
     # compare difference in alignment length versus difference in local/global
     df["diff_distance"] = df["global_distance"] - df["local_distance"]
