@@ -536,6 +536,9 @@ def get_orthologs_from_files(env, pf_q_list, pf_t_list, pf_output, **kwargs):
 
     sbsp_options = get_value(kwargs, "sbsp_options", MSAOptions(env))       # type: MSAOptions
 
+    fn_q_labels = get_value(kwargs, "fn_q_labels", "ncbi.gff")
+    fn_t_labels = get_value(kwargs, "fn_t_labels", "ncbi.gff")
+
     q_gil = GenomeInfoList.init_from_file(pf_q_list)
     t_gil = GenomeInfoList.init_from_file(pf_t_list)
 
@@ -553,8 +556,8 @@ def get_orthologs_from_files(env, pf_q_list, pf_t_list, pf_output, **kwargs):
             "ignore_partial": True
             }
 
-    extract_labeled_sequences_for_genomes(env, q_gil, pf_q_nt, pf_q_aa, **custom, **kwargs)
-    extract_labeled_sequences_for_genomes(env, t_gil, pf_t_nt, pf_t_aa, **custom, **kwargs)
+    extract_labeled_sequences_for_genomes(env, q_gil, pf_q_nt, pf_q_aa, fn_labels=fn_q_labels, **custom, **kwargs)
+    extract_labeled_sequences_for_genomes(env, t_gil, pf_t_nt, pf_t_aa, fn_labels=fn_t_labels, **custom, **kwargs)
 
     pf_blast_db = os.path.join(pd_work, "blast.db")
     create_blast_database(pf_t_aa, pf_blast_db, seq_type="prot", use_diamond=True)      # FIXME: cleanup

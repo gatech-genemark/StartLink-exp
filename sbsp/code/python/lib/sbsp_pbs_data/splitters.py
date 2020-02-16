@@ -47,6 +47,33 @@ def split_list(data, num_splits, pd_work, **kwargs):
     return list_splits
 
 
+def split_genome_info_list(data, num_splits, pd_work, **kwargs):
+    # type: (Dict[str, Any], int, str, Dict[str, Any]) -> List[Dict[str, Any]]
+
+    genome_info_list = get_value(data, "gil", required=True)
+    pf_aa_template = data["pf_aa_template"]
+    pf_nt_template = data["pf_nt_template"]
+
+    if num_splits > len(genome_info_list):
+        num_splits = len(genome_info_list)
+
+    list_of_list_of_gi = [[]] * num_splits
+
+    for index, gi in enumerate(genome_info_list):
+
+        index_of_list = index % num_splits
+
+        list_of_list_of_gi[index_of_list].append(gi)
+
+    return [
+        {
+            "gil": GenomeInfoList(list_of_list_of_gi[i]),
+            "pf_aa": pf_aa_template.format(i),
+            "pf_nt": pf_nt_template.format(i)
+        } for i in range(len(list_of_list_of_gi))
+    ]
+
+
 def split_q3prime_files(data, num_splits, pd_work, **kwargs):
     # type: (Dict[str, Any], int, str, Dict[str, Any]) -> List[Dict[str, str]]
 
