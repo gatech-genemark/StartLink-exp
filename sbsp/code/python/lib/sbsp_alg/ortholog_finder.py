@@ -21,9 +21,29 @@ from sbsp_io.general import mkdir_p
 from sbsp_io.labels import read_labels_from_file
 from sbsp_io.sequences import read_fasta_into_hash
 from sbsp_options.msa import MSAOptions
-from stats_start_candidates import is_valid_start, is_valid_stop
 
 log = logging.getLogger(__name__)
+
+
+valid_starts_pos = ["ATG", "GTG", "TTG"]
+valid_starts_neg = ["CAT", "CAC", "CAA"]
+
+valid_stops_pos = ["TAA", "TGA", "TAG"]
+valid_stops_neg = ["TTA", "TCA", "CTA"]
+
+
+def is_valid_start(codon, strand):
+    if strand == "+":
+        return codon in valid_starts_pos
+    else:
+        return codon in valid_starts_neg
+
+
+def is_valid_stop(codon, strand):
+    if strand == "+":
+        return codon in valid_stops_pos
+    else:
+        return codon in valid_stops_neg
 
 
 def get_orthologs_from_files_deprecated(env, pf_q_list, pf_t_list, pf_output, **kwargs):
