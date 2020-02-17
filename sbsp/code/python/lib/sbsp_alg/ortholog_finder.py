@@ -427,7 +427,7 @@ def get_lorf(label, sequences):
 
             curr_pos -= 3
 
-        lorf_seq = sequences[label.seqname()][pos_lorf:label.right()+1]._data
+        lorf_seq = sequences[label.seqname()][pos_lorf:label.right()+1]
 
     else:
 
@@ -444,7 +444,7 @@ def get_lorf(label, sequences):
 
             curr_pos += 3
 
-        lorf_seq = sequences[label.seqname()][label.left():pos_lorf+1]._data
+        lorf_seq = sequences[label.seqname()][label.left():pos_lorf+1]
 
     return lorf_seq
 
@@ -456,7 +456,7 @@ def extract_labeled_sequence(label, sequences, **kwargs):
     reverse_complement = get_value(kwargs, "reverse_complement", False)
     lorf = get_value(kwargs, "lorf", False)
 
-    if not lorf:
+    if lorf:
         frag = get_lorf(label, sequences)
     else:
         frag = sequences[label.seqname()][label.left():label.right() + 1]
@@ -605,6 +605,8 @@ def extract_labeled_sequences_for_genomes(env, gil, pf_output, **kwargs):
             dict_intersection_by_key(sequences_nt, sequences_aa)
 
             append_sequences_to_file(sequences_aa, f_aa)
+
+        f_aa.close()
     except OSError:
         log.warning("Could not open file for writing sequences:\n{}".format(pf_output))
 
