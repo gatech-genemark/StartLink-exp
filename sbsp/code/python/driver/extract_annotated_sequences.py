@@ -6,6 +6,7 @@
 import logging
 import argparse
 import os
+from os import remove
 from typing import *
 
 # noinspection All
@@ -24,6 +25,7 @@ from sbsp_general import Environment
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
+from sbsp_io.sequences import read_fasta_into_hash
 from sbsp_options.pbs import PBSOptions
 from sbsp_parallelization.pbs import PBS
 from sbsp_pbs_data.mergers import merge_identity
@@ -32,6 +34,7 @@ from sbsp_pbs_data.splitters import split_genome_info_list
 parser = argparse.ArgumentParser("Description of driver.")
 
 parser.add_argument('--pf-genome-list', required=True, help="Genome list")
+parser.add_argument('--pf-output', required=True, help="Output file")
 sbsp_argparse.parallelization.add_pbs_options(parser)
 
 
@@ -84,6 +87,20 @@ def main(env, args):
             "fn_labels": "ncbi.gff",
         }
     )
+
+    with open(args.pf_output, "w") as f_output:
+
+        for pf_tmp in output:
+
+            sequences = read_fasta_into_hash(pf_tmp)
+
+            for k, v in sequences.items():
+                f_output.write(">{}\n{}\n".format(k, v))
+
+            remove(pf_tmp)
+
+        f_output.close()
+
 
 
 if __name__ == "__main__":
