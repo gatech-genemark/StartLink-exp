@@ -21,6 +21,7 @@ from sbsp_io.general import mkdir_p
 from sbsp_io.labels import read_labels_from_file
 from sbsp_io.sequences import read_fasta_into_hash
 from sbsp_options.msa import MSAOptions
+from stats_start_candidates import is_valid_start, is_valid_stop
 
 log = logging.getLogger(__name__)
 
@@ -389,39 +390,101 @@ def get_pf_labels_for_genome(env, gi, **kwargs):
     fn_labels = get_value(kwargs, "fn_labels", "ncbi.gff")
     return os.path.join(env['pd-data'], gi.name, fn_labels)
 
+def get_lorf(label, sequences):
+    # type: (Label, Dict[str, Seq]) -> Seq
+
+    if label.strand() == "+":
+
+        curr_pos = label.left()
+        pos_lorf = curr_pos
+
+        while curr_pos >= 0:
+            codon = sequences[label.seqname()][curr_pos:curr_pos+3]._data
+            if is_valid_start(codon, label.strand()):
+                pos_lorf = curr_pos
+            if is_valid_stop(codon, label.strand()):
+                break
+
+            curr_pos -= 3
+
+        lorf_seq = sequences[label.seqname()][pos_lorf:label.right()+1]._data
+
+    else:
+
+        curr_pos = label.right()
+        pos_lorf = curr_pos
+        seq_len = len(sequences[label.seqname()])
+
+        while curr_pos < seq_len:
+            codon = sequences[label.seqname()][curr_pos-2:curr_pos+1]._data
+            if is_valid_start(codon, label.strand()):
+                pos_lorf = curr_pos
+            if is_valid_stop(codon, label.strand()):
+                break
+
+            curr_pos += 3
+
+        lorf_seq = sequences[label.seqname()][label.left():pos_lorf+1]._data
+
+    return lorf_seq
+
+
+
 
 def extract_labeled_sequence(label, sequences, **kwargs):
     # type: (Label, Dict[str, Seq], Dict[str, Any]) -> Seq
     reverse_complement = get_value(kwargs, "reverse_complement", False)
+    lorf = get_value(kwargs, "lorf", False)
 
-    frag = sequences[label.seqname()][label.left():label.right() + 1]
+    if not lorf:
+        frag = get_lorf(label, sequences)
+    else:
+        frag = sequences[label.seqname()][label.left():label.right() + 1]
 
     if label.strand() == "-" and reverse_complement:
         frag = frag.reverse_complement()
 
     return frag
 
+
 def pack_fasta_header(label, gi, **kwargs):
     # type: (Label, GenomeInfo, Dict[str, Any]) -> str
 
     gc = get_value(kwargs, "gc", 0)
     seq_type = get_value(kwargs, "seq_type", "")
+    lorf_nt = get_value(kwargs, "lorf_nt", "")
+    offset = get_value(kwargs, "offset", 0)
 
-    return "{}:tag={};11;:gc={}:pos={};{};{}:cds={};{};{}:type={}:key={};{};{}".format(
+
+    return "{} accession={};genome={};gc={};left={};right={};strand={};lorf_nt={};offset={}".format(
+        label.seqname(),
         label.seqname(),
         gi.name,
         gc,
         label.left() + 1,
         label.right() + 1,
         label.strand(),
-        label.left() + 1,
-        label.right() + 1,
-        label.strand(),
-        seq_type,
-        label.seqname(),
-        label.right() if label.strand() == "+" else label.left(),
-        label.strand()
+        lorf_nt,
+        offset,
     )
+
+    # return "{}:tag={};11;:gc={}:pos={};{};{}:cds={};{};{}:type={}:key={};{};{}".format(
+    #     label.seqname(),
+    #     gi.name,
+    #     gc,
+    #     label.left() + 1,
+    #     label.right() + 1,
+    #     label.strand(),
+    #     label.left() + 1,
+    #     label.right() + 1,
+    #     label.strand(),
+    #     seq_type,
+    #     label.seqname(),
+    #     label.right() if label.strand() == "+" else label.left(),
+    #     label.strand()
+    # )
+
+
 
 
 
@@ -435,13 +498,15 @@ def extract_labeled_sequences(sequences, labels, **kwargs):
 
     for i, label in enumerate(labels):
         labeled_sequence = extract_labeled_sequence(label, sequences, **kwargs)
+        lorf_nt = extract_labeled_sequence(label, sequences, lorf=True, **kwargs)
+        offset = len(lorf_nt) - (label.right() - label.left() + 1)
 
         fasta_header = str(i)
         if func_fasta_header_creator is not None:
             if kwargs_fasta_header_creator is not None:
-                fasta_header = func_fasta_header_creator(label, **kwargs_fasta_header_creator)
+                fasta_header = func_fasta_header_creator(label, offset=offset, lorf_nt=lorf_nt, **kwargs_fasta_header_creator)
             else:
-                fasta_header = func_fasta_header_creator(label)
+                fasta_header = func_fasta_header_creator(label, offset=offset, lorf_nt=lorf_nt)
 
         dict_labeled_sequences[fasta_header] = labeled_sequence
 
@@ -497,13 +562,12 @@ def dict_intersection_by_key(dict_a, dict_b):
     remove_keys_from_dict(dict_b, keys_b_unique)
 
 
-def extract_labeled_sequences_for_genomes(env, gil, pf_nt, pf_aa, **kwargs):
-    # type: (Environment, GenomeInfoList, str, str, Dict[str, Any]) -> None
+def extract_labeled_sequences_for_genomes(env, gil, pf_output, **kwargs):
+    # type: (Environment, GenomeInfoList, str, Dict[str, Any]) -> None
 
     # open file for writing
     try:
-        f_nt = open(pf_nt, "w")
-        f_aa = open(pf_aa, "w")
+        f_aa = open(pf_output, "w")
 
         for gi in gil:
             func_fasta_header_creator = pack_fasta_header
@@ -520,10 +584,9 @@ def extract_labeled_sequences_for_genomes(env, gil, pf_nt, pf_aa, **kwargs):
             # only keep sequences that have been translated
             dict_intersection_by_key(sequences_nt, sequences_aa)
 
-            append_sequences_to_file(sequences_nt, f_nt)
             append_sequences_to_file(sequences_aa, f_aa)
     except OSError:
-        log.warning("Could not open files for writing sequences:\n{}\n{}".format(pf_nt, pf_aa))
+        log.warning("Could not open file for writing sequences:\n{}".format(pf_output))
 
 
 def run_blast_on_sequences(env, pf_q_aa, pf_db, pf_blast_output, **kwargs):
@@ -556,8 +619,8 @@ def get_orthologs_from_files(env, pf_q_list, pf_t_list, pf_output, **kwargs):
             "ignore_partial": True
             }
 
-    extract_labeled_sequences_for_genomes(env, q_gil, pf_q_nt, pf_q_aa, fn_labels=fn_q_labels, **custom, **kwargs)
-    extract_labeled_sequences_for_genomes(env, t_gil, pf_t_nt, pf_t_aa, fn_labels=fn_t_labels, **custom, **kwargs)
+    extract_labeled_sequences_for_genomes(env, q_gil, pf_q_aa, fn_labels=fn_q_labels, **custom, **kwargs)
+    extract_labeled_sequences_for_genomes(env, t_gil, pf_t_aa, fn_labels=fn_t_labels, **custom, **kwargs)
 
     pf_blast_db = os.path.join(pd_work, "blast.db")
     create_blast_database(pf_t_aa, pf_blast_db, seq_type="prot", use_diamond=True)      # FIXME: cleanup

@@ -77,8 +77,7 @@ def main(env, args):
 
     output = pbs.run(
         data={"gil": gil,
-              "pf_aa_template": os.path.join(pbs_options["pd-head"], "sequences_{}.faa"),
-              "pf_nt_template": os.path.join(pbs_options["pd-head"], "sequences_{}.fnt")},
+              "pf_output_template": os.path.join(pbs_options["pd-head"], "sequences_{}.faa")},
         func=extract_labeled_sequences_for_genomes,
         func_kwargs={
             "env": env,

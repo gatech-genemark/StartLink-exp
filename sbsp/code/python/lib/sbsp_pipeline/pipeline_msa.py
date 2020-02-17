@@ -4,7 +4,7 @@ from shutil import copyfile
 from typing import *
 
 from sbsp_alg.sbsp_steps import sbsp_step_get_orthologs, sbsp_step_compute_features, sbsp_step_filter, sbsp_step_msa, \
-    sbsp_step_accuracy
+    sbsp_step_accuracy, sbsp_steps
 from sbsp_general import Environment
 from sbsp_io.general import read_rows_to_list
 from sbsp_options.msa import MSAOptions
@@ -45,24 +45,12 @@ class PipelineMSA:
         copyfile(self.pipeline_options["pf-q-list"], os.path.join(self.env["pd-work"], "query.list"))
 
         curr_time = timeit.default_timer()
-        state = self._run_get_orthologs()
-        elapsed_times["1-orthologs"] = timeit.default_timer() - curr_time
-
-        # curr_time = timeit.default_timer()
-        # state = self._run_compute_features(state)
-        # elapsed_times["2-features"] = timeit.default_timer() - curr_time
-
-        curr_time = timeit.default_timer()
-        state = self._run_filter(state)
-        elapsed_times["3-filter"] = timeit.default_timer() - curr_time
-
-        curr_time = timeit.default_timer()
-        state = self._run_msa(state)
-        elapsed_times["4-msa"] = timeit.default_timer() - curr_time
+        state = self._run_helper()
+        elapsed_times["1-compute-steps"] = timeit.default_timer() - curr_time
 
         curr_time = timeit.default_timer()
         state = self._accuracy(state)
-        elapsed_times["5-accuracy"] = timeit.default_timer() - curr_time
+        elapsed_times["2-accuracy"] = timeit.default_timer() - curr_time
 
         time_string = "\n".join([
                 "{},{}".format(key, value) for key, value in elapsed_times.items()
@@ -115,5 +103,14 @@ class PipelineMSA:
             "pd-work": os.path.join(self.env["pd-work"], "accuracy")
         })
         result = sbsp_step_accuracy(curr_env, self.pipeline_options, state.list_pf_data)
+
+        return PipelineMSA.PipelineState(result)
+
+    def _run_helper(self, state):
+        # type: (PipelineState) -> PipelineState
+        curr_env = self.env.duplicate({
+            "pd-work": os.path.join(self.env["pd-work"], "steps")
+        })
+        result = sbsp_steps(curr_env, self.pipeline_options, state.list_pf_data)
 
         return PipelineMSA.PipelineState(result)

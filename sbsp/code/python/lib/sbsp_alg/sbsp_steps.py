@@ -10,11 +10,12 @@ from sbsp_alg.msa import run_sbsp_msa, get_files_per_key, run_sbsp_msa_from_mult
     run_sbsp_msa_from_multiple_for_multiple_queries
 from sbsp_io.general import mkdir_p
 from sbsp_general.general import get_value
-from sbsp_alg.ortholog_finder import get_orthologs_from_files
+from sbsp_alg.ortholog_finder import get_orthologs_from_files, extract_labeled_sequences_for_genomes
 from sbsp_alg.sbsp_compute_accuracy import pipeline_step_compute_accuracy, separate_msa_outputs_by_stats
 from sbsp_general import Environment
 from sbsp_io.general import read_rows_to_list
 from sbsp_io.msa_2 import add_true_starts_to_msa_output
+from sbsp_io.sequences import read_fasta_into_hash
 from sbsp_options.pbs import PBSOptions
 from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
 from sbsp_parallelization.pbs import PBS
@@ -250,6 +251,75 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
 
             output = pbs.run(
                 data={"q3prime_to_list_pf": q3prime_to_list_pf,
+                      "pf_output_template": os.path.join(pbs_options["pd-head"],
+                                                         pipeline_options["fn-msa"] + "_{}")},
+                func=run_sbsp_msa_from_multiple_for_multiple_queries,
+                func_kwargs={
+                    "env": env,
+                    "msa_options": pipeline_options["msa-options"],
+                    "clean": True,
+                    "pd_msa_final": pd_msa
+                }
+            )
+
+
+            # output = pbs.run(
+            #     data={"list_pf_data": list_pf_previous, "group_key": "q-3prime",
+            #           "pf_output_template": os.path.join(pbs_options["pd-head"],
+            #                                              pipeline_options["fn-msa"] + "_{}")},
+            #     func=run_sbsp_msa,
+            #     func_kwargs={
+            #         "env": env,
+            #         "msa_options": pipeline_options["msa-options"]
+            #     }
+            # )
+        else:
+            # read data from file
+            list_pf_output_packages = read_rows_to_list(os.path.join(env["pd-work"], "pbs-summary.txt"))
+            output = pbs.merge_output_package_files(list_pf_output_packages)
+
+    return output
+
+
+def sbsp_steps(env, pipeline_options, list_pf_previous):
+    # type: (Environment, PipelineSBSPOptions, List[str]) -> Dict[str, Any]
+    """
+    Given a list of query and target genomes, find the set of related genes
+    for each query
+    """
+
+    log.debug("Running: sbsp steps")
+
+    output = {
+        "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
+    }
+
+    # read input sequences
+    q_gil = GenomeInfoList.init_from_file(pipeline_options["pf-q-list"])
+
+    pf_aa = os.path.join(env["pd-work"], "query.faa")
+    extract_labeled_sequences_for_genomes(env, q_gil, pf_aa)
+    q_sequences = read_fasta_into_hash(pf_aa)
+
+    if pipeline_options.use_pbs():
+        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"], keep_on_head=False)
+
+        if pbs_options.safe_get("pd-data-compute"):
+            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
+
+        pbs = PBS(env, pbs_options,
+                  splitter=split_labels,
+                  merger=merge_identity
+                  )
+
+        if pipeline_options.perform_step("build-msa"):
+
+            pd_msa = os.path.join(pbs_options["pd-head"], "msa")
+            mkdir_p(pd_msa)
+
+
+            output = pbs.run(
+                data={"sequences": q_sequences,
                       "pf_output_template": os.path.join(pbs_options["pd-head"],
                                                          pipeline_options["fn-msa"] + "_{}")},
                 func=run_sbsp_msa_from_multiple_for_multiple_queries,
