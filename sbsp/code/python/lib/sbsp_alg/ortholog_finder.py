@@ -592,19 +592,21 @@ def extract_labeled_sequences_for_genomes(env, gil, pf_output, **kwargs):
         for gi in gil:
             func_fasta_header_creator = pack_fasta_header
             kwargs_fasta_header_creator = {"gi": gi}
+            try:
+                sequences_nt = extract_labeled_sequences_for_genome(
+                    env, gi,
+                    func_fhc=func_fasta_header_creator,
+                    kwargs_fhc=kwargs_fasta_header_creator,
+                    **kwargs
+                )
+                sequences_aa = translate_sequences_to_aa(sequences_nt)
 
-            sequences_nt = extract_labeled_sequences_for_genome(
-                env, gi,
-                func_fhc=func_fasta_header_creator,
-                kwargs_fhc=kwargs_fasta_header_creator,
-                **kwargs
-            )
-            sequences_aa = translate_sequences_to_aa(sequences_nt)
+                # only keep sequences that have been translated
+                dict_intersection_by_key(sequences_nt, sequences_aa)
 
-            # only keep sequences that have been translated
-            dict_intersection_by_key(sequences_nt, sequences_aa)
-
-            append_sequences_to_file(sequences_aa, f_aa)
+                append_sequences_to_file(sequences_aa, f_aa)
+            except IOError:
+                pass
     except OSError:
         log.warning("Could not open file for writing sequences:\n{}".format(pf_output))
 
