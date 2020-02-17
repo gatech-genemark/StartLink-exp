@@ -30,6 +30,7 @@ parser = argparse.ArgumentParser("Description of driver.")
 
 parser.add_argument('--pf-data', required=True, help="CSV data file")
 
+parser.add_argument('--fn-prefix', required=False, help="Prefix to add to all generated files")
 parser.add_argument('--ext', required=False, default="png", choices=["png", "pdf"], help="Extension for image files")
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -56,14 +57,15 @@ logger = logging.getLogger("logger")  # type: logging.Logger
 def compare_distance_local_vs_global(env, df, **kwargs):
     # type: (Environment, pd.DataFrame, Dict[str, Any]) -> None
     pd_work = env["pd-work"]
-    ext= get_value(kwargs, "extension", "png")
+    ext = get_value(kwargs, "extension", "png")
+    fn_prefix = get_value(kwargs, "fn_prefix", "", default_if_none=True)
 
-    pf_distance = os.path.join(pd_work, "distance_local_vs_global.{}".format(ext))
-    pf_alignment_length = os.path.join(pd_work, "alignment_length_local_vs_global.{}".format(ext))
-    pf_ungapped_alignment_length = os.path.join(pd_work, "ungapped_alignment_length_local_vs_global.{}".format(ext))
+    pf_distance = os.path.join(pd_work, "{}distance_local_vs_global.{}".format(fn_prefix, ext))
+    pf_alignment_length = os.path.join(pd_work, "{}alignment_length_local_vs_global.{}".format(fn_prefix, ext))
+    pf_ungapped_alignment_length = os.path.join(pd_work, "{}ungapped_alignment_length_local_vs_global.{}".format(fn_prefix, ext))
 
-    pf_diff_distance_vs_ratio_length = os.path.join(pd_work, "diff_distance_vs_ratio_length.{}".format(ext))
-    pf_diff_distance_vs_ratio_ungapped_length = os.path.join(pd_work, "diff_distance_vs_ratio_ungapped_length.{}".format(ext))
+    pf_diff_distance_vs_ratio_length = os.path.join(pd_work, "{}diff_distance_vs_ratio_length.{}".format(fn_prefix, ext))
+    pf_diff_distance_vs_ratio_ungapped_length = os.path.join(pd_work, "{}diff_distance_vs_ratio_ungapped_length.{}".format(fn_prefix, ext))
 
     # compare kimura local vs global
     scatter(df, "global_distance", "local_distance", figure_options=FigureOptions(
@@ -121,7 +123,7 @@ def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
 
     df = pd.read_csv(args.pf_data)
-    compare_distance_local_vs_global(env, df, ext=args.ext)
+    compare_distance_local_vs_global(env, df, ext=args.ext, fn_prefix=args.fn_prefix)
 
 
 if __name__ == "__main__":

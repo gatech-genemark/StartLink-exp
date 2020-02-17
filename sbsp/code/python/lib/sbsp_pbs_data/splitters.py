@@ -57,7 +57,9 @@ def split_genome_info_list(data, num_splits, pd_work, **kwargs):
     if num_splits > len(genome_info_list):
         num_splits = len(genome_info_list)
 
-    list_of_list_of_gi = [[]] * num_splits
+    list_of_list_of_gi = list()
+    for i in range(num_splits):
+        list_of_list_of_gi.append(list())
 
     for index, gi in enumerate(genome_info_list):
 
