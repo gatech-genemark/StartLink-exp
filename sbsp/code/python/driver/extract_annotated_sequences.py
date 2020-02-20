@@ -85,14 +85,19 @@ def main(env, args):
         func_kwargs={
             "env": env,
             "fn_labels": "ncbi.gff",
+            "reverse_complement": True,
+            "ignore_frameshifted": True,
+            "ignore_partial": True
         }
     )
 
     with open(args.pf_output, "w") as f_output:
 
         for pf_tmp in output:
+            if pf_tmp is None or not os.path.isfile(pf_tmp):
+                continue
 
-            sequences = read_fasta_into_hash(pf_tmp)
+            sequences = read_fasta_into_hash(pf_tmp, stop_at_first_space=False)
 
             for k, v in sequences.items():
                 f_output.write(">{}\n{}\n".format(k, v))

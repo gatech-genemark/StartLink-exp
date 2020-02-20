@@ -12,12 +12,19 @@ from sbsp_general.general import create_gene_key
 from sbsp_io.general import write_string_to_file
 
 
-def read_fasta_into_hash(fnsequences):
+def read_fasta_into_hash(fnsequences, stop_at_first_space=True):
     # type: (str) -> dict[str, Bio.Seq.Seq]
     # read all sequences
     sequences = {}  # will contain all protein sequences from file
-    for record in SeqIO.parse(fnsequences, "fasta"):
-        sequences[record.name.strip().split()[0]] = record.seq
+    try:
+        for record in SeqIO.parse(fnsequences, "fasta"):
+            if stop_at_first_space:
+                sequences[record.name.strip().split()[0]] = record.seq
+            else:
+                sequences[record.description.strip()] = record.seq
+
+    except Exception:
+        pass
 
     return sequences
 

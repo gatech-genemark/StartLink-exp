@@ -645,6 +645,8 @@ def extract_labeled_sequences_for_genomes(env, gil, pf_output, **kwargs):
     except OSError:
         log.warning("Could not open file for writing sequences:\n{}".format(pf_output))
 
+    return pf_output
+
 
 def run_blast_on_sequences(env, pf_q_aa, pf_db, pf_blast_output, **kwargs):
     # type: (Environment, str, str, str, Dict[str, Any]) -> None
