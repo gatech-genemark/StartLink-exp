@@ -84,7 +84,7 @@ def main(env, args):
 
     pipeline_options = PipelineSBSPOptions(env,
                                            pf_q_list=args.pf_q_list,
-                                           pf_t_list=args.pf_t_list,        # TODO remove
+                                           # pf_t_list=args.pf_t_list,        # TODO remove
                                            pf_t_db=args.pf_t_db,
                                            pf_output=args.pf_output,
                                            msa_options=msa_options,

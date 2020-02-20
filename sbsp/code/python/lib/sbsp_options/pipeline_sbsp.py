@@ -32,7 +32,7 @@ class PipelineSBSPOptions(Options):
             # output files for sbsp steps
             "fn-orthologs", "fn-compute-features", "fn-filter", "fn-msa", "fn-accuracy", "pf-output",
             # input files
-            "pf-q-list", "pf-t-list", "fn-q-labels", "fn-t-labels"
+            "pf-q-list", "pf-t-db", "fn-q-labels"
         }
 
     def use_pbs(self):

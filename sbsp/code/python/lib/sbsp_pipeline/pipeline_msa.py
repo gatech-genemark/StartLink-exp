@@ -118,11 +118,11 @@ class PipelineMSA:
 
         return PipelineMSA.PipelineState(result)
 
-    def _run_helper(self, state):
-        # type: (PipelineState) -> PipelineState
+    def _run_helper(self, ):
+        # type: () -> PipelineState
         curr_env = self.env.duplicate({
             "pd-work": os.path.join(self.env["pd-work"], "steps")
         })
-        result = sbsp_steps(curr_env, self.pipeline_options, state.list_pf_data)
+        result = sbsp_steps(curr_env, self.pipeline_options)
 
         return PipelineMSA.PipelineState(result)
