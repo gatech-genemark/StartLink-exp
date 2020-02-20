@@ -2116,11 +2116,6 @@ def perform_msa_on_df(env, df, **kwargs):
     msa_output_start = get_value(kwargs, "msa_output_start", 0)
     dn_msa_output = get_value(kwargs, "dn_msa_output", None)
     column_k2p_distance = get_value(kwargs, "k2p_distance", "k2p-distance")
-    suffix_coordinates = get_value(kwargs, "suffix_coordinates", None)
-    tag_msa = get_value(kwargs, "tag_msa", "msa")
-
-    upstream_length_nt = get_value(kwargs, "upstream_length_nt", None)
-    downstream_length_nt = get_value(kwargs, "downstream_length_nt", None)
 
     logger.info("Performing msa on df with parameters:\n{}".format(msa_options.to_string()))
 
@@ -2132,24 +2127,11 @@ def perform_msa_on_df(env, df, **kwargs):
 
     filter_stats = {x: 0 for x in msa_options.option_names() if x.startswith("filter")}
 
-    # sbsp_general.general.df_add_5prime_3prime_key(df, "q-")
+    sbsp_general.general.df_add_5prime_3prime_key(df, "q-")
     #
     # Step 1: Filter data points
     logger.debug("Pipeline Step 1: Filter")
     df = filter_df(df, msa_options, column_distance=column_k2p_distance, filter_stats=filter_stats, filter_non_group_only=False )
-
-    limit_upstream_to_first_candidate = msa_options.safe_get("search-limit-upstream-to-first-candidate")
-
-
-    # Step 2: Add sequences for each data point (to perform alignment on)
-    logger.debug("Pipeline Step 2: Add sequences for each genome")
-    df = sbsp_general.dataframe.df_add_labeled_sequences(env, df,
-                                                         source="both",
-                                                         suffix_coordinates=suffix_coordinates,
-                                                         suffix_gene_sequence=tag_msa,
-                                                         upstream_length_nt=upstream_length_nt,
-                                                         downstream_length_nt=downstream_length_nt,
-                                                         limit_upstream_to_first_candidate=limit_upstream_to_first_candidate)
 
     # Step 3: Perform MSA on each ortholog group
     logger.debug("Pipeline Step 3: Perform MSA on each ortholog group")

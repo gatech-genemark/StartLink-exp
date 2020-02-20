@@ -31,7 +31,7 @@ from sbsp_pipeline.pipeline_msa import PipelineMSA
 parser = argparse.ArgumentParser("Description of driver.")
 
 parser.add_argument('--pf-q-list', required=True, help="File containing names of query genomes")
-parser.add_argument('--pf-t-list', required=True, help="File containing names of target genomes")
+parser.add_argument('--pf-t-db', required=True, help="(Diamond) Blast database")
 parser.add_argument('--pf-output', required=True, help="Output file containing query-target information used by SBSP")
 
 parser.add_argument('--fn-q-labels', default="ncbi.gff", required=False, type=Union[str],
@@ -84,7 +84,8 @@ def main(env, args):
 
     pipeline_options = PipelineSBSPOptions(env,
                                            pf_q_list=args.pf_q_list,
-                                           pf_t_list=args.pf_t_list,
+                                           pf_t_list=args.pf_t_list,        # TODO remove
+                                           pf_t_db=args.pf_t_db,
                                            pf_output=args.pf_output,
                                            msa_options=msa_options,
                                            fn_q_labels=args.fn_q_labels,

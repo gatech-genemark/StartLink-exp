@@ -46,6 +46,29 @@ def split_list(data, num_splits, pd_work, **kwargs):
 
     return list_splits
 
+def split_dict(data, num_splits, pd_work, **kwargs):
+    # type: (Dict[str, Any], int, str, Dict[str, Any]) -> List[Dict[str, Any]]
+
+    a_dict = data["dict"]       # type: Dict[str, Any]
+    pf_output_template = data["pf_output_template"]
+
+    list_splits = list()
+    num_splits = min(num_splits, len(a_dict))
+    for i in range(num_splits):
+        list_splits.append(dict())
+        list_splits[-1]["data"] = dict()
+
+    index = 0
+
+    for k, v in a_dict.items():
+        list_splits[index % num_splits]["data"][k] = v
+
+    for split_number in range(1, len(list_splits)+1):
+        list_splits[split_number-1]["pf_output"] = pf_output_template.format(split_number)
+        list_splits[split_number-1]["msa_output_start"] = split_number
+
+    return list_splits
+
 
 def split_genome_info_list(data, num_splits, pd_work, **kwargs):
     # type: (Dict[str, Any], int, str, Dict[str, Any]) -> List[Dict[str, Any]]

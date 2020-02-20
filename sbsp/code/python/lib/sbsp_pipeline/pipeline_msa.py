@@ -44,13 +44,25 @@ class PipelineMSA:
         # Copy Information file to local directory
         copyfile(self.pipeline_options["pf-q-list"], os.path.join(self.env["pd-work"], "query.list"))
 
+        # curr_time = timeit.default_timer()
+        # state = self._run_get_orthologs()
+        # elapsed_times["1-orthologs"] = timeit.default_timer() - curr_time
+        #
+        # curr_time = timeit.default_timer()
+        # state = self._run_filter(state)
+        # elapsed_times["2-filter"] = timeit.default_timer() - curr_time
+        #
+        # curr_time = timeit.default_timer()
+        # state = self._run_msa(state)
+        # elapsed_times["3-msa"] = timeit.default_timer() - curr_time
+
         curr_time = timeit.default_timer()
         state = self._run_helper()
         elapsed_times["1-compute-steps"] = timeit.default_timer() - curr_time
 
         curr_time = timeit.default_timer()
         state = self._accuracy(state)
-        elapsed_times["2-accuracy"] = timeit.default_timer() - curr_time
+        elapsed_times["4-accuracy"] = timeit.default_timer() - curr_time
 
         time_string = "\n".join([
                 "{},{}".format(key, value) for key, value in elapsed_times.items()

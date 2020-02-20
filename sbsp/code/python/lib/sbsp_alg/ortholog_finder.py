@@ -1,5 +1,7 @@
 import os
 import logging
+import re
+
 import numpy as np
 from typing import *
 
@@ -74,6 +76,65 @@ def get_orthologs_from_files_deprecated(env, pf_q_list, pf_t_list, pf_output, **
             pass
 
     return pf_output
+
+def pack_fasta_header(label, gi, **kwargs):
+    # type: (Label, GenomeInfo, Dict[str, Any]) -> str
+
+    gc = get_value(kwargs, "gc", 0)
+    seq_type = get_value(kwargs, "seq_type", "")
+    lorf_nt = get_value(kwargs, "lorf_nt", "")
+    offset = get_value(kwargs, "offset", 0)
+
+
+    return "{} accession={};genome={};gc={};left={};right={};strand={};lorf_nt={};offset={}".format(
+        label.seqname(),
+        label.seqname(),
+        gi.name,
+        gc,
+        label.left() + 1,
+        label.right() + 1,
+        label.strand(),
+        lorf_nt,
+        offset,
+    )
+
+
+
+def unpack_fasta_header(header):
+    # type: (str) -> Dict[str, Any]
+
+    fields = {}
+
+    def get_key_value_from_definition_line(key, l_defline):
+        m = re.match("[;^]" + str(key) + "=([^;]*)", l_defline)
+
+        if m:
+            return m.group(1)
+
+        raise ValueError("Key " + str(key) + " not in definition line")
+
+    # remove first accession
+    header = header.strip().split()[1:]
+
+    # get all keys in string
+    keys = re.findall(r"[;^]([^=]+)=", header)
+
+    type_mapper = {
+        "left": int,
+        "right": int,
+        "gc": float,
+        "offset": int
+    }
+
+    # for each key, get value
+    for k in keys:
+        fields[k] = get_key_value_from_definition_line(k, header)
+
+        if k in type_mapper.keys():
+            fields[k] = type_mapper[k](fields[k])
+
+    return fields
+
 
 
 def select_representative_hsp(alignment, hsp_criteria):
@@ -164,15 +225,6 @@ def create_info_for_query_target_pair(query_info, target_info, hsp, **kwargs):
 
     return output
 
-
-def unpack_fasta_header(header):
-    # type: (str) -> Dict[str, Any]
-    import sbsp_general.general
-    output = sbsp_general.general.expand_definition_line(header)
-    output["def"] = header
-
-    output["genome"] = sbsp_general.general.get_genome_name_from_defition_line(header)
-    return output
 
 
 def compute_distance_based_on_global_alignment_from_sequences(q_sequence, t_sequence, q_sequence_nt, t_sequence_nt, matrix):
@@ -467,26 +519,7 @@ def extract_labeled_sequence(label, sequences, **kwargs):
     return frag
 
 
-def pack_fasta_header(label, gi, **kwargs):
-    # type: (Label, GenomeInfo, Dict[str, Any]) -> str
 
-    gc = get_value(kwargs, "gc", 0)
-    seq_type = get_value(kwargs, "seq_type", "")
-    lorf_nt = get_value(kwargs, "lorf_nt", "")
-    offset = get_value(kwargs, "offset", 0)
-
-
-    return "{} accession={};genome={};gc={};left={};right={};strand={};lorf_nt={};offset={}".format(
-        label.seqname(),
-        label.seqname(),
-        gi.name,
-        gc,
-        label.left() + 1,
-        label.right() + 1,
-        label.strand(),
-        lorf_nt,
-        offset,
-    )
 
     # return "{}:tag={};11;:gc={}:pos={};{};{}:cds={};{};{}:type={}:key={};{};{}".format(
     #     label.seqname(),
