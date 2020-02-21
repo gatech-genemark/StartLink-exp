@@ -2103,6 +2103,7 @@ def perform_msa_on_df(env, df, **kwargs):
 
     msa_options = get_value(kwargs, "msa_options", MSAOptions(env))
     msa_output_start = get_value(kwargs, "msa_output_start", 0)
+    msa_number = get_value(kwargs, "msa_number", 0)
     dn_msa_output = get_value(kwargs, "dn_msa_output", None)
     column_k2p_distance = get_value(kwargs, "k2p_distance", "distance")
 
@@ -2136,7 +2137,7 @@ def perform_msa_on_df(env, df, **kwargs):
     # get all file labels in order to compute
 
     # for each ortholog group
-    msa_number = 0
+
     for name, df_group in df.groupby("q-5prime-3prime"):
 
         # if name == "Escherichia_coli_K_12_substr__MG1655_uid57779;NC_000913;2080789;2081262;-":
