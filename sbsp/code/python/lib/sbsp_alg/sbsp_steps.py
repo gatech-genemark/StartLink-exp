@@ -320,6 +320,9 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
     run_blast_on_sequences(env, pf_q_sequences, pf_t_db, pf_blast_output, sbsp_options=msa_options)
     elapsed_times["1-blastp"] = timeit.default_timer() - curr_time
 
+    if not os.path.isfile(pf_blast_output):
+        return pf_output
+
     # open blast stream
     try:
         f_blast_results = open(pf_blast_output, "r")
