@@ -62,6 +62,7 @@ def split_dict(data, num_splits, pd_work, **kwargs):
 
     for k, v in a_dict.items():
         list_splits[index % num_splits]["data"][k] = v
+        index += 1
 
     for split_number in range(1, len(list_splits)+1):
         list_splits[split_number-1]["pf_output"] = pf_output_template.format(split_number)
