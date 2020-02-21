@@ -8,13 +8,13 @@ from sbsp_options.options import Options
 class PipelineSBSPOptions(Options):
     """Options for SBSP pipeline"""
 
-    def __init__(self, env, pf_q_list, pf_t_list, pf_output, msa_options, pf_options_custom=None, **kwargs):
+    def __init__(self, env, pf_q_list, pf_t_db, pf_output, msa_options, pf_options_custom=None, **kwargs):
         # type: (Environment, str, str, str, MSAOptions, str, Dict[str, Any]) -> None
         super(PipelineSBSPOptions, self).__init__(env, pf_options_custom,
                                                   msa_options=msa_options,
                                                   pf_output=pf_output,
                                                   pf_q_list=pf_q_list,
-                                                  pf_t_list=pf_t_list,
+                                                  pf_t_db=pf_t_db,
                                                   **kwargs)
 
     def perform_step(self, step):

@@ -106,7 +106,7 @@ def unpack_fasta_header(header):
     fields = {}
 
     def get_key_value_from_definition_line(key, l_defline):
-        m = re.match("[;^]" + str(key) + "=([^;]*)", l_defline)
+        m = re.match(".*(?:^|;)" + str(key) + "=([^;]*)", l_defline)
 
         if m:
             return m.group(1)
@@ -114,10 +114,10 @@ def unpack_fasta_header(header):
         raise ValueError("Key " + str(key) + " not in definition line")
 
     # remove first accession
-    header = header.strip().split()[1:]
+    header = header.strip().split(maxsplit=1)[1]
 
     # get all keys in string
-    keys = re.findall(r"[;^]([^=]+)=", header)
+    keys = re.findall(r"([^;=]+)=", header)
 
     type_mapper = {
         "left": int,
@@ -220,7 +220,7 @@ def create_info_for_query_target_pair(query_info, target_info, hsp, **kwargs):
     source_to_info = {"q": query_info, "t": target_info}
     for source in ["q", "t"]:
 
-        for key in ["genome", "accession", "def", "gc", "gcode", "left", "right", "strand", "type"]:
+        for key in ["genome", "accession", "gc", "left", "right", "strand"]:
             output["{}-{}".format(source, key)] = source_to_info[source][key]
 
     return output

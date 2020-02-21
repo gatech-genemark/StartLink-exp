@@ -64,7 +64,7 @@ def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
 
     labels_gms2 = read_labels_from_file(pf_gms2, name="GMS2")
     labels_sbsp = read_labels_from_file(pf_sbsp, name="SBSP")
-    labels_ncbi = read_labels_from_file(pf_ncbi, name="NCBI")
+    labels_ncbi = read_labels_from_file(pf_ncbi, name="Prodigal")
 
     lcd = LabelsComparisonDetailed(labels_gms2, labels_sbsp,
                                    name_a="gms2",
@@ -74,7 +74,7 @@ def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
 
     lcd_2 = LabelsComparisonDetailed(labels_gms2_sbsp_3p_5p, labels_ncbi,
                                      name_a="gms2_sbsp",
-                                     name_b="ncbi")
+                                     name_b="prodigal")
 
     labels_gms2_sbsp_ncbi_3p_5p = lcd_2.intersection("a")
 
@@ -86,9 +86,9 @@ def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
     return {
         "GMS2": len(labels_gms2),
         "SBSP": len(labels_sbsp),
-        "NCBI": len(labels_ncbi),
+        "Prodigal": len(labels_ncbi),
         "GMS2=SBSP": len(labels_gms2_sbsp_3p_5p),
-        "GMS2=SBSP=NCBI": len(labels_gms2_sbsp_ncbi_3p_5p)
+        "GMS2=SBSP=Prodigal": len(labels_gms2_sbsp_ncbi_3p_5p)
     }
 
 
@@ -99,6 +99,7 @@ def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output
         pd_genome = os.path.join(env["pd-data"], gi.name)
         pf_gms2 = os.path.join(pd_genome, "runs", "gms2", "gms2.gff")
         pf_sbsp = os.path.join(gcfid_to_pd_sbsp[gi.name], "accuracy", "{}.gff".format(gi.name))
+        #pf_ncbi = os.path.join(pd_genome, "runs", "prodigal", "prodigal.gff")
         pf_ncbi = os.path.join(pd_genome, "ncbi.gff")
 
         name = gi.attributes["name"] if "name" in gi.attributes else gi.name
@@ -116,7 +117,7 @@ def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output
 
     if len(list_summary) > 0:
 
-        ordered_header = ["GCFID", "Name", "Ancestor", "GMS2", "SBSP", "NCBI", "GMS2=SBSP", "GMS2=SBSP=NCBI"]
+        ordered_header = ["GCFID", "Name", "Ancestor", "GMS2", "SBSP", "Prodigal", "GMS2=SBSP", "GMS2=SBSP=Prodigal"]
         remaining_header = sorted(
             set(list_summary[0].keys()).difference(ordered_header)
         )

@@ -1120,8 +1120,6 @@ def filter_df(df, msa_options, **kwargs):
 
     if filter_stats is not None:
         filter_stats["filter-frame-shifted"] = before - after
-    else:
-        logger.critical("Filter ({}): {} - {} = {}".format("frame-shifted", before, after, before - after))
 
 
     # max distance
@@ -1151,8 +1149,6 @@ def filter_df(df, msa_options, **kwargs):
 
             if filter_stats is not None:
                 filter_stats["filter-min-distance"] = before - after
-            else:
-                logger.critical("Filter ({}): {} - {} = {}".format("filter-min-distance", before, after, before - after))
 
     # equal distances
     if len(df) > 0 and msa_options["filter-orthologs-with-equal-kimura"] is not None and column_distance in df.columns.values:
@@ -1173,8 +1169,6 @@ def filter_df(df, msa_options, **kwargs):
 
         if filter_stats is not None:
             filter_stats["filter-orthologs-with-equal-kimura"] = before - after
-        else:
-            logger.critical("Filter ({}): {} - {} = {}".format("filter-orthologs-with-equal-kimura", before, after, before - after))
 
     if len(df) > 0 and msa_options["filter-max-number-orthologs"] is not None and not filter_non_group_only:
 
@@ -1203,9 +1197,6 @@ def filter_df(df, msa_options, **kwargs):
         after = len(df)
         if filter_stats is not None:
             filter_stats["filter-max-number-orthologs"] = before - after
-        else:
-            logger.critical(
-                "Filter ({}): {} - {} = {}".format("filter-max-number-orthologs", before, after, before - after))
 
     # if len(df) > 0:
     #     sbsp_general.general.df_add_3prime_key(df, "q-")
@@ -1706,7 +1697,7 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
     # type: (Dict[str, Any], pd.DataFrame, MSAOptions, Dict[str, Any]) -> (pd.DataFrame, sbsp_general.labels.Label)
 
     order_by = get_value(kwargs, "order_by", None)
-    column_k2p_distance = get_value(kwargs, "k2p_distance", "k2p-distance")
+    column_k2p_distance = get_value(kwargs, "k2p_distance", "distance")
     ortholog_group_id = get_value(kwargs, "ortholog_group_id", 0)
     pf_msa_out = get_value(kwargs, "pf_msa_out", None)
     suffix_fname = get_value(kwargs, "suffix_fname", None)
@@ -1722,8 +1713,6 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
     column_q_pos_5_prime_msa = "q-prot-pos-5prime-in-frag-msa"
     column_t_pos_5_prime_msa = "t-prot-pos-5prime-in-frag-msa"
 
-    if msa_options.safe_get("column-distance"):
-        column_k2p_distance = msa_options.safe_get("column-distance")
 
     # if labels_info is None:
     #     labels_info = sbsp_general.dataframe.df_get_index_of_label_per_genome(env, df_group, "both")
@@ -2115,12 +2104,12 @@ def perform_msa_on_df(env, df, **kwargs):
     msa_options = get_value(kwargs, "msa_options", MSAOptions(env))
     msa_output_start = get_value(kwargs, "msa_output_start", 0)
     dn_msa_output = get_value(kwargs, "dn_msa_output", None)
-    column_k2p_distance = get_value(kwargs, "k2p_distance", "k2p-distance")
+    column_k2p_distance = get_value(kwargs, "k2p_distance", "distance")
 
     logger.info("Performing msa on df with parameters:\n{}".format(msa_options.to_string()))
 
-    if msa_options.safe_get("column-distance"):
-        column_k2p_distance = msa_options.safe_get("column-distance")
+    #if msa_options.safe_get("column-distance"):
+    #    column_k2p_distance = msa_options.safe_get("column-distance")
 
     # setup directory
     pd_msa_output = setup_directory_for_msa_outputs(env, dn_msa_output)
@@ -2140,6 +2129,9 @@ def perform_msa_on_df(env, df, **kwargs):
     labels_info = None # sbsp_general.dataframe.df_get_index_of_label_per_genome(env, df, "both")
 
     df_result = pd.DataFrame()
+
+    if len(df) == 0:
+        return df_result
 
     # get all file labels in order to compute
 
@@ -2175,7 +2167,7 @@ def perform_msa_on_df(env, df, **kwargs):
 
 
 
-    print_filter_stats(filter_stats)
+    #print_filter_stats(filter_stats)
 
 
     if len(df_result) == 0:

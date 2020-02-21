@@ -292,19 +292,22 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
     return output
 
 
-def run_sbsp_steps(env, sequences, pf_t_db, pf_output, msa_options, **kwargs):
+def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
     # type: (Environment, Dict[str, Seq], str, str, MSAOptions, Dict[str, Any]) -> str
 
+    sequences = data
     tag = get_value(kwargs, "tag", None)
     hsp_criteria = get_value(kwargs, "hsp_criteria", None)
     msa_output_start = get_value(kwargs, "msa_output_start", 0)
     pd_msa_final = get_value(kwargs, "pd_msa_final", env["pd-work"])
-    
+
+    distance_min = 0.001
+    distance_max = 0.5
 
 
     # write sequences to a file
 
-    pf_q_sequences = os.path.join(env["pd-work"], "query_sequences_{}.fasta".format(tag))
+    pf_q_sequences = os.path.join(env["pd-work"], "query_sequences_{}.fasta".format(msa_output_start))
     write_fasta_hash_to_file(sequences, pf_q_sequences)
 
     # run blast
@@ -341,7 +344,7 @@ def run_sbsp_steps(env, sequences, pf_t_db, pf_output, msa_options, **kwargs):
 
             hsp = select_representative_hsp(alignment, hsp_criteria)
 
-            target_info = unpack_fasta_header(alignment.hit_id)
+            target_info = unpack_fasta_header(alignment.title)
 
             # get nucleotide sequence that corresponds to protein
             original_q_nt = Seq(query_info["lorf_nt"][query_info["offset"]:])
@@ -355,14 +358,14 @@ def run_sbsp_steps(env, sequences, pf_t_db, pf_output, msa_options, **kwargs):
             original_q_aa = original_q_nt.translate()
             original_t_aa = original_t_nt.translate()
 
-            global_distance, global_length, global_length_without_gaps = compute_distance_based_on_global_alignment_from_sequences(
-                original_q_aa, original_t_aa, original_q_nt, original_t_nt, matrix
-            )
-            # global_distance = global_length = global_length_without_gaps = 0
+            #global_distance, global_length, global_length_without_gaps = compute_distance_based_on_global_alignment_from_sequences(
+            #    original_q_aa, original_t_aa, original_q_nt, original_t_nt, matrix
+            #)
+            global_distance = global_length = global_length_without_gaps = 0
 
             # FIXME: thresholds should be from input configuration files
-            # if distance > distance_min and distance < distance_max:
-            if True:
+            if distance > distance_min and distance < distance_max:
+            #if True:
 
                 output_info = create_info_for_query_target_pair(
                     query_info, target_info, hsp,
@@ -381,22 +384,27 @@ def run_sbsp_steps(env, sequences, pf_t_db, pf_output, msa_options, **kwargs):
                 # clean up
                 output_info["q-prot-pos-5prime-in-frag-msa"] = query_info["offset"] / 3
                 output_info["q-nucl-pos-5prime-in-frag-msa"] = query_info["offset"]
-                output_info["q-prot-position-of-5prime-in-fragment-no-gaps"] = query_info["offset"] / 3
-                output_info["q-nucl-position-of-5prime-in-fragment-no-gaps"] = query_info["offset"]
+                output_info["q-prot-position-of-5prime-in-msa-fragment-no-gaps"] = query_info["offset"] / 3
+                output_info["q-nucl-position-of-5prime-in-msa-fragment-no-gaps"] = query_info["offset"]
                 output_info["t-prot-pos-5prime-in-frag-msa"] = target_info["offset"] / 3
                 output_info["t-nucl-pos-5prime-in-frag-msa"] = target_info["offset"]
-                output_info["t-prot-position-of-5prime-in-fragment-no-gaps"] = target_info["offset"] / 3
-                output_info["t-nucl-position-of-5prime-in-fragment-no-gaps"] = target_info["offset"]
+                output_info["t-prot-position-of-5prime-in-msa-fragment-no-gaps"] = target_info["offset"] / 3
+                output_info["t-nucl-position-of-5prime-in-msa-fragment-no-gaps"] = target_info["offset"]
 
-                output_info["q-prot-msa"] = Seq(query_info["lorf_nt"]).translate()
-                output_info["t-prot-msa"] = Seq(target_info["lorf_nt"]).translate()
+                output_info["q-prot-msa"] = Seq(query_info["lorf_nt"]).translate()._data
+                output_info["t-prot-msa"] = Seq(target_info["lorf_nt"]).translate()._data
 
-                output_info["q-nucl-msa"] = Seq(query_info["lorf_nt"])
-                output_info["t-nucl-msa"] = Seq(target_info["lorf_nt"])
+                output_info["q-nucl-msa"] = Seq(query_info["lorf_nt"])._data
+                output_info["t-nucl-msa"] = Seq(target_info["lorf_nt"])._data
 
                 list_entries.append(output_info)
 
         # run MSA on remaining targets
+
+        if len(list_entries) == 0:
+            continue
+
+        print("{};{};{};{}".format(query_info["accession"], query_info["left"], query_info["right"], query_info["strand"]))
 
         df_entries = pd.DataFrame(list_entries)
         df_results = perform_msa_on_df(env, df_entries, msa_options=msa_options, msa_output_start=msa_output_start)
@@ -418,7 +426,7 @@ def run_sbsp_steps(env, sequences, pf_t_db, pf_output, msa_options, **kwargs):
     return pf_output
 
 
-def sbsp_steps(env, pipeline_options, list_pf_previous):
+def sbsp_steps(env, pipeline_options):
     # type: (Environment, PipelineSBSPOptions, List[str]) -> Dict[str, Any]
     """
     Given a list of query and target genomes, find the set of related genes
@@ -435,8 +443,8 @@ def sbsp_steps(env, pipeline_options, list_pf_previous):
     q_gil = GenomeInfoList.init_from_file(pipeline_options["pf-q-list"])
 
     pf_aa = os.path.join(env["pd-work"], "query.faa")
-    extract_labeled_sequences_for_genomes(env, q_gil, pf_aa)
-    q_sequences = read_fasta_into_hash(pf_aa)
+    extract_labeled_sequences_for_genomes(env, q_gil, pf_aa, ignore_frameshifted=True, reverse_complement=True, ignore_partial=True )
+    q_sequences = read_fasta_into_hash(pf_aa, stop_at_first_space=False)
 
     if pipeline_options.use_pbs():
         pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"], keep_on_head=False)
@@ -456,7 +464,7 @@ def sbsp_steps(env, pipeline_options, list_pf_previous):
 
 
             output = pbs.run(
-                data={"data": q_sequences,
+                data={"dict": q_sequences,
                       "pf_output_template": os.path.join(pbs_options["pd-head"],
                                                          pipeline_options["fn-msa"] + "_{}")},
                 func=run_sbsp_steps,
