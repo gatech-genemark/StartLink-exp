@@ -1703,6 +1703,7 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
     suffix_fname = get_value(kwargs, "suffix_fname", None)
     labels_info = get_value(kwargs, "labels_info", None)
     filter_stats = get_value(kwargs, "filter_stats", dict())
+    stats = get_value(kwargs, "stats", dict())
 
     column_q_msa_aa = "q-prot-msa"
     column_t_msa_aa = "t-prot-msa"
@@ -1749,8 +1750,7 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
         suffix_fname=suffix_msa_fname
     )
 
-
-
+    stats["num-queries-with-support-before-pairwise-filtering"] += (1 if len(df_group) > 0 else 0)
     if msa_options["filter-by-pairwise-kimura-from-msa"]:
         filtered_list_sequeces_aa_aligned, indices_of_remaining = filter_by_pairwise_kimura_from_msa(
             list_sequences_aa_aligned, msa_options
@@ -1778,6 +1778,9 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
                 suffix_fname=suffix_msa_fname
             )
 
+    stats["num-queries-with-support-after-pairwise-filtering"] += (1 if len(df_group) > 0 else 0)
+
+    stats["num-queries-with-support-before-gaps-filtering"] += (1 if len(df_group) > 0 else 0)
     if msa_options.safe_get("filter-remove-sequences-that-introduce-gaps"):
 
         before_filtering = len(list_sequences_aa_aligned)
@@ -1813,6 +1816,8 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
 
         filter_stats["filter-remove-sequences-that-introduce-gaps"] = before_filtering - len(
             filtered_list_sequeces_aa_aligned)
+
+    stats["num-queries-with-support-after-gaps-filtering"] += (1 if len(df_group) > 0 else 0)
 
     # choose start
     # lower case everything, except
@@ -2106,6 +2111,7 @@ def perform_msa_on_df(env, df, **kwargs):
     msa_number = get_value(kwargs, "msa_number", 0)
     dn_msa_output = get_value(kwargs, "dn_msa_output", None)
     column_k2p_distance = get_value(kwargs, "k2p_distance", "distance")
+    stats = get_value(kwargs, "stats", dict())
 
     logger.info("Performing msa on df with parameters:\n{}".format(msa_options.to_string()))
 
@@ -2156,7 +2162,8 @@ def perform_msa_on_df(env, df, **kwargs):
                                                                 labels_info=labels_info,
                                                                 ortholog_group_id=msa_number,
                                                                 suffix_fname=msa_output_start,
-                                                                filter_stats=filter_stats)
+                                                                filter_stats=filter_stats,
+                                                                stats=stats)
 
         if q_label is not None:
             df_result = df_result.append(df_group_msa)

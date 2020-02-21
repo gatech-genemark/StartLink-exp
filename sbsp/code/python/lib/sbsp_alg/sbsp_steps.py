@@ -306,6 +306,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
     distance_max = 0.5
 
     elapsed_times = dict()
+    stats = dict()
 
 
     # write sequences to a file
@@ -341,6 +342,13 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
     elapsed_times["3-msa-per-query"] = 0
     num_queries = 0
     msa_number = 0
+    stats["num-queries-with-support-before-filtering"] = 0
+    stats["num-queries-with-support-after-filtering"] = 0
+    stats["num-queries-with-support-after-msa"] = 0
+    stats["num-queries-with-support-before-pairwise-filtering"] = 0
+    stats["num-queries-with-support-after-pairwise-filtering"] = 0
+    stats["num-queries-with-support-before-gaps-filtering"] = 0
+    stats["num-queries-with-support-after-gaps-filtering"] = 0
 
     # for each blast query
     for r in records:
@@ -349,6 +357,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
 
         list_entries = list()
         num_queries += 1
+        stats["num-queries-with-support-before-filtering"] += 1
 
         curr_time = timeit.default_timer()
 
@@ -419,13 +428,15 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
         if len(list_entries) == 0:
             continue
 
+        stats["num-queries-with-support-after-filtering"] += 1
+
         print("{};{};{};{}".format(query_info["accession"], query_info["left"], query_info["right"], query_info["strand"]))
 
         curr_time = timeit.default_timer()
 
         df_entries = pd.DataFrame(list_entries)
         df_results = perform_msa_on_df(env, df_entries, msa_options=msa_options, msa_output_start=msa_output_start,
-                                       msa_number=msa_number)
+                                       msa_number=msa_number, stats=stats)
         elapsed_times["3-msa-per-query"] += timeit.default_timer() - curr_time
         msa_number += 1
 
@@ -438,6 +449,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
 
         # write/append result to file
         if df_results is not None and len(df_results) > 0:
+            stats["num-queries-with-support-after-msa"] += 1
             if not os.path.isfile(pf_output):
                 df_results.to_csv(pf_output, index=False)
             else:
@@ -445,6 +457,9 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
 
     for key in sorted(elapsed_times.keys()):
         logging.critical("Timer: {},{}".format(key, elapsed_times[key] / 60))
+
+    for key in sorted(stats.keys()):
+        logging.critical("Stats: {},{}".format(key, stats[key]))
 
     return pf_output
 
