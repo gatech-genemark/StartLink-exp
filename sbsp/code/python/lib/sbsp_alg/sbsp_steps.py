@@ -1,6 +1,7 @@
 import copy
 import os
 import logging
+import timeit
 from typing import *
 
 from Bio.Blast import NCBIXML
@@ -304,6 +305,8 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
     distance_min = 0.001
     distance_max = 0.5
 
+    elapsed_times = dict()
+
 
     # write sequences to a file
 
@@ -311,8 +314,10 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
     write_fasta_hash_to_file(sequences, pf_q_sequences)
 
     # run blast
+    curr_time = timeit.default_timer()
     pf_blast_output = os.path.join(env["pd-work"], "blast_output.xml")
     run_blast_on_sequences(env, pf_q_sequences, pf_t_db, pf_blast_output, sbsp_options=msa_options)
+    elapsed_times["1-blastp"] = timeit.default_timer() - curr_time
 
     if not os.path.isfile(pf_blast_output):
         return pf_output
@@ -335,12 +340,20 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
     records = NCBIXML.parse(f_blast_results)
     header_written = False
 
+    elapsed_times["2-read-filter-per-query"] = 0
+    elapsed_times["3-msa-per-query"] = 0
+    num_queries = 0
+    msa_number = 0
+
     # for each blast query
     for r in records:
 
         query_info = unpack_fasta_header(r.query)
 
         list_entries = list()
+        num_queries += 1
+
+        curr_time = timeit.default_timer()
 
         # for each alignment to a target protein for the current query
         for alignment in r.alignments:
@@ -402,6 +415,8 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
 
                 list_entries.append(output_info)
 
+
+        elapsed_times["2-read-filter-per-query"] += timeit.default_timer() - curr_time
         # run MSA on remaining targets
 
         if len(list_entries) == 0:
@@ -409,8 +424,13 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
 
         print("{};{};{};{}".format(query_info["accession"], query_info["left"], query_info["right"], query_info["strand"]))
 
+        curr_time = timeit.default_timer()
+
         df_entries = pd.DataFrame(list_entries)
-        df_results = perform_msa_on_df(env, df_entries, msa_options=msa_options, msa_output_start=msa_output_start)
+        df_results = perform_msa_on_df(env, df_entries, msa_options=msa_options, msa_output_start=msa_output_start,
+                                       msa_number=msa_number)
+        elapsed_times["3-msa-per-query"] += timeit.default_timer() - curr_time
+        msa_number += 1
 
         # for each query in blast
         if pd_msa_final is not None:
@@ -425,6 +445,9 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
                 df_results.to_csv(pf_output, index=False)
             else:
                 df_results.to_csv(pf_output, mode="a", index=False, header=False)
+
+    for key in sorted(elapsed_times.keys()):
+        logging.critical("Timer: {},{}".format(key, elapsed_times[key] / 60))
 
     return pf_output
 
