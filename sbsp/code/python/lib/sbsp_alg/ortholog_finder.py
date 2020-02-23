@@ -11,21 +11,19 @@ from Bio.Blast.Record import Alignment, HSP
 from Bio.Seq import Seq
 from Bio.SubsMat import MatrixInfo as matlist
 
-
 from sbsp_alg.feature_computation import add_gaps_to_nt_based_on_aa
 from sbsp_alg.phylogeny import k2p_distance, global_alignment_aa_with_gap
 from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_general import Environment
 from sbsp_general.blast import run_blast, convert_blast_output_to_csv, create_blast_database, run_blast_alignment
 from sbsp_general.general import get_value
-from sbsp_general.labels import Labels, Label
+from sbsp_general.labels import Labels, Label, create_gene_key_from_label
 from sbsp_io.general import mkdir_p
 from sbsp_io.labels import read_labels_from_file
 from sbsp_io.sequences import read_fasta_into_hash
 from sbsp_options.msa import MSAOptions
 
 log = logging.getLogger(__name__)
-
 
 valid_starts_pos = ["ATG", "GTG", "TTG"]
 valid_starts_neg = ["CAT", "CAC", "CAA"]
@@ -77,27 +75,25 @@ def get_orthologs_from_files_deprecated(env, pf_q_list, pf_t_list, pf_output, **
 
     return pf_output
 
+
 def pack_fasta_header(label, gi, **kwargs):
     # type: (Label, GenomeInfo, Dict[str, Any]) -> str
 
-    gc = get_value(kwargs, "gc", 0)
-    seq_type = get_value(kwargs, "seq_type", "")
-    lorf_nt = get_value(kwargs, "lorf_nt", "")
-    offset = get_value(kwargs, "offset", 0)
+    def create_tags_from_dict(**local_kwargs):
+        # type: (Dict[str, Any]) -> str
+        out = ""
+        for k, v in local_kwargs.items():
+            out += ";{}={}".format(k, v)
+        return out
 
-
-    return "{} accession={};genome={};gc={};left={};right={};strand={};lorf_nt={};offset={}".format(
+    return "{} accession={};genome={};left={};right={};strand={}".format(
         label.seqname(),
         label.seqname(),
         gi.name,
-        gc,
         label.left() + 1,
         label.right() + 1,
         label.strand(),
-        lorf_nt,
-        offset,
-    )
-
+    ) + create_tags_from_dict(**kwargs)
 
 
 def unpack_fasta_header(header):
@@ -123,7 +119,9 @@ def unpack_fasta_header(header):
         "left": int,
         "right": int,
         "gc": float,
-        "offset": int
+        "offset": int,
+        "upstream_left": int,
+        "upstream_right": int
     }
 
     # for each key, get value
@@ -134,7 +132,6 @@ def unpack_fasta_header(header):
             fields[k] = type_mapper[k](fields[k])
 
     return fields
-
 
 
 def select_representative_hsp(alignment, hsp_criteria):
@@ -171,14 +168,13 @@ def map_aligned_aa_to_aligned_nt(q_aligned_seq_aa, original_q_nt, q_start_aa, q_
         if curr_aa == "-":
             output += "---"
         else:
-            output += original_q_nt[pos_nt_no_gaps:pos_nt_no_gaps+3]
+            output += original_q_nt[pos_nt_no_gaps:pos_nt_no_gaps + 3]
             pos_nt_no_gaps += 3
 
         if pos_nt_no_gaps >= max_pos_nt_no_gaps:
             break
 
     return output
-
 
 
 def compute_distance_based_on_local_alignment(query_info, target_info, hsp, **kwargs):
@@ -192,8 +188,8 @@ def compute_distance_based_on_local_alignment(query_info, target_info, hsp, **kw
     t_aligned_seq_aa = hsp.sbjct
 
     # indices of where alignment starts in original sequences
-    q_start, q_end = hsp.query_start - 1, hsp.query_end - 2     # -2 to make inclusive
-    t_start, t_end = hsp.sbjct_start - 1, hsp.sbjct_end - 1     # -2 to make inclusive
+    q_start, q_end = hsp.query_start - 1, hsp.query_end - 2  # -2 to make inclusive
+    t_start, t_end = hsp.sbjct_start - 1, hsp.sbjct_end - 1  # -2 to make inclusive
 
     # aligned fragments (nt)
     q_aligned_seq_nt = map_aligned_aa_to_aligned_nt(q_aligned_seq_aa, original_q_nt, q_start, q_end)
@@ -226,8 +222,8 @@ def create_info_for_query_target_pair(query_info, target_info, hsp, **kwargs):
     return output
 
 
-
-def compute_distance_based_on_global_alignment_from_sequences(q_sequence, t_sequence, q_sequence_nt, t_sequence_nt, matrix):
+def compute_distance_based_on_global_alignment_from_sequences(q_sequence, t_sequence, q_sequence_nt, t_sequence_nt,
+                                                              matrix):
     [q_align, t_align, _, _, _] = \
         global_alignment_aa_with_gap(q_sequence, t_sequence, matrix)
 
@@ -243,6 +239,7 @@ def compute_distance_based_on_global_alignment_from_sequences(q_sequence, t_sequ
         distance = 100
 
     return (distance, len(q_align), len_without_gaps)
+
 
 def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
     # type: (str, str, Dict[str, Any]) -> None
@@ -311,7 +308,6 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
                 original_q_aa, original_t_aa, original_q_nt, original_t_nt, matrix
             )
             # global_distance = global_length = global_length_without_gaps = 0
-
 
             # FIXME: thresholds should be from input configuration files
             # if distance > distance_min and distance < distance_max:
@@ -442,7 +438,6 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
 #                     f_csv.write(line)
 
 
-
 def append_sequences_to_file(sequences, f):
     # type: (Dict[str, Seq], IO[AnyStr]) -> None
     for header, sequence in sequences.items():
@@ -462,6 +457,7 @@ def get_pf_labels_for_genome(env, gi, **kwargs):
     fn_labels = get_value(kwargs, "fn_labels", "ncbi.gff")
     return os.path.join(env['pd-data'], gi.name, fn_labels)
 
+
 def get_lorf(label, sequences):
     # type: (Label, Dict[str, Seq]) -> Seq
 
@@ -471,7 +467,7 @@ def get_lorf(label, sequences):
         pos_lorf = curr_pos
 
         while curr_pos >= 0:
-            codon = sequences[label.seqname()][curr_pos:curr_pos+3]._data
+            codon = sequences[label.seqname()][curr_pos:curr_pos + 3]._data
             if is_valid_start(codon, label.strand()):
                 pos_lorf = curr_pos
             if is_valid_stop(codon, label.strand()):
@@ -479,7 +475,7 @@ def get_lorf(label, sequences):
 
             curr_pos -= 3
 
-        lorf_seq = sequences[label.seqname()][pos_lorf:label.right()+1]
+        lorf_seq = sequences[label.seqname()][pos_lorf:label.right() + 1]
 
     else:
 
@@ -488,7 +484,7 @@ def get_lorf(label, sequences):
         seq_len = len(sequences[label.seqname()])
 
         while curr_pos < seq_len:
-            codon = sequences[label.seqname()][curr_pos-2:curr_pos+1]._data
+            codon = sequences[label.seqname()][curr_pos - 2:curr_pos + 1]._data
             if is_valid_start(codon, label.strand()):
                 pos_lorf = curr_pos
             if is_valid_stop(codon, label.strand()):
@@ -496,11 +492,9 @@ def get_lorf(label, sequences):
 
             curr_pos += 3
 
-        lorf_seq = sequences[label.seqname()][label.left():pos_lorf+1]
+        lorf_seq = sequences[label.seqname()][label.left():pos_lorf + 1]
 
     return lorf_seq
-
-
 
 
 def extract_labeled_sequence(label, sequences, **kwargs):
@@ -517,9 +511,6 @@ def extract_labeled_sequence(label, sequences, **kwargs):
         frag = frag.reverse_complement()
 
     return frag
-
-
-
 
     # return "{}:tag={};11;:gc={}:pos={};{};{}:cds={};{};{}:type={}:key={};{};{}".format(
     #     label.seqname(),
@@ -538,7 +529,30 @@ def extract_labeled_sequence(label, sequences, **kwargs):
     # )
 
 
+def get_upstream_label_per_label(labels):
+    # type: (Labels) -> Dict[str, Label]
 
+    sorted_labels = [l for l in labels.sort_by("left")]
+    num_labels = len(sorted_labels)
+
+    gene_key_to_upstream_label = dict()  # type: Dict[str, Label]
+
+    for i, label in enumerate(sorted_labels):
+
+        prev_label = None
+
+        if label.strand() == "+":
+            if i > 0:
+                prev_i = i - 1
+                prev_label = sorted_labels[prev_i]
+        else:
+            if i < num_labels - 1:
+                prev_i = i + 1
+                prev_label = sorted_labels[prev_i]
+
+        gene_key_to_upstream_label[create_gene_key_from_label(label)] = prev_label
+
+    return gene_key_to_upstream_label
 
 
 def extract_labeled_sequences(sequences, labels, **kwargs):
@@ -547,17 +561,30 @@ def extract_labeled_sequences(sequences, labels, **kwargs):
     func_fasta_header_creator = get_value(kwargs, "func_fhc", None)
     kwargs_fasta_header_creator = get_value(kwargs, "kwargs_fhc", None)
 
-    dict_labeled_sequences = dict()     # type: Dict[str, Seq]
+    dict_labeled_sequences = dict()  # type: Dict[str, Seq]
+
+    gene_key_to_upstream_label = get_upstream_label_per_label(labels)
 
     for i, label in enumerate(labels):
         labeled_sequence = extract_labeled_sequence(label, sequences, **kwargs)
         lorf_nt = extract_labeled_sequence(label, sequences, lorf=True, **kwargs)
         offset = len(lorf_nt) - (label.right() - label.left() + 1)
 
+        upstream_label = gene_key_to_upstream_label[create_gene_key_from_label(label)]
+        upstream_left = upstream_right = upstream_strand = -1
+        if upstream_label is not None:
+            upstream_left = upstream_label.left() + 1
+            upstream_right = upstream_label.right() + 1
+            upstream_strand = upstream_label.strand()
+
         fasta_header = str(i)
         if func_fasta_header_creator is not None:
             if kwargs_fasta_header_creator is not None:
-                fasta_header = func_fasta_header_creator(label, offset=offset, lorf_nt=lorf_nt, **kwargs_fasta_header_creator)
+                fasta_header = func_fasta_header_creator(label, offset=offset, lorf_nt=lorf_nt,
+                                                         upstream_left=upstream_left,
+                                                         upstream_right=upstream_right,
+                                                         upstream_strand=upstream_strand,
+                                                         **kwargs_fasta_header_creator)
             else:
                 fasta_header = func_fasta_header_creator(label, offset=offset, lorf_nt=lorf_nt)
 
@@ -656,7 +683,7 @@ def run_blast_on_sequences(env, pf_q_aa, pf_db, pf_blast_output, **kwargs):
 def get_orthologs_from_files(env, pf_q_list, pf_t_list, pf_output, **kwargs):
     # type: (Environment, str, str, str, Dict[str, Any]) -> str
 
-    sbsp_options = get_value(kwargs, "sbsp_options", MSAOptions(env))       # type: MSAOptions
+    sbsp_options = get_value(kwargs, "sbsp_options", MSAOptions(env))  # type: MSAOptions
 
     fn_q_labels = get_value(kwargs, "fn_q_labels", "ncbi.gff")
     fn_t_labels = get_value(kwargs, "fn_t_labels", "ncbi.gff")
@@ -673,16 +700,16 @@ def get_orthologs_from_files(env, pf_q_list, pf_t_list, pf_output, **kwargs):
     pf_t_nt = os.path.join(pd_work, "t.fnt")
 
     custom = {
-            "reverse_complement": True,
-            "ignore_frameshifted": True,
-            "ignore_partial": True
-            }
+        "reverse_complement": True,
+        "ignore_frameshifted": True,
+        "ignore_partial": True
+    }
 
     extract_labeled_sequences_for_genomes(env, q_gil, pf_q_aa, fn_labels=fn_q_labels, **custom, **kwargs)
     extract_labeled_sequences_for_genomes(env, t_gil, pf_t_aa, fn_labels=fn_t_labels, **custom, **kwargs)
 
     pf_blast_db = os.path.join(pd_work, "blast.db")
-    create_blast_database(pf_t_aa, pf_blast_db, seq_type="prot", use_diamond=True)      # FIXME: cleanup
+    create_blast_database(pf_t_aa, pf_blast_db, seq_type="prot", use_diamond=True)  # FIXME: cleanup
 
     # Run blast
     pf_blast_results = os.path.join(pd_work, "blast.xml")
@@ -699,10 +726,3 @@ def get_orthologs_from_files(env, pf_q_list, pf_t_list, pf_output, **kwargs):
                                     **kwargs)
 
     return pf_output
-
-
-
-
-
-
-

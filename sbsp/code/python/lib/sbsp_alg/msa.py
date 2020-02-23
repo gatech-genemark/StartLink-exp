@@ -17,8 +17,8 @@ import sbsp_ml.msa_features_2
 from sbsp_general.msa_2 import MSAType
 
 import logging
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 
 def msa(sequences, **kwargs):
@@ -30,7 +30,6 @@ def msa(sequences, **kwargs):
 
     if suffix_fname != "":
         suffix_fname = "-" + str(suffix_fname)
-
 
     if len(sequences) == 0:
         return None
@@ -65,10 +64,9 @@ def msa(sequences, **kwargs):
     pf_tmp = os.path.join(pd_work, "tmp{}.msa".format(suffix_fname))
     pf_aln = os.path.join(pd_work, "tmp{}.aln".format(suffix_fname))
 
-    sbsp_io.general.write_string_to_file(data,pf_tmp )
+    sbsp_io.general.write_string_to_file(data, pf_tmp)
     clustalw_cline = ClustalwCommandline("clustalw2", infile=pf_tmp, gapopen=20)
     stdout, stderr = clustalw_cline()
-
 
     align = AlignIO.read(pf_aln, "clustal")
 
@@ -80,7 +78,6 @@ def msa(sequences, **kwargs):
 
     output_list = [a.seq._data for a in list_alignments]
     return [output_list, stdout, stderr, align]
-
 
 
 # TODO
@@ -101,7 +98,7 @@ def add_stops_to_aa_alignment(aa_alignment_no_stops, aa_sequence_with_stops):
 
         # gaps
         if c_align == "-":
-            aa_alignment_with_stops += "-"          # add gap
+            aa_alignment_with_stops += "-"  # add gap
             continue
 
         c_seq = aa_sequence_with_stops[pos_in_aa_sequence]
@@ -119,7 +116,6 @@ def add_stops_to_aa_alignment(aa_alignment_no_stops, aa_sequence_with_stops):
         pos_in_aa_sequence += 1
 
     return aa_alignment_with_stops
-
 
 
 # FIXME: found in another file - put somewhere
@@ -143,9 +139,9 @@ def add_gaps_to_nt_based_on_aa(seq_nt, seq_aa_with_gaps):
 
         # if gap
         if curr_aa == "-":
-            seq_nt_with_gaps += "---"       # 3 nt gaps = 1 aa gap
+            seq_nt_with_gaps += "---"  # 3 nt gaps = 1 aa gap
         else:
-            seq_nt_with_gaps += seq_nt[pos_in_nt:pos_in_nt+3]       # add next 3 nucleotides
+            seq_nt_with_gaps += seq_nt[pos_in_nt:pos_in_nt + 3]  # add next 3 nucleotides
             pos_in_nt += 3
 
         pos_in_aa_with_gaps += 1
@@ -176,8 +172,8 @@ def convert_using_marked(aa_alignment, marks):
 
     return result
 
-def mark_all_candidate_starts(seq_aa_with_gaps, seq_nt_no_gaps):
 
+def mark_all_candidate_starts(seq_aa_with_gaps, seq_nt_no_gaps):
     seq_candidates = ""
 
     pos_in_no_gap_aa = 0
@@ -190,7 +186,7 @@ def mark_all_candidate_starts(seq_aa_with_gaps, seq_nt_no_gaps):
 
         pos_in_no_gap_nt = pos_in_no_gap_aa * 3
 
-        codon = seq_nt_no_gaps[pos_in_no_gap_nt:pos_in_no_gap_nt+3]
+        codon = seq_nt_no_gaps[pos_in_no_gap_nt:pos_in_no_gap_nt + 3]
 
         if codon == "ATG":
             seq_candidates += "A"
@@ -206,8 +202,6 @@ def mark_all_candidate_starts(seq_aa_with_gaps, seq_nt_no_gaps):
     return seq_candidates
 
 
-
-
 def lower_case_everything_except_starts(alignments_aa, list_sequences_aa, list_sequences_nt):
     # type: (Bio.Align.MultipleSeqAlignment, list) -> Bio.Align.MultipleSeqAlignment
 
@@ -217,7 +211,7 @@ def lower_case_everything_except_starts(alignments_aa, list_sequences_aa, list_s
 
         aa_align = alignment.seq._data
         nt_seq = list_sequences_nt[i]
-        aa_seq = list_sequences_aa[i]       # type: str
+        aa_seq = list_sequences_aa[i]  # type: str
 
         aa_seq = aa_seq.replace("J", "")
 
@@ -250,7 +244,6 @@ def lower_case_everything_except_starts_deprecated(list_alignments_aa, list_sequ
     list_result = list()
 
     for i in range(len(list_alignments_aa)):
-
         aa_align = list_alignments_aa[i]
         nt_seq = list_sequences_nt[i]
 
@@ -287,10 +280,10 @@ def should_count_in_neighbor(pos, alignment, msa_options, q_curr_type):
         upstream_should_count = False
         downstream_should_count = False
 
-        for r in range(1, msa_options["search-neighbor"]+1):
+        for r in range(1, msa_options["search-neighbor"] + 1):
             r_upstr = r
             gap_skips = 0
-            while pos - r_upstr >= 0 and alignment[pos - r_upstr] == "-":       # skip over all gaps
+            while pos - r_upstr >= 0 and alignment[pos - r_upstr] == "-":  # skip over all gaps
                 if limit_gap_skips is not None:
                     if gap_skips >= limit_gap_skips:
                         break
@@ -331,6 +324,7 @@ def should_count_in_neighbor(pos, alignment, msa_options, q_curr_type):
                 return True
 
     return False
+
 
 def count_num_upper(list_alignments, i, msa_options):
     num_upper = 0
@@ -376,8 +370,8 @@ def count_num_upper(list_alignments, i, msa_options):
 
     return num_upper
 
-def get_aligned_letters_at_position(list_alignments, i, upstream_region=0, downstream_region=0):
 
+def get_aligned_letters_at_position(list_alignments, i, upstream_region=0, downstream_region=0):
     list_items = list()
 
     for j in range(len(list_alignments)):
@@ -388,7 +382,7 @@ def get_aligned_letters_at_position(list_alignments, i, upstream_region=0, downs
 
         if not t_curr_type.isupper():
             # search neighborhood
-            for radius in range(1, max(upstream_region, downstream_region)+1):
+            for radius in range(1, max(upstream_region, downstream_region) + 1):
 
                 # check upstream
                 if radius <= upstream_region:
@@ -408,8 +402,8 @@ def get_aligned_letters_at_position(list_alignments, i, upstream_region=0, downs
     return list_items
 
 
-
-def compute_conservation_in_region(list_alignments, begin, end, direction="upstream", skip_gaps=False, only_full_length=False,
+def compute_conservation_in_region(list_alignments, begin, end, direction="upstream", skip_gaps=False,
+                                   only_full_length=False,
                                    max_fraction_of_gaps_in_pos=None, scorer=None, **kwargs):
     # type: (List[str], int, int, str, bool, bool, bool, ScoringFunction) -> float
 
@@ -443,13 +437,14 @@ def compute_conservation_in_region(list_alignments, begin, end, direction="upstr
     for i in range(int(number_of_positions)):
 
         curr_pos = begin + skipped_gaps + i
-        if direction == "upstream":     # go backwards
+        if direction == "upstream":  # go backwards
             curr_pos = end - 1 - skipped_gaps - i
 
         if skip_gaps:
             # keep going until no gap
             if direction == "upstream":
-                while curr_pos >= 0 and (list_alignments[0][curr_pos] == "-" or gap_fraction_in_pos(list_alignments, curr_pos) > max_fraction_of_gaps_in_pos):
+                while curr_pos >= 0 and (list_alignments[0][curr_pos] == "-" or gap_fraction_in_pos(list_alignments,
+                                                                                                    curr_pos) > max_fraction_of_gaps_in_pos):
                     curr_pos -= 1
                     skipped_gaps += 1
 
@@ -458,7 +453,8 @@ def compute_conservation_in_region(list_alignments, begin, end, direction="upstr
                         raise ValueError("Need enough region")
                     break
             else:
-                while curr_pos < end and (list_alignments[0][curr_pos] == "-" or gap_fraction_in_pos(list_alignments, curr_pos) > max_fraction_of_gaps_in_pos):
+                while curr_pos < end and (list_alignments[0][curr_pos] == "-" or gap_fraction_in_pos(list_alignments,
+                                                                                                     curr_pos) > max_fraction_of_gaps_in_pos):
                     curr_pos += 1
                     skipped_gaps += 1
 
@@ -493,7 +489,6 @@ def compute_conservation_in_region(list_alignments, begin, end, direction="upstr
                     matched += scorer.score(curr_letter, list_alignments[j][curr_pos])
                     total += 1
 
-
     if total == 0:
         return 0
 
@@ -519,8 +514,6 @@ def select_start_position_from_msa_for_lorf(alignments, **kwargs):
     msa_options = get_value(kwargs, "msa_options", None)
     pos_of_upstream_in_msa = get_value(kwargs, "pos_of_upstream_in_msa", None)
 
-
-
     score_on_all_pairs = get_value(kwargs, "score_on_all_pairs", False)
 
     list_alignments = [a.seq._data for a in alignments]
@@ -544,12 +537,14 @@ def select_start_position_from_msa_for_lorf(alignments, **kwargs):
     # if not enough, return None
     distance_between_candidates = len(list_alignments[0][candidates[0]:candidates[1]].replace("-", ""))
     if distance_between_candidates < region_length:
-        logger.debug("Distance between first and second candidate is {} < {}".format(distance_between_candidates, region_length))
+        logger.debug(
+            "Distance between first and second candidate is {} < {}".format(distance_between_candidates, region_length))
         return None
 
     # otherwise, compute conservation
     conservation = None
-    if msa_options is not None and msa_options.safe_get("search-use-upstream-for-lorf") and pos_of_upstream_in_msa is not None:
+    if msa_options is not None and msa_options.safe_get(
+            "search-use-upstream-for-lorf") and pos_of_upstream_in_msa is not None:
         # only consider candidate if it is not overlapping and region above isn't overlapping either
 
         if candidates[1] > pos_of_upstream_in_msa + region_length:
@@ -559,7 +554,7 @@ def select_start_position_from_msa_for_lorf(alignments, **kwargs):
                                                           scorer=scorer
                                                           )
     else:
-        conservation = compute_conservation_in_region(list_alignments, candidates[1]-region_length, candidates[1],
+        conservation = compute_conservation_in_region(list_alignments, candidates[1] - region_length, candidates[1],
                                                       direction="upstream", skip_gaps=True, only_full_length=True,
                                                       score_on_all_pairs=score_on_all_pairs,
                                                       scorer=scorer
@@ -624,7 +619,6 @@ def get_candidates_before_any_conservation_block(alignments, **kwargs):
 
         return numerator / float(total)
 
-
     # find: first block without many gaps
     curr_pos = pos_of_first_candidate
     for i in range(curr_pos, end):
@@ -637,8 +631,6 @@ def get_candidates_before_any_conservation_block(alignments, **kwargs):
         if list_alignments[0][i].isupper():
             candidates.append(i)
 
-
-
     # compute conservation at this position
     for i in range(curr_pos, end):
 
@@ -649,8 +641,9 @@ def get_candidates_before_any_conservation_block(alignments, **kwargs):
             continue
 
         try:
-            conservation = compute_conservation_in_region(list_alignments, i, i+region_length,
-                                                          direction="downstream", skip_gaps=True, only_full_length=True,)
+            conservation = compute_conservation_in_region(list_alignments, i, i + region_length,
+                                                          direction="downstream", skip_gaps=True,
+                                                          only_full_length=True, )
 
             if conservation > threshold:
                 break
@@ -660,8 +653,6 @@ def get_candidates_before_any_conservation_block(alignments, **kwargs):
             pass
 
     return candidates
-
-
 
 
 def get_candidates_without_upstream_conservation(alignments, **kwargs):
@@ -687,7 +678,6 @@ def get_candidates_without_upstream_conservation(alignments, **kwargs):
     if pos_of_upstream_in_msa is not None and pos_of_upstream_in_msa < 0:
         pos_of_upstream_in_msa = None
 
-
     list_alignments = [a.seq._data for a in alignments]
 
     # find the positions of the first two candidate starts in the query
@@ -706,7 +696,8 @@ def get_candidates_without_upstream_conservation(alignments, **kwargs):
                     candidates.append(i)
                 else:
                     conservation = compute_conservation_in_region(list_alignments, i - region_length, i,
-                                                              direction="upstream", skip_gaps=True, only_full_length=True,
+                                                                  direction="upstream", skip_gaps=True,
+                                                                  only_full_length=True,
                                                                   score_on_all_pairs=score_on_all_pairs,
                                                                   scorer=scorer)
 
@@ -726,23 +717,12 @@ def get_candidates_without_upstream_conservation(alignments, **kwargs):
     return candidates
 
 
-
-
-
-
-
-
-
-
-
-
-
 def select_start_position_from_msa(alignments, msa_options, **kwargs):
     # type: (Bio.Align.MultipleSeqAlignment, MSAOptions, Dict[str, Any]) -> int
 
     logger.debug("Func: Select start position from MSA")
 
-    list_alignments = [a.seq._data for a in alignments]     # type: list[str]
+    list_alignments = [a.seq._data for a in alignments]  # type: list[str]
 
     score_on_all_pairs = get_value(kwargs, "score_on_all_pairs", False)
 
@@ -778,7 +758,8 @@ def select_start_position_from_msa(alignments, msa_options, **kwargs):
                     logger.debug("Found at {} from upstream".format(pos_of_upstream_in_msa - curr_pos))
                     if curr_msa_options.safe_get("search-5prime-near-upstream-is-conserved"):
                         num_upper = count_num_upper(list_alignments, curr_pos, curr_msa_options)
-                        if  num_upper / float(len(list_alignments)) > curr_msa_options["search-start-selection-threshold"]:
+                        if num_upper / float(len(list_alignments)) > curr_msa_options[
+                            "search-start-selection-threshold"]:
                             return curr_pos
                     else:
                         return curr_pos
@@ -796,7 +777,8 @@ def select_start_position_from_msa(alignments, msa_options, **kwargs):
                     logger.debug("Found at {} from upstream".format(pos_of_upstream_in_msa - curr_pos))
                     if curr_msa_options.safe_get("search-5prime-near-upstream-is-conserved"):
                         num_upper = count_num_upper(list_alignments, curr_pos, curr_msa_options)
-                        if  num_upper / float(len(list_alignments)) > curr_msa_options["search-start-selection-threshold"]:
+                        if num_upper / float(len(list_alignments)) > curr_msa_options[
+                            "search-start-selection-threshold"]:
                             return curr_pos
                     else:
                         return curr_pos
@@ -805,8 +787,7 @@ def select_start_position_from_msa(alignments, msa_options, **kwargs):
                 while curr_pos < len(list_alignments[0]) and list_alignments[0][curr_pos] == "-":
                     curr_pos += 1
 
-
-    for i in range(int(start_from_pos),int( min(end_at_pos, len(list_alignments[0])))):
+    for i in range(int(start_from_pos), int(min(end_at_pos, len(list_alignments[0])))):
 
         num_upper = 0
 
@@ -817,8 +798,6 @@ def select_start_position_from_msa(alignments, msa_options, **kwargs):
             logger.debug("Position {}: total seqs = {}, num upper = {}".format(i, len(list_alignments), num_upper))
 
             pos_to_num[i] = num_upper
-
-
 
             if num_upper / float(len(list_alignments)) > threshold:
                 start_pos = i
@@ -834,7 +813,8 @@ def select_start_position_from_msa(alignments, msa_options, **kwargs):
         # search downstream
         if msa_options["search-better-downstream-aa"] is not None:
             if msa_options["search-better-downstream-aa"] > 0:
-                logger.debug("Search for better downstream: width = {}".format(msa_options["search-better-downstream-aa"]))
+                logger.debug(
+                    "Search for better downstream: width = {}".format(msa_options["search-better-downstream-aa"]))
 
                 msa_options_tmp = copy.deepcopy(msa_options)
                 # msa_options_tmp["search-better-downstream-aa"] = 0
@@ -876,20 +856,25 @@ def select_start_position_from_msa(alignments, msa_options, **kwargs):
                                 logger.debug("Better support, choosing {}".format(new_sp))
                                 start_pos = new_sp
 
-                            if msa_options.safe_get("search-stringent-check-when-equal-support") and new_num_upper == curr_num_upper:
-                                logger.debug("Positions {} and {} have same support. Computing support with neighbor=0".format(
-                                    current_sp, new_sp
-                                ))
+                            if msa_options.safe_get(
+                                    "search-stringent-check-when-equal-support") and new_num_upper == curr_num_upper:
+                                logger.debug(
+                                    "Positions {} and {} have same support. Computing support with neighbor=0".format(
+                                        current_sp, new_sp
+                                    ))
                                 tmp_msa_options = copy.deepcopy(msa_options)
                                 tmp_msa_options["search-neighbor"] = 0
-                                start_pos = new_sp if count_num_upper(list_alignments, new_sp, tmp_msa_options) > count_num_upper(list_alignments, current_sp, tmp_msa_options) else current_sp
+                                start_pos = new_sp if count_num_upper(list_alignments, new_sp,
+                                                                      tmp_msa_options) > count_num_upper(
+                                    list_alignments, current_sp, tmp_msa_options) else current_sp
 
                     else:
                         if new_support > curr_support:
                             logger.debug("Better support, choosing {}".format(new_sp))
                             start_pos = new_sp
 
-                        if msa_options.safe_get("search-stringent-check-when-equal-support") and new_support == curr_support:
+                        if msa_options.safe_get(
+                                "search-stringent-check-when-equal-support") and new_support == curr_support:
                             logger.debug(
                                 "Positions {} and {} have same support. Computing support with neighbor=0".format(
                                     current_sp, new_sp
@@ -908,7 +893,7 @@ def select_start_position_from_msa(alignments, msa_options, **kwargs):
                             logger.debug("Better downstream selected. Check conservation")
                             conservation = compute_conservation_in_region(
                                 list_alignments,
-                                current_sp+1, start_pos,
+                                current_sp + 1, start_pos,
                                 direction="downstream",
                                 score_on_all_pairs=score_on_all_pairs,
                                 scorer=upstream_block_scorer
@@ -925,9 +910,10 @@ def select_start_position_from_msa(alignments, msa_options, **kwargs):
                                     if True or new_num_upper == curr_num_upper:
                                         tmp_msa_options = copy.deepcopy(msa_options)
                                         tmp_msa_options["search-neighbor"] = 0
-                                        l_new_support = count_num_upper(list_alignments, new_sp, tmp_msa_options) / float(len(list_alignments))
-                                        l_curr_support = count_num_upper(list_alignments, current_sp,
+                                        l_new_support = count_num_upper(list_alignments, new_sp,
                                                                         tmp_msa_options) / float(len(list_alignments))
+                                        l_curr_support = count_num_upper(list_alignments, current_sp,
+                                                                         tmp_msa_options) / float(len(list_alignments))
                                     if l_new_support > l_curr_support + margin:
                                         logger.debug("{} > {} + {}".format(l_new_support, l_curr_support, margin))
                                         start_pos = new_sp
@@ -942,7 +928,6 @@ def select_start_position_from_msa(alignments, msa_options, **kwargs):
                                                 "Conservation too high - go back to origin: {}".format(current_sp))
 
                                     return start_pos
-
 
                                 start_pos = search_better_downstream_by_margin(new_support, curr_support, start_pos)
 
@@ -970,9 +955,10 @@ def select_start_position_from_msa(alignments, msa_options, **kwargs):
                 begin = curr_start_pos - region_length
                 end = curr_start_pos
                 try:
-                    conservation = compute_conservation_in_region(list_alignments, begin, end, skip_gaps=True, only_full_length=True,
+                    conservation = compute_conservation_in_region(list_alignments, begin, end, skip_gaps=True,
+                                                                  only_full_length=True,
                                                                   score_on_all_pairs=score_on_all_pairs,
-                                                                  scorer=upstream_block_scorer) # FIXME
+                                                                  scorer=upstream_block_scorer)  # FIXME
                 except ValueError:
                     conservation = 0.0
 
@@ -1020,7 +1006,6 @@ def select_start_position_from_msa(alignments, msa_options, **kwargs):
                 if selection_has_conserved_upstream:
                     return None
     return start_pos
-
 
 
 def add_start_position_to_msa_alignments(alignments, position, position_of_upstream=None):
@@ -1091,7 +1076,7 @@ def filter_df_by_upstream_to_msa(df, msa_options, **kwargs):
 
         val = msa_options["filter-gene-length-max-percent-difference"]
 
-        df = df[((100.0 * abs(df[column_q_gene_length] - df[column_t_gene_length ])) / df[column_q_gene_length]) < val]
+        df = df[((100.0 * abs(df[column_q_gene_length] - df[column_t_gene_length])) / df[column_q_gene_length]) < val]
 
         after = len(df)
 
@@ -1099,7 +1084,6 @@ def filter_df_by_upstream_to_msa(df, msa_options, **kwargs):
             filter_stats["filter-gene-length-max-percent-difference"] = before - after
 
     return df
-
 
 
 def filter_df(df, msa_options, **kwargs):
@@ -1114,13 +1098,12 @@ def filter_df(df, msa_options, **kwargs):
 
     # remove frameshifted
     before = len(df)
-    not_frame_shifted = ((df["q-right"]-df["q-left"]+1) % 3 == 0) & ((df["t-right"]-df["t-left"]+1) % 3 == 0)
+    not_frame_shifted = ((df["q-right"] - df["q-left"] + 1) % 3 == 0) & ((df["t-right"] - df["t-left"] + 1) % 3 == 0)
     df = df[not_frame_shifted]
     after = len(df)
 
     if filter_stats is not None:
         filter_stats["filter-frame-shifted"] = before - after
-
 
     # max distance
     if len(df) > 0 and msa_options["filter-max-distance"] is not None:
@@ -1135,7 +1118,8 @@ def filter_df(df, msa_options, **kwargs):
             if filter_stats is not None:
                 filter_stats["filter-max-distance"] = before - after
             else:
-                logger.critical("Filter ({}): {} - {} = {}".format("filter-max-distance", before, after, before - after))
+                logger.critical(
+                    "Filter ({}): {} - {} = {}".format("filter-max-distance", before, after, before - after))
 
     # min distance
     if len(df) > 0 and msa_options["filter-min-distance"] is not None:
@@ -1151,7 +1135,8 @@ def filter_df(df, msa_options, **kwargs):
                 filter_stats["filter-min-distance"] = before - after
 
     # equal distances
-    if len(df) > 0 and msa_options["filter-orthologs-with-equal-kimura"] is not None and column_distance in df.columns.values:
+    if len(df) > 0 and msa_options[
+        "filter-orthologs-with-equal-kimura"] is not None and column_distance in df.columns.values:
 
         column_distance_rounded = "column_distance_rounded"
         df[column_distance_rounded] = df[column_distance].round(msa_options["filter-orthologs-with-equal-kimura"])
@@ -1178,7 +1163,7 @@ def filter_df(df, msa_options, **kwargs):
 
         # sbsp_general.general.df_add_3prime_key(df, "q-")
         # df = df.groupby(["q-3prime"], as_index=False).head(number)
-        print ("Length = {}".format(len(df)))
+        print("Length = {}".format(len(df)))
 
         if len(df) > number:
             sample_method = msa_options.safe_get("filter-sample-from-set")
@@ -1186,11 +1171,12 @@ def filter_df(df, msa_options, **kwargs):
                 sample_method = "uniform"
 
             if sample_method == "uniform":
-                df = df.groupby(["q-3prime"], as_index=False).apply(lambda x: x.sample(n=number, random_state=1) if len(x) > number else x)
+                df = df.groupby(["q-3prime"], as_index=False).apply(
+                    lambda x: x.sample(n=number, random_state=1) if len(x) > number else x)
             elif sample_method == "closest-distance":
                 logger.debug("Closest samples by distance")
-                df = df.groupby(["q-3prime"], as_index=False).apply(lambda x: x.sort_values(column_distance).head(number)).reset_index(drop=True)
-
+                df = df.groupby(["q-3prime"], as_index=False).apply(
+                    lambda x: x.sort_values(column_distance).head(number)).reset_index(drop=True)
 
         # df.drop("q-3prime", inplace=True, axis=1)
 
@@ -1210,7 +1196,6 @@ def filter_df(df, msa_options, **kwargs):
     # filter-gene-length-max-percent-difference: null
 
     # if msa_options["filter-min-upstream-distance"]
-
 
     return df
 
@@ -1271,7 +1256,8 @@ def print_alignment_to_file(alignments, start_position_in_msa, df, pf_msa_out, p
     :return:
     """
 
-    alignments = add_start_position_to_msa_alignments(alignments, start_position_in_msa, position_of_upstream=pos_of_upstream_in_msa)
+    alignments = add_start_position_to_msa_alignments(alignments, start_position_in_msa,
+                                                      position_of_upstream=pos_of_upstream_in_msa)
     stdout = convert_alignments_to_str(alignments)
     indeces_of_orthologs = list()
     if df is not None:
@@ -1291,7 +1277,6 @@ def print_alignment_to_file(alignments, start_position_in_msa, df, pf_msa_out, p
 
 def compute_match_in_area(list_alignments, pos_of_5prime, region_aa, direction,
                           frame=None):
-
     from sbsp_general.general import except_if_not_in_set
 
     except_if_not_in_set(direction, {"upstream", "downstream"})
@@ -1318,7 +1303,7 @@ def compute_match_in_area(list_alignments, pos_of_5prime, region_aa, direction,
     total = 0
     while num_none_gapped < region_aa:
 
-        done = False            # set to true when no more positions are left to analyze
+        done = False  # set to true when no more positions are left to analyze
 
         # skip all gaps in query and make sure we are in bounds
         while True:
@@ -1354,10 +1339,6 @@ def compute_match_in_area(list_alignments, pos_of_5prime, region_aa, direction,
         return match / float(total)
 
 
-
-
-
-
 # def add_features()
 def compute_post_alignment_features(
         df,
@@ -1380,8 +1361,12 @@ def compute_post_alignment_features(
     df["f-conservation-upstream-match"] = upstream_match
 
     for frame in range(3):
-        df["f-conservation-downstream-match-{}".format(frame)] = compute_match_in_area(list_alignments_nt, pos_nt, region_aa*3, "downstream", frame=frame)
-        df["f-conservation-upstream-match-{}".format(frame)] = compute_match_in_area(list_alignments_nt, pos_nt, region_aa*3, "upstream", frame=frame)
+        df["f-conservation-downstream-match-{}".format(frame)] = compute_match_in_area(list_alignments_nt, pos_nt,
+                                                                                       region_aa * 3, "downstream",
+                                                                                       frame=frame)
+        df["f-conservation-upstream-match-{}".format(frame)] = compute_match_in_area(list_alignments_nt, pos_nt,
+                                                                                     region_aa * 3, "upstream",
+                                                                                     frame=frame)
 
     # ratios
     for frame_1 in range(3):
@@ -1396,15 +1381,10 @@ def compute_post_alignment_features(
                 df["f-conservation-upstream-match-{}".format(frame_1)] / df[
                     "f-conservation-upstream-match-{}".format(frame_2)]
 
-
         # downstream / upstream
         df["f-conservation-ratio-match-{}".format(frame_1)] = \
             df["f-conservation-downstream-match-{}".format(frame_1)] / df[
                 "f-conservation-upstream-match-{}".format(frame_1)]
-
-
-
-
 
 
 def convert_msa_from_aa_to_nt(alignments_aa, list_sequences_nt):
@@ -1417,7 +1397,7 @@ def convert_msa_from_aa_to_nt(alignments_aa, list_sequences_nt):
     i = 0
     for a in alignments_aa:
         align_nt = sbsp_general.general.add_gaps_to_nt_based_on_aa(
-            list_sequences_nt[i],      # remove stop
+            list_sequences_nt[i],  # remove stop
             a.seq._data,
             preserve_case=True
         )
@@ -1442,13 +1422,13 @@ def compute_kimura_matrix(list_sequences_aligned_nt):
 
     for i in range(1, num_sequences):
         for j in range(i):
-
             val = k2p_distance(list_sequences_aligned_nt[i], list_sequences_aligned_nt[j])
 
             output[i, j] = val
             output[j, i] = val
 
     return output
+
 
 def get_indices_after_filtering_random(edge_mat, min_range, max_range):
     # type: (np.ndarray, Union[float, None], Union[float, None]) -> List[int]
@@ -1457,12 +1437,12 @@ def get_indices_after_filtering_random(edge_mat, min_range, max_range):
 
     removed_nodes = set()
 
-    for i in range(2, rows):            # skip query
+    for i in range(2, rows):  # skip query
 
         if i in removed_nodes:
             continue
 
-        for j in range(1, i):           # skip query
+        for j in range(1, i):  # skip query
 
             if i == j:
                 continue
@@ -1487,6 +1467,7 @@ def get_indices_after_filtering_random(edge_mat, min_range, max_range):
 
     return list(set(range(rows)) - removed_nodes)
 
+
 def get_indices_after_filtering(edge_mat, min_range=None, max_range=None, strategy="random"):
     # type: (np.ndarray, Union[float, None], Union[float, None], str) -> List[int]
 
@@ -1499,8 +1480,6 @@ def get_indices_after_filtering(edge_mat, min_range=None, max_range=None, strate
 
     if strategy == "random":
         return get_indices_after_filtering_random(edge_mat, min_range, max_range)
-
-
 
 
 def filter_by_pairwise_kimura_from_msa(list_sequences_aligned_nt, msa_options):
@@ -1536,7 +1515,6 @@ def filter_sequences_that_introduce_gaps_in_msa(list_sequences_aligned, msa_opti
     :return:
     """
 
-
     # sketch: get to the first start codon in methianine
     # from then (up to 50% of alignment length), if a large gap observed, remove sequences that caused it
 
@@ -1555,11 +1533,11 @@ def filter_sequences_that_introduce_gaps_in_msa(list_sequences_aligned, msa_opti
             first_start_codon_position = i
             break
 
-    end_search = int(alignment_length/2.0) - gap_width
+    end_search = int(alignment_length / 2.0) - gap_width
     for i in range(first_start_codon_position, end_search):
 
         # if block
-        block_detected = list_sequences_aligned[0][i:i+gap_width].count("-") == gap_width
+        block_detected = list_sequences_aligned[0][i:i + gap_width].count("-") == gap_width
 
         sequences_that_contribute_to_block = list()
 
@@ -1567,7 +1545,7 @@ def filter_sequences_that_introduce_gaps_in_msa(list_sequences_aligned, msa_opti
 
             for j in range(1, num_sequences_aligned):
 
-                if list_sequences_aligned[j][i:i+gap_width].count("-") == 0:
+                if list_sequences_aligned[j][i:i + gap_width].count("-") == 0:
                     sequences_that_contribute_to_block.append(j)
 
             num_sequences_that_contribute_to_block = len(sequences_that_contribute_to_block)
@@ -1605,7 +1583,8 @@ def find_rightmost_by_standard_aa_score(alignments, candidates, threshold=0.5):
     return None
 
 
-def compute_position_of_upstream_of_query_in_msa(msa_t, q_pos_5prime_in_msa_no_gap, distance_to_upstream_nt, index_in_msa=0):
+def compute_position_of_upstream_of_query_in_msa(msa_t, q_pos_5prime_in_msa_no_gap, distance_to_upstream_nt,
+                                                 index_in_msa=0):
     # type: (MSAType, int, float, int) -> int
 
     """
@@ -1631,9 +1610,9 @@ def compute_position_of_upstream_of_query_in_msa(msa_t, q_pos_5prime_in_msa_no_g
         remaining -= 1
 
     curr_pos = q_pos_5prime_in_msa
-    distance_to_upstream_aa = int(distance_to_upstream_nt/3)
+    distance_to_upstream_aa = int(distance_to_upstream_nt / 3)
 
-    if distance_to_upstream_aa > 0:         # no overlap
+    if distance_to_upstream_aa > 0:  # no overlap
 
         remaining_aa = distance_to_upstream_aa
         while remaining_aa > 0:
@@ -1666,13 +1645,6 @@ def compute_position_of_upstream_of_query_in_msa(msa_t, q_pos_5prime_in_msa_no_g
             remaining_aa -= 1
 
     return int(curr_pos)
-
-
-
-
-
-
-
 
     #
     # # type: (Dict[str, Any], pd.DataFrame, Dict[str, Any]) -> None
@@ -1714,7 +1686,6 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
     column_q_pos_5_prime_msa = "q-prot-pos-5prime-in-frag-msa"
     column_t_pos_5_prime_msa = "t-prot-pos-5prime-in-frag-msa"
 
-
     # if labels_info is None:
     #     labels_info = sbsp_general.dataframe.df_get_index_of_label_per_genome(env, df_group, "both")
 
@@ -1731,12 +1702,10 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
     if "kimura3" in df_group:
         list_distances = ["{}-{}".format(x, y) for x, y in zip(list_distances, [0] + list(df_group["kimura3"]))]
 
-
     if msa_options.safe_get("search-msa-max-sequence-length-aa") is not None:
         val = msa_options["search-msa-max-sequence-length-aa"]
         list_sequences_aa = [l[0:val] for l in list_sequences_aa]
-        list_sequences_nt = [l[0:val*3] for l in list_sequences_nt]
-
+        list_sequences_nt = [l[0:val * 3] for l in list_sequences_nt]
 
     suffix_msa_fname = "{}".format(ortholog_group_id)
     if suffix_fname is not None:
@@ -1756,20 +1725,17 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
             list_sequences_aa_aligned, msa_options
         )
 
-
-        filter_stats["filter-by-pairwise-kimura-from-msa"] = len(list_sequences_aa_aligned) - len(filtered_list_sequeces_aa_aligned)
+        filter_stats["filter-by-pairwise-kimura-from-msa"] = len(list_sequences_aa_aligned) - len(
+            filtered_list_sequeces_aa_aligned)
 
         # if some sequences were filtered, rerun alignment
         if len(filtered_list_sequeces_aa_aligned) < len(list_sequences_aa_aligned):
-
-
-
             list_sequences_aa = get_elements_at_indices(list_sequences_aa, indices_of_remaining)
             list_distances = get_elements_at_indices(list_distances, indices_of_remaining)
             list_sequences_nt = get_elements_at_indices(list_sequences_nt, indices_of_remaining)
 
             # remove from dataframe
-            df_group = df_group.iloc[[x-1 for x in indices_of_remaining if x != 0]]
+            df_group = df_group.iloc[[x - 1 for x in indices_of_remaining if x != 0]]
 
             [list_sequences_aa_aligned, stdout, stderr, alignments] = msa(
                 list_sequences_aa,
@@ -1813,7 +1779,6 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
                 suffix_fname=suffix_msa_fname
             )
 
-
         filter_stats["filter-remove-sequences-that-introduce-gaps"] = before_filtering - len(
             filtered_list_sequeces_aa_aligned)
 
@@ -1829,7 +1794,6 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
     except:
         pass
     list_sequences_nt_aligned = [a.seq._data for a in alignments_nt]
-
 
     score_on_all_pairs = msa_options.safe_get("search-score-on-all-pairs")
 
@@ -1850,13 +1814,13 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
 
     # add distance to upstream gene
     sbsp_general.dataframe.df_add_distance_to_upstream_gene(env, df_group, "q",
-                                                                       suffix_coordinates=None,
-                                                                       suffix_upstream_distance="upstream-distance-original",
-                                                                       labels_info=labels_info)
+                                                            suffix_coordinates=None,
+                                                            suffix_upstream_distance="upstream-distance-original",
+                                                            labels_info=labels_info)
     sbsp_general.dataframe.df_add_distance_to_upstream_gene(env, df_group, "t",
-                                                                       suffix_coordinates=None,
-                                                                       suffix_upstream_distance="upstream-distance-original",
-                                                                       labels_info=labels_info)
+                                                            suffix_coordinates=None,
+                                                            suffix_upstream_distance="upstream-distance-original",
+                                                            labels_info=labels_info)
 
     sbsp_general.dataframe.df_add_position_of_upstream_gene_in_msa_no_gaps(df_group)
 
@@ -1869,7 +1833,6 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
     df_group["q-upstream-pos-in-frag-msa"] = pos_of_upstream_in_msa
 
     predicted_at_step = ""
-
 
     thresh = msa_options["search-start-selection-threshold"]
     start_position_in_msa = None
@@ -1907,7 +1870,8 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
 
         if len(candidate_positions) == 0:
             logger.debug("No filtered candidates. Run search on entire gene")
-            start_position_in_msa = select_start_position_from_msa(alignments, threshold=thresh, msa_options=msa_options,
+            start_position_in_msa = select_start_position_from_msa(alignments, threshold=thresh,
+                                                                   msa_options=msa_options,
                                                                    score_on_all_pairs=score_on_all_pairs,
                                                                    upstream_block_scorer=upstream_block_scorer,
                                                                    pos_of_upstream_in_msa=pos_of_upstream_in_msa)
@@ -1918,7 +1882,7 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
             logger.debug("Run search for candidate positions: {}".format(candidate_positions))
             start_position_in_msa = select_start_position_from_msa(alignments, threshold=thresh,
                                                                    msa_options=msa_options,
-                                                                   end_at_pos=candidate_positions[-1]+1,
+                                                                   end_at_pos=candidate_positions[-1] + 1,
                                                                    score_on_all_pairs=score_on_all_pairs,
                                                                    upstream_block_scorer=upstream_block_scorer,
                                                                    pos_of_upstream_in_msa=pos_of_upstream_in_msa)
@@ -1941,8 +1905,6 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
             if start_position_in_msa is None and msa_options.safe_get("search-select-closest-to-coding-on-fail"):
                 logger.debug("No candidate found. Select rightmost")
                 start_position_in_msa = candidate_positions[-1]
-
-
 
     q_pos_of_previous_start_in_msa = df_group[column_q_pos_5_prime_msa].iloc[0]
 
@@ -1973,7 +1935,6 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
         for index, row in df_group.iterrows():
             sbsp_general.dataframe.df_coordinates_to_row(df_group, index, q_label_msa, "q", suffix_msa_updated)
 
-
         # add distance to upstream gene
         sbsp_general.dataframe.df_add_distance_to_upstream_gene_DEPRECATED(env, df_group, "q",
                                                                            suffix_coordinates=suffix_msa_updated,
@@ -1986,7 +1947,6 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
 
         # add position of upstream gene in msa
 
-
         # add gene lengths
         target_number = 1
         for index, row in df_group.iterrows():
@@ -1995,10 +1955,10 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
                 df_group,
                 list_sequences_aa[target_number],
                 list_sequences_aa_aligned[target_number],
-                df_group[column_t_pos_5_prime_msa].iloc[target_number-1],       # -1 to account for added query sequence
+                df_group[column_t_pos_5_prime_msa].iloc[target_number - 1],  # -1 to account for added query sequence
                 start_position_in_msa,
                 source="t",
-                row_num=target_number-1
+                row_num=target_number - 1
             )
 
             sbsp_general.dataframe.df_coordinates_to_row(df_group, index, t_label_msa, "t", suffix_msa_updated)
@@ -2010,15 +1970,14 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
 
         # compute 5prime conservation scores
         compute_post_alignment_features(
-                df_group,
-                list_sequences_aa_aligned,
-                list_sequences_nt_aligned,
-                start_position_in_msa,
-                start_position_in_msa*3,
-                msa_options,
-                10
+            df_group,
+            list_sequences_aa_aligned,
+            list_sequences_nt_aligned,
+            start_position_in_msa,
+            start_position_in_msa * 3,
+            msa_options,
+            10
         )
-
 
         # FILTERING
         while True:
@@ -2045,14 +2004,13 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
             df_group, q_label_msa = perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs)
             pf_msa_out = None
 
-
         # format alignment and print to file
         if pf_msa_out is not None:
-            print_alignment_to_file(alignments, start_position_in_msa, df_group, pf_msa_out, pos_of_upstream_in_msa=pos_of_upstream_in_msa)
+            print_alignment_to_file(alignments, start_position_in_msa, df_group, pf_msa_out,
+                                    pos_of_upstream_in_msa=pos_of_upstream_in_msa)
 
-
-            print_alignment_to_file(alignments_nt, start_position_in_msa*3, None,
-                                    "{}_nt".format(pf_msa_out), pos_of_upstream_in_msa=pos_of_upstream_in_msa*3)
+            print_alignment_to_file(alignments_nt, start_position_in_msa * 3, None,
+                                    "{}_nt".format(pf_msa_out), pos_of_upstream_in_msa=pos_of_upstream_in_msa * 3)
     # otherwise no start is found - print the alignment to file
     else:
         if pf_msa_out is not None:
@@ -2088,13 +2046,14 @@ def perform_msa_on_df_and_compute_conservation_features(env, df, **kwargs):
     # type: (Dict[str, Any], pd.DataFrame, Dict[str, Any]) -> pd.DataFrame
     pass
 
+
 def print_filter_stats(meine_filter_stats):
     for k in sorted(meine_filter_stats.keys()):
         logger.critical(
             "Filter ({}): {}".format(k, meine_filter_stats[k]))
 
-def print_filter_stats_to_file(meine_filter_stats, pf_filter_stats):
 
+def print_filter_stats_to_file(meine_filter_stats, pf_filter_stats):
     output = ""
     for k in sorted(meine_filter_stats.keys()):
         output += "Filter ({}): {}".format(k, meine_filter_stats[k]) + "\n"
@@ -2115,7 +2074,7 @@ def perform_msa_on_df(env, df, **kwargs):
 
     logger.info("Performing msa on df with parameters:\n{}".format(msa_options.to_string()))
 
-    #if msa_options.safe_get("column-distance"):
+    # if msa_options.safe_get("column-distance"):
     #    column_k2p_distance = msa_options.safe_get("column-distance")
 
     # setup directory
@@ -2127,13 +2086,14 @@ def perform_msa_on_df(env, df, **kwargs):
     #
     # Step 1: Filter data points
     logger.debug("Pipeline Step 1: Filter")
-    df = filter_df(df, msa_options, column_distance=column_k2p_distance, filter_stats=filter_stats, filter_non_group_only=False )
+    df = filter_df(df, msa_options, column_distance=column_k2p_distance, filter_stats=filter_stats,
+                   filter_non_group_only=False)
 
     # Step 3: Perform MSA on each ortholog group
     logger.debug("Pipeline Step 3: Perform MSA on each ortholog group")
 
     # get information for labels to use in computation of upstream distances
-    labels_info = None # sbsp_general.dataframe.df_get_index_of_label_per_genome(env, df, "both")
+    labels_info = None  # sbsp_general.dataframe.df_get_index_of_label_per_genome(env, df, "both")
 
     df_result = pd.DataFrame()
 
@@ -2150,7 +2110,7 @@ def perform_msa_on_df(env, df, **kwargs):
         #     pass
         # else:
         #     continue
-        if len(df_group)+1 < msa_options["filter-min-number-orthologs"]:
+        if len(df_group) + 1 < msa_options["filter-min-number-orthologs"]:
             filter_stats["filter-min-number-orthologs"] += 1
             continue
 
@@ -2173,24 +2133,20 @@ def perform_msa_on_df(env, df, **kwargs):
     # sbsp_general.dataframe.df_add_distance_to_upstream_gene(env, df_result, "q", suffix_coordinates=tag_msa, suffix_upstream_distance="upstream-distance-msa")
     # sbsp_general.dataframe.df_add_distance_to_upstream_gene(env, df_result, "t", suffix_coordinates=tag_msa, suffix_upstream_distance="upstream-distance-msa")
 
-
-
-    #print_filter_stats(filter_stats)
-
+    # print_filter_stats(filter_stats)
 
     if len(df_result) == 0:
         return df_result
 
     import sbsp_io.msa_2
     sbsp_io.msa_2.update_msa_outputs(df_result,
-                                              column_q_upstream_distance="q-upstream-distance-msa",
-                                              column_t_upstream_distance="t-upstream-distance-msa")
+                                     column_q_upstream_distance="q-upstream-distance-msa",
+                                     column_t_upstream_distance="t-upstream-distance-msa")
 
     df_result["q-left-msa"] = df_result["q-left-msa"].astype(int)
     df_result["q-right-msa"] = df_result["q-right-msa"].astype(int)
 
     return df_result
-
 
 
 def select_start_for_msa_from_file(env, pf_msa, **kwargs):
@@ -2207,14 +2163,12 @@ def move_files_using_scp(df, pd_msa):
     from shutil import copyfile
 
     for pf_msa_old, df_group in df.groupby("pf-msa-output", as_index=False):
-
         fn_msa = os.path.basename(pf_msa_old)
         pf_msa_new = os.path.join(pd_msa, fn_msa)
 
         df.loc[df["pf-msa-output"] == pf_msa_old, "pf-msa-output"] = pf_msa_new
         copyfile(pf_msa_old, pf_msa_new)
         copyfile(pf_msa_old + "_nt", pf_msa_new + "_nt")
-
 
 
 def run_sbsp_msa_from_multiple_for_multiple_queries(env, dict_qkey_to_list_pf_data, pf_output, **kwargs):
@@ -2281,6 +2235,7 @@ def run_sbsp_msa_from_multiple(env, list_pf_data, pf_output, **kwargs):
 
     return pf_output
 
+
 def run_sbsp_msa(env, pf_data, pf_output, **kwargs):
     # type: (Environment, str, str, Dict[str, Any]) -> str
 
@@ -2291,6 +2246,7 @@ def run_sbsp_msa(env, pf_data, pf_output, **kwargs):
     df.to_csv(pf_output, index=False)
 
     return pf_output
+
 
 def get_files_per_key(list_pf):
     # type: (List[str]) -> Dict[str, List[str]]
@@ -2312,14 +2268,3 @@ def get_files_per_key(list_pf):
             pass
 
     return result
-
-
-
-
-
-
-
-
-
-
-
