@@ -302,7 +302,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
     msa_output_start = get_value(kwargs, "msa_output_start", 0)
     pd_msa_final = get_value(kwargs, "pd_msa_final", env["pd-work"])
 
-    distance_min = 0.001
+    distance_min = 0.000001
     distance_max = 0.5
 
     elapsed_times = dict()
@@ -353,6 +353,17 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
     stats["num-queries-with-support-before-gaps-filtering"] = 0
     stats["num-queries-with-support-after-gaps-filtering"] = 0
 
+    stats_per_query = dict()
+    # steps:
+    # blast hit
+    # kimura filter
+    # pairwise filter
+    # gaps filter
+    # no prediction filter
+    lost_query_at_step = {
+            x: 0 for x in ["blast", "kimura", "pairwise-kimura", "msa-gaps", "start-search"]
+    }
+
     # for each blast query
     for r in records:
 
@@ -360,13 +371,19 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
 
         list_entries = list()
         num_queries += 1
-        stats["num-queries-with-support-before-filtering"] += 1
+        stats_per_query[num_queries] = 0
 
         curr_time = timeit.default_timer()
+        one_if_one_target = 0
+
+        if len(r.alignments) == 0:
+            lost_query_at_step["blast"] += 1
 
         # for each alignment to a target protein for the current query
         for alignment in r.alignments:
 
+            stats_per_query[num_queries] += 1
+            one_if_one_target = 1
             hsp = select_representative_hsp(alignment, hsp_criteria)
 
             target_info = unpack_fasta_header(alignment.title)
@@ -425,10 +442,14 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
                 list_entries.append(output_info)
 
 
+        stats["num-queries-with-support-before-filtering"] += one_if_one_target
         elapsed_times["2-read-filter-per-query"] += timeit.default_timer() - curr_time
         # run MSA on remaining targets
 
         if len(list_entries) == 0:
+            if one_if_one_target != 0:
+                lost_query_at_step["kimura"] += 1
+
             continue
 
         stats["num-queries-with-support-after-filtering"] += 1
@@ -442,6 +463,12 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
                                        msa_number=msa_number, stats=stats)
         elapsed_times["3-msa-per-query"] += timeit.default_timer() - curr_time
         msa_number += 1
+
+
+        if stats["num-queries-with-support-before-pairwise-filtering"] > stats["num-queries-with-support-after-pairwise-filtering"]:
+            lost_query_at_step["pairwise-kimura"] += 1
+        if stats["num-queries-with-support-before-gaps-filtering"] > stats["num-queries-with-support-after-gaps-filtering"]:
+            lost_query_at_step["msa-gaps"] += 1
 
         # for each query in blast
         if pd_msa_final is not None:
@@ -464,6 +491,13 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, msa_options, **kwargs):
     for key in sorted(stats.keys()):
         logging.critical("Stats: {},{}".format(key, stats[key]))
 
+    for key in sorted(stats_per_query.keys()):
+        logging.critical("Stats per query: {},{}".format(key, stats_per_query[key]))
+
+
+    for key in lost_query_at_step.keys():
+        logging.critical("Lost-query: {},{}".format(key, lost_query_at_step[key]))
+
     return pf_output
 
 
@@ -483,6 +517,7 @@ def sbsp_steps(env, pipeline_options):
     # read input sequences
     q_gil = GenomeInfoList.init_from_file(pipeline_options["pf-q-list"])
 
+    mkdir_p(env["pd-work"])
     pf_aa = os.path.join(env["pd-work"], "query.faa")
     extract_labeled_sequences_for_genomes(env, q_gil, pf_aa, ignore_frameshifted=True, reverse_complement=True, ignore_partial=True )
     q_sequences = read_fasta_into_hash(pf_aa, stop_at_first_space=False)
