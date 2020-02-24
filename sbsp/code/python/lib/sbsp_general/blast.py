@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os
+from subprocess import CalledProcessError
 from typing import *
 
 import numpy as np
@@ -50,8 +51,10 @@ def run_blast_alignment(pf_q_sequences, pf_blast_db, pf_blast_out, use_diamond, 
     # type: (str, str, str, bool, **str) -> None
 
     cmd = gen_cmd_run_blastp(pf_q_sequences, pf_blast_db, pf_blast_out, use_diamond, **kwargs)
-    print(cmd)
-    sbsp_general.general.run_shell_cmd(cmd)
+    try:
+        sbsp_general.general.run_shell_cmd(cmd)
+    except CalledProcessError:
+        raise ValueError("Couldn't run blast")
 
 
 def create_blast_database(pf_input, pf_blast_db, seq_type="nucl", use_diamond=True):

@@ -9,7 +9,7 @@ from sbsp_general import Environment
 from sbsp_general.general import get_value
 import sbsp_general.labels
 from sbsp_io.general import read_rows_to_list
-from sbsp_options.msa import MSAOptions
+from sbsp_options.sbsp import SBSPOptions
 from typing import *
 import pandas as pd
 import copy
@@ -270,7 +270,7 @@ def convert_alignments_to_str(alignments):
 
 
 def should_count_in_neighbor(pos, alignment, msa_options, q_curr_type):
-    # type: (int, str, MSAOptions, str) -> bool
+    # type: (int, str, SBSPOptions, str) -> bool
 
     limit_gap_skips = msa_options.safe_get("search-limit-gap-skips")
 
@@ -718,7 +718,7 @@ def get_candidates_without_upstream_conservation(alignments, **kwargs):
 
 
 def select_start_position_from_msa(alignments, msa_options, **kwargs):
-    # type: (Bio.Align.MultipleSeqAlignment, MSAOptions, Dict[str, Any]) -> int
+    # type: (Bio.Align.MultipleSeqAlignment, SBSPOptions, Dict[str, Any]) -> int
 
     logger.debug("Func: Select start position from MSA")
 
@@ -1036,7 +1036,7 @@ def add_start_position_to_msa_alignments(alignments, position, position_of_upstr
 
 
 def select_and_add_start_position_alignments(alignments, msa_options):
-    # type: (Bio.Align.MultipleSeqAlignment, MSAOptions) -> Bio.Align.MultipleSeqAlignment
+    # type: (Bio.Align.MultipleSeqAlignment, SBSPOptions) -> Bio.Align.MultipleSeqAlignment
 
     position = select_start_position_from_msa(alignments, msa_options=msa_options)
 
@@ -1046,7 +1046,7 @@ def select_and_add_start_position_alignments(alignments, msa_options):
 
 
 def filter_df_by_upstream_to_msa(df, msa_options, **kwargs):
-    # type: (pd.DataFrame, MSAOptions, Dict[str, Any]) -> pd.DataFrame
+    # type: (pd.DataFrame, SBSPOptions, Dict[str, Any]) -> pd.DataFrame
 
     suffix_upstream = get_value(kwargs, "suffix_upstream", "upstream-distance-msa")
     suffix_gene_length = get_value(kwargs, "suffix_gene_length", "gene-length-msa")
@@ -1087,7 +1087,7 @@ def filter_df_by_upstream_to_msa(df, msa_options, **kwargs):
 
 
 def filter_df(df, msa_options, **kwargs):
-    # type: (pd.DataFrame, MSAOptions, Dict[str, Any]) -> pd.DataFrame
+    # type: (pd.DataFrame, SBSPOptions, Dict[str, Any]) -> pd.DataFrame
 
     column_distance = get_value(kwargs, "column_distance", "k2p-distance")
     filter_stats = get_value(kwargs, "filter_stats", None)
@@ -1483,7 +1483,7 @@ def get_indices_after_filtering(edge_mat, min_range=None, max_range=None, strate
 
 
 def filter_by_pairwise_kimura_from_msa(list_sequences_aligned_nt, msa_options):
-    # type: (List[str], MSAOptions) -> Tuple(List[str], List[int])
+    # type: (List[str], SBSPOptions) -> Tuple(List[str], List[int])
 
     output = list()
 
@@ -1511,7 +1511,7 @@ def filter_sequences_that_introduce_gaps_in_msa(list_sequences_aligned, msa_opti
     :param list_sequences_aligned:
     :type list_sequences_aligned: List[str]
     :param msa_options:
-    :type msa_options: MSAOptions
+    :type msa_options: SBSPOptions
     :return:
     """
 
@@ -1666,7 +1666,7 @@ def compute_position_of_upstream_of_query_in_msa(msa_t, q_pos_5prime_in_msa_no_g
 
 
 def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
-    # type: (Dict[str, Any], pd.DataFrame, MSAOptions, Dict[str, Any]) -> (pd.DataFrame, sbsp_general.labels.Label)
+    # type: (Dict[str, Any], pd.DataFrame, SBSPOptions, Dict[str, Any]) -> (pd.DataFrame, sbsp_general.labels.Label)
 
     order_by = get_value(kwargs, "order_by", None)
     column_k2p_distance = get_value(kwargs, "k2p_distance", "distance")
@@ -2065,7 +2065,7 @@ def print_filter_stats_to_file(meine_filter_stats, pf_filter_stats):
 def perform_msa_on_df(env, df, **kwargs):
     # type: (Environment, pd.DataFrame, Dict[str, Any]) -> pd.DataFrame
 
-    msa_options = get_value(kwargs, "msa_options", MSAOptions(env))
+    msa_options = get_value(kwargs, "msa_options", SBSPOptions(env))
     msa_output_start = get_value(kwargs, "msa_output_start", 0)
     msa_number = get_value(kwargs, "msa_number", 0)
     dn_msa_output = get_value(kwargs, "dn_msa_output", None)
@@ -2153,7 +2153,7 @@ def select_start_for_msa_from_file(env, pf_msa, **kwargs):
     # type: (Dict[str, Any], str, Dict[str, Any]) -> None
 
     suffix = get_value(kwargs, "suffix", None)
-    msa_options = get_value(kwargs, "msa_options", MSAOptions(env))
+    msa_options = get_value(kwargs, "msa_options", SBSPOptions(env))
 
     # read alignment
 

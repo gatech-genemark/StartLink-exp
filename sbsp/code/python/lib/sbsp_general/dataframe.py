@@ -11,7 +11,7 @@ from sbsp_alg.phylogeny import k2p_distance, global_alignment_aa_with_gap
 from sbsp_alg.gene_distances import *
 from sbsp_general import Environment
 from sbsp_general.general import get_value, except_if_not_in_set
-from sbsp_options.msa import MSAOptions
+from sbsp_options.sbsp import SBSPOptions
 from typing import *
 # from memory_profiler import profile
 
@@ -419,7 +419,7 @@ def df_compute_kimura(env, df, **kwargs):
 
 def df_filter(env, df, **kwargs):
 
-    msa_options = get_value(kwargs, "msa_options", MSAOptions(env))     # type: (MSAOptions)
+    msa_options = get_value(kwargs, "msa_options", SBSPOptions(env))     # type: (SBSPOptions)
     pf_filter_stats = get_value(kwargs, "pf_filter_stats", None)
     filter_non_group_only = get_value(kwargs, "filter_non_group_only", True)
 

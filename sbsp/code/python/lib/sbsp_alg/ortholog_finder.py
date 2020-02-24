@@ -21,7 +21,7 @@ from sbsp_general.labels import Labels, Label, create_gene_key_from_label
 from sbsp_io.general import mkdir_p
 from sbsp_io.labels import read_labels_from_file
 from sbsp_io.sequences import read_fasta_into_hash
-from sbsp_options.msa import MSAOptions
+from sbsp_options.sbsp import SBSPOptions
 
 log = logging.getLogger(__name__)
 
@@ -218,6 +218,21 @@ def create_info_for_query_target_pair(query_info, target_info, hsp, **kwargs):
 
         for key in ["genome", "accession", "gc", "left", "right", "strand"]:
             output["{}-{}".format(source, key)] = source_to_info[source][key]
+
+    output["q-prot-pos-5prime-in-frag-msa"] = query_info["offset"] / 3
+    output["q-nucl-pos-5prime-in-frag-msa"] = query_info["offset"]
+    output["q-prot-position-of-5prime-in-msa-fragment-no-gaps"] = query_info["offset"] / 3
+    output["q-nucl-position-of-5prime-in-msa-fragment-no-gaps"] = query_info["offset"]
+    output["t-prot-pos-5prime-in-frag-msa"] = target_info["offset"] / 3
+    output["t-nucl-pos-5prime-in-frag-msa"] = target_info["offset"]
+    output["t-prot-position-of-5prime-in-msa-fragment-no-gaps"] = target_info["offset"] / 3
+    output["t-nucl-position-of-5prime-in-msa-fragment-no-gaps"] = target_info["offset"]
+
+    output["q-prot-msa"] = Seq(query_info["lorf_nt"]).translate()._data
+    output["t-prot-msa"] = Seq(target_info["lorf_nt"]).translate()._data
+
+    output["q-nucl-msa"] = Seq(query_info["lorf_nt"])._data
+    output["t-nucl-msa"] = Seq(target_info["lorf_nt"])._data
 
     return output
 
@@ -675,7 +690,7 @@ def extract_labeled_sequences_for_genomes(env, gil, pf_output, **kwargs):
     return pf_output
 
 
-def run_blast_on_sequences(env, pf_q_aa, pf_db, pf_blast_output, **kwargs):
+def run_blast_on_sequence_file(env, pf_q_aa, pf_db, pf_blast_output, **kwargs):
     # type: (Environment, str, str, str, Dict[str, Any]) -> None
     run_blast_alignment(pf_q_aa, pf_db, pf_blast_output, use_diamond=True, **kwargs)
 
@@ -683,7 +698,7 @@ def run_blast_on_sequences(env, pf_q_aa, pf_db, pf_blast_output, **kwargs):
 def get_orthologs_from_files(env, pf_q_list, pf_t_list, pf_output, **kwargs):
     # type: (Environment, str, str, str, Dict[str, Any]) -> str
 
-    sbsp_options = get_value(kwargs, "sbsp_options", MSAOptions(env))  # type: MSAOptions
+    sbsp_options = get_value(kwargs, "sbsp_options", SBSPOptions(env))  # type: SBSPOptions
 
     fn_q_labels = get_value(kwargs, "fn_q_labels", "ncbi.gff")
     fn_t_labels = get_value(kwargs, "fn_t_labels", "ncbi.gff")
@@ -713,7 +728,7 @@ def get_orthologs_from_files(env, pf_q_list, pf_t_list, pf_output, **kwargs):
 
     # Run blast
     pf_blast_results = os.path.join(pd_work, "blast.xml")
-    run_blast_on_sequences(env, pf_q_aa, pf_blast_db, pf_blast_results, **kwargs)
+    run_blast_on_sequence_file(env, pf_q_aa, pf_blast_db, pf_blast_results, **kwargs)
 
     # Parse data, filter, and write to CSV
     parse_filter_and_convert_to_csv(pf_blast_results, pf_output,

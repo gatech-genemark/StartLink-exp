@@ -2,10 +2,10 @@ import argparse
 from typing import *
 
 
-def add_msa_options(parser):
+def add_sbsp_options(parser):
     # type: (argparse.ArgumentParser) -> None
 
-    parser.add_argument('--pf-msa-options', required=False, default=None, type=Union[str])
+    parser.add_argument('--pf-sbsp-options', required=False, default=None, type=Union[str])
 
     parser.add_argument("--filter-max-distance", type=float, default=None)
     parser.add_argument("--filter-min-distance", type=float, default=None)
