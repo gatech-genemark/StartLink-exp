@@ -370,7 +370,7 @@ def extract_sequences_from_df_for_msa(df):
 
         list_sequences.append(Seq(df.iloc[0]["q-lorf_nt"]).translate())
 
-        for row in df:
+        for _, row in df.iterrows():
             list_sequences.append(Seq(row["t-lorf_nt"]).translate())
 
     return list_sequences
@@ -486,7 +486,7 @@ def filter_df_based_on_msa(df, msa_t, sbsp_options, inplace=False, multiple_filt
     for i in range(first_start_codon_position, end_search):
 
         # if chunk of gaps detected in query
-        block_detected = msa_t[0][i:i + gap_width].count("-") == gap_width
+        block_detected = msa_t[0][i:i + gap_width].seq._data.count("-") == gap_width
 
         sequences_that_contribute_to_block = list()
 
@@ -494,7 +494,7 @@ def filter_df_based_on_msa(df, msa_t, sbsp_options, inplace=False, multiple_filt
 
             # find sequences that have no gaps in that region
             for j in range(1, num_sequences_aligned):
-                if msa_t[j][i:i + gap_width].count("-") == 0:
+                if msa_t[j][i:i + gap_width].seq._data.count("-") == 0:
                     sequences_that_contribute_to_block.append(j)
 
             # compute fraction of these sequences
@@ -524,7 +524,7 @@ def get_next_position_in_msa(l_curr_pos, l_msa_t, l_direction, l_skip_gaps_in_qu
             if new_pos < 0:
                 return None
             if l_skip_gaps_in_query and l_msa_t[0][new_pos] == "-":
-                new_pos = l_curr_pos - 1
+                new_pos = new_pos - 1
                 continue
             break
     else:
@@ -533,7 +533,7 @@ def get_next_position_in_msa(l_curr_pos, l_msa_t, l_direction, l_skip_gaps_in_qu
             if new_pos >= l_msa_t.alignment_length():
                 return None
             if l_skip_gaps_in_query and l_msa_t[0][new_pos] == "-":
-                new_pos = l_curr_pos + 1
+                new_pos = new_pos + 1
                 continue
             break
     return new_pos
@@ -607,6 +607,9 @@ def get_all_candidates_before_conserved_block(msa_t, sbsp_options, at_least_unti
     threshold = 0.5         # FIXME
     score_on_all_pairs = False      # get_value(kwargs, "score_on_all_pairs", False)
 
+    if at_least_until is None:
+        at_least_until = 0
+
     scorer = ScoringMatrix("identity")          # FIXME: get from sbsp options
 
     # find the positions of the first two candidate starts in the query
@@ -622,19 +625,22 @@ def get_all_candidates_before_conserved_block(msa_t, sbsp_options, at_least_unti
                 candidates.append(i)
             else:
                 # compute conservation of block upstream of candidate
-                conservation = compute_conservation_in_region(
-                    msa_t, i - region_length, i,
-                    scorer=scorer,
-                    direction="upstream",
-                    skip_gaps_in_query=True,
-                    score_on_all_pairs=score_on_all_pairs,
-                )
+                try:
+                    conservation = compute_conservation_in_region(
+                        msa_t, i - region_length, i,
+                        scorer=scorer,
+                        direction="upstream",
+                        skip_gaps_in_query=True,
+                        score_on_all_pairs=score_on_all_pairs,
+                    )
 
-                # if block not conserved, add candidate
-                if conservation < threshold:
+                    # if block not conserved, add candidate
+                    if conservation < threshold:
+                        candidates.append(i)
+                    else:
+                        break
+                except ValueError:
                     candidates.append(i)
-                else:
-                    break
 
     return candidates
 
@@ -873,7 +879,7 @@ def compute_position_of_upstream_in_lorf_nt(series, s):
     else:
         distance_of_current_to_upstream = series["{}-upstream_left".format(s)] - series["{}-right".format(s)]
 
-    offset_upstream_nt = series["{}-offset"] - distance_of_current_to_upstream
+    offset_upstream_nt = series["{}-offset".format(s)] - distance_of_current_to_upstream
 
     return offset_upstream_nt
 
@@ -965,6 +971,8 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
     pos_of_upstream_in_msa = compute_position_of_upstream_in_msa_for_query(df, msa_t)
 
     # get all candidates before conserved block
+    import pdb
+    pdb.set_trace()
     candidate_positions = get_all_candidates_before_conserved_block(
         msa_t, sbsp_options,
         at_least_until=pos_of_upstream_in_msa
@@ -1128,6 +1136,8 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
     for r in records:
         df_result = find_start_for_query_blast_record(env, r, sbsp_options, **kwargs)
         append_data_frame_to_csv(df_result, pf_output)
+        import pdb
+        pdb.set_trace()
 
     return pf_output
 

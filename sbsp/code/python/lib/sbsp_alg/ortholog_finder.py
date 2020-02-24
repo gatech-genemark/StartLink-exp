@@ -216,7 +216,7 @@ def create_info_for_query_target_pair(query_info, target_info, hsp, **kwargs):
     source_to_info = {"q": query_info, "t": target_info}
     for source in ["q", "t"]:
 
-        for key in ["genome", "accession", "gc", "left", "right", "strand"]:
+        for key in ["genome", "accession", "left", "right", "strand", "upstream_left", "upstream_right", "upstream_strand", "offset"]:
             output["{}-{}".format(source, key)] = source_to_info[source][key]
 
     output["q-prot-pos-5prime-in-frag-msa"] = query_info["offset"] / 3
@@ -228,11 +228,11 @@ def create_info_for_query_target_pair(query_info, target_info, hsp, **kwargs):
     output["t-prot-position-of-5prime-in-msa-fragment-no-gaps"] = target_info["offset"] / 3
     output["t-nucl-position-of-5prime-in-msa-fragment-no-gaps"] = target_info["offset"]
 
-    output["q-prot-msa"] = Seq(query_info["lorf_nt"]).translate()._data
-    output["t-prot-msa"] = Seq(target_info["lorf_nt"]).translate()._data
+    #output["q-prot-msa"] = Seq(query_info["lorf_nt"]).translate()._data
+    #output["t-prot-msa"] = Seq(target_info["lorf_nt"]).translate()._data
 
-    output["q-nucl-msa"] = Seq(query_info["lorf_nt"])._data
-    output["t-nucl-msa"] = Seq(target_info["lorf_nt"])._data
+    output["q-lorf_nt"] = Seq(query_info["lorf_nt"])._data
+    output["t-lorf_nt"] = Seq(target_info["lorf_nt"])._data
 
     return output
 
