@@ -704,7 +704,7 @@ def count_number_of_5prime_candidates_at_position(msa_t, curr_pos, sbsp_options)
                     num_upper -= sbsp_options.safe_get("search-penalize-no-sequence")
 
     return num_upper
-    
+
 
 
 def find_first_5prime_that_satisfies_5prime_threshold(msa_t, sbsp_options, begin, radius_aa, direction, skip_gaps_in_query):
@@ -1065,7 +1065,7 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
     df["predicted-at-step"] = predicted_at_step
     df["start-position-in-msa"] = start_position_in_msa
     df["q-left-sbsp"] = q_label_sbsp.left() + 1
-    df["q-left-sbsp"] = q_label_sbsp.right() + 1
+    df["q-right-sbsp"] = q_label_sbsp.right() + 1
     df["q-strand-sbsp"] = q_label_sbsp.strand()
 
 
