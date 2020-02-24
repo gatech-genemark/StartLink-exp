@@ -132,11 +132,11 @@ def pipeline_step_compute_accuracy(env, df, pipeline_options):
                                                     coordinates_suffix="-msa")
         df_add_distance_between_predicted_and_true(
             df, labels, "q-", "distance-to-true",
-            coordinates_suffix="-msa")
+            coordinates_suffix="-sbsp")
 
 
     # get labels
-    genome_to_pf_labels = df_print_labels(env, df, "q", suffix_coordinates="msa",
+    genome_to_pf_labels = df_print_labels(env, df, "q", suffix_coordinates="sbsp",
                                            suffix_fname="")
 
     # print accuracies

@@ -18,10 +18,10 @@ from sbsp_alg.filtering import filter_orthologs
 from sbsp_alg.msa import run_sbsp_msa, get_files_per_key, run_sbsp_msa_from_multiple, \
     run_sbsp_msa_from_multiple_for_multiple_queries, perform_msa_on_df, move_files_using_scp
 from sbsp_general.blast import run_blast
-from sbsp_general.labels import Label
+from sbsp_general.labels import Label, Coordinates
 from sbsp_general.msa_2 import MSAType
 from sbsp_io.general import mkdir_p, remove_p, write_string_to_file
-from sbsp_general.general import get_value
+from sbsp_general.general import get_value, except_if_not_in_set
 from sbsp_alg.ortholog_finder import get_orthologs_from_files, extract_labeled_sequences_for_genomes, \
     unpack_fasta_header, select_representative_hsp, create_info_for_query_target_pair, \
     compute_distance_based_on_local_alignment, compute_distance_based_on_global_alignment_from_sequences, \
@@ -854,9 +854,115 @@ def step_c_find_rightmost_by_standard_aa_score(msa_t, candidate_positions, sbsp_
     return start_position_in_msa
 
 
+def compute_position_of_upstream_in_lorf_nt(series, s):
+    # type: (pd.Series, str) -> Union[int, None]
+
+    except_if_not_in_set(s, {"q", "t"})
+
+    # no upstream label
+    if series["{}-upstream_left".format(s)] == -1 or series["{}-upstream_right".format(s)] == -1:
+        return None
+
+    s_strand = series["{}-strand".format(s)]
+
+    # Compute distance to upstream label (+ means no overlap, - means overlap
+    # if the label's strand is "+", then use right of upstream label
+    if s_strand == "+":
+        distance_of_current_to_upstream = series["{}-left".format(s)] - series["{}-upstream_right".format(s)]
+    # otherwise, use left of upstream label (since it's on reverse strand)
+    else:
+        distance_of_current_to_upstream = series["{}-upstream_left".format(s)] - series["{}-right".format(s)]
+
+    offset_upstream_nt = series["{}-offset"] - distance_of_current_to_upstream
+
+    return offset_upstream_nt
+
+
+def convert_ungapped_position_to_gapped(ungapped_position, seq):
+    # type: (int, Seq) -> Union[int, None]
+
+    if ungapped_position is None or ungapped_position < 0:
+        return None
+
+    seq_length = len(seq)
+
+    curr_pos = 0
+
+    # skip gaps until first none gap
+    while curr_pos < seq_length and seq[curr_pos] == "-":
+        curr_pos += 1
+
+    for i in range(ungapped_position):
+
+        # state: at non-gap, go over it
+        curr_pos += 1
+
+        # if at gap, skip all gaps
+        while curr_pos < seq_length and seq[curr_pos] == "-":
+            curr_pos += 1
+
+    if curr_pos >= seq_length:
+        return None
+
+    return curr_pos
+
+def convert_gapped_position_to_ungapped(gapped_position, seq):
+    # type: (int, Seq) -> Union[int, None]
+
+    if gapped_position is None or gapped_position < 0:
+        return None
+
+    number_of_gaps_until_position = sum(1 for i in range(gapped_position) if seq[i] == "-")
+
+    return gapped_position - number_of_gaps_until_position
+
+
+def compute_position_of_upstream_in_msa_for_query(df, msa_t):
+    # type: (pd.DataFrame, MSAType) -> Union[int, None]
+
+    pos_of_upstream_in_lorf_nt = compute_position_of_upstream_in_lorf_nt(df.iloc[0], "q")
+    if pos_of_upstream_in_lorf_nt is None or pos_of_upstream_in_lorf_nt < 0:
+        return None
+
+    pos_of_upstream_in_lorf_aa = int(pos_of_upstream_in_lorf_nt / 3)        # approximate to nearest AA
+
+    return convert_ungapped_position_to_gapped(pos_of_upstream_in_lorf_aa, msa_t[0].seq)
+
+
+def get_label_from_start_position_in_msa(series, msa_t, start_position_in_msa, s="q"):
+    # type: (pd.Series, MSAType, int, str) -> Label
+
+    # convert gapped position to ungapped
+    ungapped_offset_aa = convert_gapped_position_to_ungapped(start_position_in_msa, msa_t[0].seq)
+
+    ungapped_offset_nt = ungapped_offset_aa * 3
+
+    s_strand = series["{}-strand".format(s)]
+
+    left = series["{}-left".format(s)]
+    right = series["{}-right".format(s)]
+    strand = series["{}-strand".format(s)]
+
+    if s_strand == "+":
+        left = left + (ungapped_offset_nt - series["{}-offset".format(s)])
+    else:
+        right = right + (series["{}-offset".format(s)] - ungapped_offset_nt)
+
+    return Label(
+        Coordinates(
+            left - 1, right - 1, strand
+        ),
+        seqname=series["{}-accession".format(s)]
+    )
+
+
+
+
 def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
     # type: (pd.DataFrame, MSAType, SBSPOptions) -> None
     predicted_at_step = ""
+
+    pos_of_upstream_in_msa = compute_position_of_upstream_in_msa_for_query(df, msa_t)
 
     # get all candidates before conserved block
     candidate_positions = get_all_candidates_before_conserved_block(
@@ -897,15 +1003,17 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
 
     # get label of new start in genome
     q_label_sbsp = get_label_from_start_position_in_msa(
-        df,
+        df.iloc[0],
         msa_t,
-        start_position_in_msa
+        start_position_in_msa,
+        s="q"
     )       # type: Label
 
     df["predicted-at-step"] = predicted_at_step
     df["start-position-in-msa"] = start_position_in_msa
     df["q-left-sbsp"] = q_label_sbsp.left() + 1
     df["q-left-sbsp"] = q_label_sbsp.right() + 1
+    df["q-strand-sbsp"] = q_label_sbsp.strand()
 
 
 def perform_msa_on_df_with_single_query(env, df, sbsp_options, **kwargs):

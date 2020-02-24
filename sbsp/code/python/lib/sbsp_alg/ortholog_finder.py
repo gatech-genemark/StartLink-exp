@@ -586,7 +586,9 @@ def extract_labeled_sequences(sequences, labels, **kwargs):
         offset = len(lorf_nt) - (label.right() - label.left() + 1)
 
         upstream_label = gene_key_to_upstream_label[create_gene_key_from_label(label)]
-        upstream_left = upstream_right = upstream_strand = -1
+        upstream_left = upstream_right = -1
+        upstream_strand = ""
+
         if upstream_label is not None:
             upstream_left = upstream_label.left() + 1
             upstream_right = upstream_label.right() + 1
@@ -658,7 +660,7 @@ def dict_intersection_by_key(dict_a, dict_b):
 
 
 def extract_labeled_sequences_for_genomes(env, gil, pf_output, **kwargs):
-    # type: (Environment, GenomeInfoList, str, Dict[str, Any]) -> None
+    # type: (Environment, GenomeInfoList, str, Dict[str, Any]) -> str
 
     # open file for writing
     try:
