@@ -115,6 +115,10 @@ class LabelsComparisonDetailed:
             "a": Labels([x[0] for x in compare_3p_5p["match"].values()]),
             "b": Labels([x[0] for x in compare_3p_5p["match"].values()])
         }
+        comparison["labels"]["match-3p"] = {
+            "a": Labels([x[0] for x in compare_3p["match"].values()]),
+            "b": Labels([x[0] for x in compare_3p["match"].values()])
+        }
         return comparison
 
     @staticmethod
