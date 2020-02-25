@@ -16,7 +16,7 @@ import sbsp_ml.msa_features_2
 from sbsp_alg.feature_computation import compute_features
 from sbsp_alg.filtering import filter_orthologs
 from sbsp_alg.msa import run_sbsp_msa, get_files_per_key, run_sbsp_msa_from_multiple, \
-    run_sbsp_msa_from_multiple_for_multiple_queries, perform_msa_on_df, move_files_using_scp
+    run_sbsp_msa_from_multiple_for_multiple_queries, perform_msa_on_df, move_files_using_scp, should_count_in_neighbor
 from sbsp_general.blast import run_blast
 from sbsp_general.labels import Label, Coordinates
 from sbsp_general.msa_2 import MSAType
@@ -660,7 +660,52 @@ def step_a_check_if_at_lorf(candidate_positions):
 
 def count_number_of_5prime_candidates_at_position(msa_t, curr_pos, sbsp_options):
     # type: (MSAType, int, SBSPOptions) -> int
-    raise NotImplementedError()
+
+    i = curr_pos
+    num_upper = 0
+    q_curr_type = msa_t[0][i]
+
+    for j in range(msa_t.number_of_sequences()):
+
+        should_count = False
+
+        letter_at_i_j = msa_t[j][i]
+
+        if msa_t[j][i].isupper():
+
+            should_count = True
+
+            t_curr_type = msa_t[j][i]
+
+            if sbsp_options["search-ignore-m-to-l-mutation"]:
+                if q_curr_type == "M" and t_curr_type == "L":
+                    should_count = False
+
+            if sbsp_options["search-ignore-l-to-m-mutation"]:
+                if q_curr_type == "L" and t_curr_type == "M":
+                    should_count = False
+
+        # if current position isn't upper, check neighbors
+        else:
+            if sbsp_options["search-neighbor"]:
+                should_count = should_count_in_neighbor(i, msa_t[j].seq._data, sbsp_options, q_curr_type)
+
+        if should_count:
+            num_upper += 1
+
+        # penalize
+        if sbsp_options.safe_get("search-penalize-standard-aa") is not None:
+            if letter_at_i_j in {"v", "l", "i"}:
+                num_upper -= sbsp_options.safe_get("search-penalize-standard-aa")
+
+        if sbsp_options.safe_get("search-penalize-no-sequence") is not None:
+            if letter_at_i_j == "-":
+                if msa_t[j][0:i].count("-") == i:
+                    num_upper -= sbsp_options.safe_get("search-penalize-no-sequence")
+
+    return num_upper
+    
+
 
 def find_first_5prime_that_satisfies_5prime_threshold(msa_t, sbsp_options, begin, radius_aa, direction, skip_gaps_in_query):
     # type: (MSAType, SBSPOptions, int, int, str, bool) -> Union[int, None]
