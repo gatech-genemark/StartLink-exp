@@ -4,9 +4,11 @@ import logging
 import timeit
 from typing import *
 
+from Bio.Align import MultipleSeqAlignment
 from Bio.Align.Applications import ClustalwCommandline
 from Bio.Blast import NCBIXML, Record
 from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 from Bio.SubsMat import MatrixInfo as matlist
 from numpy import isclose
 
@@ -25,7 +27,7 @@ from sbsp_general.general import get_value, except_if_not_in_set
 from sbsp_alg.ortholog_finder import get_orthologs_from_files, extract_labeled_sequences_for_genomes, \
     unpack_fasta_header, select_representative_hsp, create_info_for_query_target_pair, \
     compute_distance_based_on_local_alignment, compute_distance_based_on_global_alignment_from_sequences, \
-    run_blast_on_sequence_file
+    run_blast_on_sequence_file, is_valid_start
 from sbsp_alg.sbsp_compute_accuracy import pipeline_step_compute_accuracy, separate_msa_outputs_by_stats
 from sbsp_general import Environment
 from sbsp_io.general import read_rows_to_list
@@ -424,6 +426,59 @@ def run_msa_on_sequences(env, sequences, sbsp_options, **kwargs):
     return msa_t
 
 
+def convert_gapped_aa_to_gapped_nt(seq_aa, seq_nt_no_gaps):
+    # type: (Seq, str) -> Seq
+
+    seq_nt_with_gaps = ""
+    pos_no_gaps = 0
+    for i in range(len(seq_aa)):
+        if seq_aa[i] == "-":
+            seq_nt_with_gaps += "---"
+        else:
+            seq_nt_with_gaps += seq_nt_no_gaps[pos_no_gaps:pos_no_gaps+3]
+            pos_no_gaps += 3
+
+    return Seq(seq_nt_with_gaps)
+
+
+def convert_msa_aa_to_nt(msa_t_aa, df):
+    # type: (MSAType, pd.DataFrame) -> MSAType
+
+    seq_record_list = list()
+    # query sequence
+    seq_record_list.append(SeqRecord(convert_gapped_aa_to_gapped_nt(msa_t_aa[0].seq, df["q-lorf_nt"])))
+
+    # targets
+    for i in range(1, msa_t_aa.number_of_sequences()):
+        row = df.iloc[i-1]          # -1 to account for query as first sequence
+        seq_record_list.append(SeqRecord(convert_gapped_aa_to_gapped_nt(msa_t_aa[i].seq, row["t-lorf_nt"])))
+
+    return MSAType(MultipleSeqAlignment(seq_record_list))
+
+
+def lower_case_non_5prime_in_msa(msa_t_aa, msa_t_nt):
+    # type: (MSAType, MSAType) -> MSAType
+
+    seq_record_list = list()
+
+    for i in range(msa_t_aa.number_of_sequences()):
+
+        new_seq_aa = ""
+        for j_aa in range(msa_t_aa.alignment_length()):
+            j_nt = j_aa * 3
+
+            if is_valid_start(msa_t_nt[j_nt:j_nt+3], "+"):
+                new_seq_aa += msa_t_aa[j_aa].seq._data.upper()
+            else:
+                new_seq_aa += msa_t_aa[j_aa].seq._data.lower()
+
+        seq_record_list.append(SeqRecord(Seq(new_seq_aa)))
+
+    return MSAType(MultipleSeqAlignment(seq_record_list))
+
+
+
+
 def construct_msa_from_df(env, df, sbsp_options, **kwargs):
     # type: (Environment, pd.DataFrame, SBSPOptions, Dict[str, Any]) -> Union[None, MSAType]
 
@@ -432,7 +487,14 @@ def construct_msa_from_df(env, df, sbsp_options, **kwargs):
     if len(sequences) == 0:
         return None
 
-    return run_msa_on_sequences(env, sequences, sbsp_options, **kwargs)
+    msa_t_aa = run_msa_on_sequences(env, sequences, sbsp_options, **kwargs)
+
+    # get nucleotide version of msa
+    msa_t_nt = convert_msa_aa_to_nt(msa_t_aa, df)
+
+    msa_t_aa = lower_case_non_5prime_in_msa(msa_t_aa, msa_t_nt)
+
+    return msa_t_aa
 
 def number_of_sequences_with_gap_in_position(msa_t, pos):
     # type: (MSAType, int) -> int
