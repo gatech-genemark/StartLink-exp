@@ -34,6 +34,8 @@ parser.add_argument('--pf-genome-list', required=True, help="List containing gen
 parser.add_argument('--pf-gcfid-to-pd-sbsp', required=True, help="CSV file containing GCFID to SBSP run directory")
 parser.add_argument('--pf-output-summary', required=True, help="Output summary file")
 
+parser.add_argument('--prodigal', default=False)
+
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
 parser.add_argument('--pd-results', required=False, default=None, help="Path to results directory")
@@ -61,10 +63,11 @@ def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
 
     venn_title = get_value(kwargs, "venn_title", None)
     pf_venn = get_value(kwargs, "pf_venn", os.path.join(env["pd-work"], "venn.pdf"))
+    pf_prodigal = get_value(kwargs, "pf_prodigal", None)
 
     labels_gms2 = read_labels_from_file(pf_gms2, name="GMS2")
     labels_sbsp = read_labels_from_file(pf_sbsp, name="SBSP")
-    labels_ncbi = read_labels_from_file(pf_ncbi, name="Prodigal")
+    labels_ncbi = read_labels_from_file(pf_ncbi, name="NCBI")
 
     lcd = LabelsComparisonDetailed(labels_gms2, labels_sbsp,
                                    name_a="gms2",
@@ -74,7 +77,7 @@ def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
 
     lcd_2 = LabelsComparisonDetailed(labels_gms2_sbsp_3p_5p, labels_ncbi,
                                      name_a="gms2_sbsp",
-                                     name_b="prodigal")
+                                     name_b="ncbi")
 
     labels_gms2_sbsp_ncbi_3p_5p = lcd_2.intersection("a")
 
@@ -83,29 +86,63 @@ def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
         save_fig=pf_venn
     ))
 
+    labels_prodigal = None
+    prodigal_info = dict()
+    if pf_prodigal is not None:
+        labels_prodigal = read_labels_from_file(pf_prodigal, name="Prodigal")
+        lcd_prodigal = LabelsComparisonDetailed(labels_gms2_sbsp_3p_5p, labels_prodigal,
+                                         name_a="gms2_sbsp",
+                                         name_b="prodigal")
+
+        labels_gms2_sbsp_prodigal_3p_5p = lcd_prodigal.intersection("a")
+
+        # Goal: check (GMS2=SBSP) != (Prodigal=NCBI)
+
+        # step1: Prodigal=NCBI
+        labels_ncbi_prodigal_3p_5p = LabelsComparisonDetailed(labels_ncbi, labels_prodigal,
+                                                              name_a="ncbi", name_b="prodigal").match_3p_5p("a")
+
+        # Get same genes in (GMS2=SBSP) and (Prodigal=NCBI)
+        lcd_full = LabelsComparisonDetailed(labels_gms2_sbsp_3p_5p, labels_ncbi_prodigal_3p_5p,
+                                            name_a="gms2_sbsp", name_b="ncbi_prodigal")
+
+        labels_match_3p = lcd_full.match_3p("a")
+        labels_match_3p_5p = lcd_full.match_3p_5p("a")
+
+        prodigal_info = {
+            "(GMS2=SBSP)!=Prodigal": len(labels_gms2_sbsp_3p_5p) - len(labels_gms2_sbsp_prodigal_3p_5p),
+            "(GMS2=SBSP)!=(NCBI=Prodigal)": len(labels_match_3p) - len(labels_match_3p_5p),
+        }
+
     return {
         "GMS2": len(labels_gms2),
         "SBSP": len(labels_sbsp),
-        "Prodigal": len(labels_ncbi),
+        "NCBI": len(labels_ncbi),
         "GMS2=SBSP": len(labels_gms2_sbsp_3p_5p),
-        "GMS2=SBSP=Prodigal": len(labels_gms2_sbsp_ncbi_3p_5p)
+        "GMS2=SBSP=NCBI": len(labels_gms2_sbsp_ncbi_3p_5p),
+        **prodigal_info
     }
 
 
 def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output_summary, **kwargs):
     # type: (Environment, GenomeInfoList, Dict[str, str], str, Dict[str, Any]) -> None
+
+    prodigal = get_value(kwargs, "prodigal", None)
     list_summary = list()
     for gi in gil:
         pd_genome = os.path.join(env["pd-data"], gi.name)
         pf_gms2 = os.path.join(pd_genome, "runs", "gms2", "gms2.gff")
         pf_sbsp = os.path.join(gcfid_to_pd_sbsp[gi.name], "accuracy", "{}.gff".format(gi.name))
-        #pf_ncbi = os.path.join(pd_genome, "runs", "prodigal", "prodigal.gff")
         pf_ncbi = os.path.join(pd_genome, "ncbi.gff")
+
+        pf_prodigal = None
+        if prodigal:
+            pf_prodigal = os.path.join(pd_genome, "runs", "prodigal", "prodigal.gff")
 
         name = gi.attributes["name"] if "name" in gi.attributes else gi.name
         ancestor = gi.attributes["ancestor"] if "ancestor" in gi.attributes else ""
 
-        out = compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi,
+        out = compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, pf_prodigal=pf_prodigal,
                                venn_title="{}, {}".format(name, ancestor),
                                pf_venn="venn_{}.pdf".format(gi.name))
 
@@ -117,7 +154,7 @@ def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output
 
     if len(list_summary) > 0:
 
-        ordered_header = ["GCFID", "Name", "Ancestor", "GMS2", "SBSP", "Prodigal", "GMS2=SBSP", "GMS2=SBSP=Prodigal"]
+        ordered_header = ["GCFID", "Name", "Ancestor", "GMS2", "SBSP", "Prodigal", "GMS2=SBSP", "GMS2=SBSP=NCBI"]
         remaining_header = sorted(
             set(list_summary[0].keys()).difference(ordered_header)
         )
@@ -139,7 +176,8 @@ def main(env, args):
 
     compare_gms2_sbsp_ncbi_for_genome_list(
         env,
-        gil, gcfid_to_pd_sbsp, args.pf_output_summary
+        gil, gcfid_to_pd_sbsp, args.pf_output_summary,
+        prodigal=args.prodigal
     )
 
 

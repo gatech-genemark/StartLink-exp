@@ -193,7 +193,15 @@ class LabelsComparisonDetailed:
 
         return self.comparison["all"]["labels"]["match-3p-5p"][source]
 
+    def match_3p_5p(self, source):
+        # type: (str) -> Labels
+        except_if_not_in_set(source, {"a", "b"})
+        return self.comparison["all"]["labels"]["match-3p-5p"][source]
 
+    def match_3p(self, source):
+        # type: (str) -> Labels
+        except_if_not_in_set(source, {"a", "b"})
+        return self.comparison["all"]["labels"]["match-3p"][source]
 
 
 
