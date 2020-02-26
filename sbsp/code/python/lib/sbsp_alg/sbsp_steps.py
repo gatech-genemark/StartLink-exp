@@ -2,6 +2,7 @@ import copy
 import os
 import logging
 import timeit
+from multiprocessing import Process, Manager, Lock
 from typing import *
 
 from Bio.Align import MultipleSeqAlignment
@@ -1177,7 +1178,7 @@ def perform_msa_on_df_with_single_query(env, df, sbsp_options, **kwargs):
 
     # construct msa and filter (if necessary)
     while True:
-        msa_t = construct_msa_from_df(env, df, sbsp_options)
+        msa_t = construct_msa_from_df(env, df, sbsp_options, **kwargs)
 
         targets_before = len(df)
         filter_df_based_on_msa(df, msa_t, sbsp_options, inplace=True)
@@ -1239,7 +1240,8 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
     perform_msa_on_df_with_single_query(
         env, df, sbsp_options, inplace=True,
         msa_output_start=msa_number,
-        msa_number=msa_number, stats=stats
+        msa_number=msa_number, stats=stats,
+        fn_tmp_prefix=msa_number
     )
 
     # for each query in blast
@@ -1261,8 +1263,30 @@ def append_data_frame_to_csv(df, pf_output):
             df.to_csv(pf_output, mode="a", index=False, header=False)
 
 
+def thread_safe_find_start_and_save_to_csv(env, r, sbsp_options, msa_number, pf_output, lock, **kwargs):
+    # type: (Environment, Record, SBSPOptions, int, str, , Dict[str, Any]) -> None
+    df_result = find_start_for_query_blast_record(env, r, sbsp_options, msa_number=msa_number, **kwargs)
+
+    append_data_frame_to_csv(df_result, pf_output)
+
+
+def process_find_start_for_multiple_query_blast_record(lock, process_number, env, records, sbsp_options, pf_output, **kwargs):
+    # type: (Lock, int, Environment, List[Record], SBSPOptions, str, Dict[str, Any]) -> None
+
+    for r in records:
+        df_result = find_start_for_query_blast_record(env, r, sbsp_options, **kwargs)
+
+        lock.acquire()
+        try:
+            append_data_frame_to_csv(df_result, pf_output)
+        finally:
+            lock.release()
+
+
 def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
     # type: (Environment, Dict[str, Seq], str, str, SBSPOptions, Dict[str, Any]) -> str
+
+    num_processors = get_value(kwargs, "num_processors", None)
 
     q_sequences = data
 
@@ -1284,12 +1308,79 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
 
     records = NCBIXML.parse(f_blast_results)
 
-    msa_number = 0
-    # for each query, find start
-    for r in records:
-        df_result = find_start_for_query_blast_record(env, r, sbsp_options, msa_number=msa_number, **kwargs)
-        append_data_frame_to_csv(df_result, pf_output)
-        msa_number += 1
+    if num_processors is None or num_processors == 0:
+        msa_number = 0
+        # for each query, find start
+        for r in records:
+            df_result = find_start_for_query_blast_record(env, r, sbsp_options, msa_number=msa_number, **kwargs)
+            append_data_frame_to_csv(df_result, pf_output)
+            msa_number += 1
+    else:
+
+        logger.debug("Run in parallel mode with {} processors".format(num_processors))
+
+        # read all records from disk. TODO: allow parallelization without the need for this step
+        records = [r for r in records]      # type: List[Record]
+
+        split_records = [list() for _ in range(num_processors)]     # type: List[List[Record]]
+
+        # split records across N workers, where N = number of processors
+        for i, r in enumerate(records):
+            split_records[i % num_processors].append(r)
+
+        # run separate process on each split
+        lock = Lock()
+
+        processes = dict()
+        for worker_id in range(len(split_records)):
+            p = Process(target=process_find_start_for_multiple_query_blast_record,
+                        args=(lock, worker_id, env, split_records[worker_id], sbsp_options, pf_output),
+                        kwargs={"msa_number": worker_id, **kwargs}
+                        )
+
+            logger.debug("Starting process {}".format(worker_id))
+            p.start()
+            processes[worker_id] = p
+
+        # wait until all processes are done
+        for i, p in processes.items():
+            p.join()
+            logger.debug("Done running process {}".format(i))
+
+
+
+
+
+        # active_processes = set()
+        # msa_number = 0
+        # parsed_all_records = False
+        # manager = Manager()
+        # return_dict = manager.dict()
+        #
+        # # for each query, find start
+        # while True:
+        #
+        #     while not parsed_all_records and len(active_processes) < num_processors:
+        #         r = next(records)
+        #         if not r:
+        #             parsed_all_records = True
+        #             break
+        #
+        #         # create new process
+        #         p = Process(target=process_find_start_for_query_blast_record, args=(msa_number, return_dict),
+        #                 kwargs={"env": env, "r": r, "sbsp_options": sbsp_options,
+        #                         "msa_number": msa_number, **kwargs})
+        #         active_processes.add(p)
+        #         msa_number += 1
+        #
+        #     while len(active_processes) > 0:
+        #         completed_threads = set()
+        #         for p in active_processes:
+        #             if not p.is_alive():
+        #                 df_result = return_dict[p.]
+        #                 completed_threads.add(p)
+
+
 
     return pf_output
 
@@ -1539,7 +1630,8 @@ def sbsp_steps(env, pipeline_options):
                     "pf_t_db": pipeline_options["pf-t-db"],
                     "sbsp_options": pipeline_options["sbsp-options"],
                     "clean": True,
-                    "pd_msa_final": pd_msa
+                    "pd_msa_final": pd_msa,
+                    "num_processors": pbs_options["num-processors"]
                 }
             )
 
@@ -1573,7 +1665,7 @@ def sbsp_step_accuracy(env, pipeline_options, list_pf_previous):
 
     # copy labels
     add_true_starts_to_msa_output(env, df, fn_q_labels_true=pipeline_options["fn-q-labels-true"])
-    add_true_starts_to_msa_output(env, df, msa_nt=True, fn_q_labels_true=pipeline_options["fn-q-labels-true"])
+    # add_true_starts_to_msa_output(env, df, msa_nt=True, fn_q_labels_true=pipeline_options["fn-q-labels-true"])
     separate_msa_outputs_by_stats(env, df, pipeline_options["dn-msa-output"])
 
     return list()
