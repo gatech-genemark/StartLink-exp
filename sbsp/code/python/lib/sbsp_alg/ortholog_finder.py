@@ -322,14 +322,14 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
             original_q_aa = q_original_sequences_aa[r.query]
             original_t_aa = t_original_sequences_aa[alignment.hit_id]
 
-            global_distance, global_length, global_length_without_gaps = compute_distance_based_on_global_alignment_from_sequences(
-                original_q_aa, original_t_aa, original_q_nt, original_t_nt, matrix
-            )
-            # global_distance = global_length = global_length_without_gaps = 0
+            #global_distance, global_length, global_length_without_gaps = compute_distance_based_on_global_alignment_from_sequences(
+            #    original_q_aa, original_t_aa, original_q_nt, original_t_nt, matrix
+            #)
+            global_distance = global_length = global_length_without_gaps = 0
 
             # FIXME: thresholds should be from input configuration files
-            # if distance > distance_min and distance < distance_max:
-            if True:
+            if distance > distance_min and distance < distance_max:
+            #if True:
 
                 output_info = create_info_for_query_target_pair(
                     query_info, target_info, hsp,
