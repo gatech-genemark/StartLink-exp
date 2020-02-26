@@ -1193,10 +1193,10 @@ def write_msa_to_directory(df, pd_msa):
     from shutil import copyfile
 
     msa_number = 0
-    for _, df_group in df.groupby("q-3prime", as_index=False):
+    for msa_t, df_group in df.groupby("msa", as_index=False):
         pf_msa = os.path.join(pd_msa, "msa_{}.txt".format(msa_number))
 
-        df["msa"].to_file(pf_msa)
+        msa_t.to_file(pf_msa)
         df.loc[df_group.index, "pf-msa-output"] = pf_msa
 
         msa_number += 1
