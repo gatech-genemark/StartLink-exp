@@ -1145,7 +1145,7 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
     )       # type: Label
 
     msa_t.add_marker(MSASinglePointMarker(start_position_in_msa, msa_t.alignment_length(), name="selected"))
-    msa_t.add_marker(MSASinglePointMarker(pos_of_upstream_in_msa, msa_t.alignment_length(), name="q-3prime"))
+    msa_t.add_marker(MSASinglePointMarker(pos_of_upstream_in_msa, msa_t.alignment_length(), name="q-3prime", mark="*"))
 
     df["predicted-at-step"] = predicted_at_step
     df["start-position-in-msa"] = start_position_in_msa
