@@ -405,6 +405,7 @@ def run_msa_on_sequence_file(pf_fasta, sbsp_options, pf_msa, **kwargs):
     #     outorder="input"
     # )
 
+    logger.debug("Number of processors for MSA: {}".format(num_processors))
     clustalw_cline = ClustalOmegaCommandline(
         "clustalo", infile=pf_fasta, outfile=pf_msa,
         #gapopen=gapopen,
@@ -1339,11 +1340,14 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
         # run separate process on each split
         lock = Lock()
 
+        kwargs_duplicated = kwargs.copy()
+        kwargs_duplicated["num_processors"] = 1
+
         processes = dict()
         for worker_id in range(len(split_records)):
             p = Process(target=process_find_start_for_multiple_query_blast_record,
                         args=(lock, worker_id, env, split_records[worker_id], sbsp_options, pf_output),
-                        kwargs={"num_processors": 1, **kwargs}
+                        kwargs={**kwargs_duplicated}
                         )
 
             logger.debug("Starting process {}".format(worker_id))
