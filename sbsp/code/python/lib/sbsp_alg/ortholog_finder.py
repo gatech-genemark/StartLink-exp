@@ -192,8 +192,11 @@ def compute_distance_based_on_local_alignment(query_info, target_info, hsp, **kw
     t_start, t_end = hsp.sbjct_start - 1, hsp.sbjct_end - 1  # -2 to make inclusive
 
     # aligned fragments (nt)
-    q_aligned_seq_nt = map_aligned_aa_to_aligned_nt(q_aligned_seq_aa, original_q_nt, q_start, q_end)
-    t_aligned_seq_nt = map_aligned_aa_to_aligned_nt(t_aligned_seq_aa, original_t_nt, t_start, t_end)
+    try:
+        q_aligned_seq_nt = map_aligned_aa_to_aligned_nt(q_aligned_seq_aa, original_q_nt, q_start, q_end)
+        t_aligned_seq_nt = map_aligned_aa_to_aligned_nt(t_aligned_seq_aa, original_t_nt, t_start, t_end)
+    except ValueError:
+        return 100  # FIXME: the hell is going on
 
     # compute distance metric
     try:
