@@ -34,7 +34,7 @@ parser.add_argument('--pf-genome-list', required=True, help="List containing gen
 parser.add_argument('--pf-gcfid-to-pd-sbsp', required=True, help="CSV file containing GCFID to SBSP run directory")
 parser.add_argument('--pf-output-summary', required=True, help="Output summary file")
 
-parser.add_argument('--prodigal', default=False)
+parser.add_argument('--prodigal', default=False, action="store_true")
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
