@@ -1278,14 +1278,17 @@ def thread_safe_find_start_and_save_to_csv(env, r, sbsp_options, msa_number, pf_
 def process_find_start_for_multiple_query_blast_record(lock, process_number, env, records, sbsp_options, pf_output, **kwargs):
     # type: (Lock, int, Environment, List[Record], SBSPOptions, str, Dict[str, Any]) -> None
 
+    msa_number = 0
     for r in records:
-        df_result = find_start_for_query_blast_record(env, r, sbsp_options, **kwargs)
+        df_result = find_start_for_query_blast_record(env, r, sbsp_options, msa_number="{}_{}".format(process_number, msa_number), **kwargs)
 
         lock.acquire()
         try:
             append_data_frame_to_csv(df_result, pf_output)
         finally:
             lock.release()
+
+        msa_number += 1
 
 
 def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
@@ -1340,7 +1343,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
         for worker_id in range(len(split_records)):
             p = Process(target=process_find_start_for_multiple_query_blast_record,
                         args=(lock, worker_id, env, split_records[worker_id], sbsp_options, pf_output),
-                        kwargs={"msa_number": worker_id, "num_processors": 1, **kwargs}
+                        kwargs={"num_processors": 1, **kwargs}
                         )
 
             logger.debug("Starting process {}".format(worker_id))
