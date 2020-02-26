@@ -390,11 +390,13 @@ def write_sequence_list_to_fasta_file(sequences, pf_sequences):
     write_string_to_file(data, pf_sequences)
 
 
-def run_msa_on_sequence_file(pf_fasta, sbsp_options, pf_msa):
-    # type: (str, SBSPOptions, str) -> None
+def run_msa_on_sequence_file(pf_fasta, sbsp_options, pf_msa, **kwargs):
+    # type: (str, SBSPOptions, str, Dict[str, Any]) -> None
 
     gapopen = sbsp_options.safe_get("msa-gapopen")
     gapext = sbsp_options.safe_get("msa-gapext")
+
+    num_processors = get_value(kwargs, "num_processors", None)
 
     # clustalw_cline = ClustalwCommandline(
     #     "clustalw2", infile=pf_fasta, outfile=pf_msa,
@@ -410,6 +412,7 @@ def run_msa_on_sequence_file(pf_fasta, sbsp_options, pf_msa):
         outputorder="input-order",
         force=True,
         outfmt="clustal",
+        threads=num_processors
     )
 
     clustalw_cline()
@@ -428,7 +431,7 @@ def run_msa_on_sequences(env, sequences, sbsp_options, **kwargs):
 
     # run msa
     pf_msa = os.path.join(pd_work, "{}tmp_msa.txt".format(fn_tmp_prefix))
-    run_msa_on_sequence_file(pf_fasta, sbsp_options, pf_msa)
+    run_msa_on_sequence_file(pf_fasta, sbsp_options, pf_msa, **kwargs)
 
     msa_t = MSAType.init_from_file(pf_msa)
 
@@ -1228,6 +1231,7 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
     msa_number = get_value(kwargs, "msa_number", 0)
     stats = get_value(kwargs, "stats", init=dict)
     fn_tmp_prefix = get_value(kwargs, "msa_output_start", None)
+    num_processors = get_value(kwargs, "num_processors", None)
 
     pd_msa_final = get_value(kwargs, "pd_msa_final", None)
 
@@ -1241,7 +1245,8 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
         env, df, sbsp_options, inplace=True,
         msa_output_start=msa_number,
         msa_number=msa_number, stats=stats,
-        fn_tmp_prefix=msa_number
+        fn_tmp_prefix=msa_number,
+        num_processors=num_processors
     )
 
     # for each query in blast
@@ -1335,7 +1340,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
         for worker_id in range(len(split_records)):
             p = Process(target=process_find_start_for_multiple_query_blast_record,
                         args=(lock, worker_id, env, split_records[worker_id], sbsp_options, pf_output),
-                        kwargs={"msa_number": worker_id, **kwargs}
+                        kwargs={"msa_number": worker_id, "num_processors": 1, **kwargs}
                         )
 
             logger.debug("Starting process {}".format(worker_id))
