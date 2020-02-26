@@ -1289,6 +1289,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
     for r in records:
         df_result = find_start_for_query_blast_record(env, r, sbsp_options, msa_number=msa_number, **kwargs)
         append_data_frame_to_csv(df_result, pf_output)
+        msa_number += 1
 
     return pf_output
 
