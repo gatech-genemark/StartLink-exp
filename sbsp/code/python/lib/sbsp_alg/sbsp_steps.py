@@ -1188,6 +1188,19 @@ def perform_msa_on_df_with_single_query(env, df, sbsp_options, **kwargs):
 
     return df
 
+def write_msa_to_directory(df, pd_msa):
+    # type: (pd.DataFrame, str) -> None
+    from shutil import copyfile
+
+    msa_number = 0
+    for _, df_group in df.groupby("q-3prime", as_index=False):
+        pf_msa = os.path.join(pd_msa, "msa_{}.txt".format(msa_number))
+
+        df["msa"].to_file(pf_msa)
+        df.loc[df_group.index, "pf-msa-output"] = pf_msa
+
+        msa_number += 1
+
 
 def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
     # type: (Environment, Record, SBSPOptions, Dict[str, Any]) -> pd.DataFrame
@@ -1223,7 +1236,7 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
     # for each query in blast
     if pd_msa_final is not None:
         try:
-            move_files_using_scp(df, pd_msa_final)
+            write_msa_to_directory(df, pd_msa_final)
         except Exception:
             pass
 
