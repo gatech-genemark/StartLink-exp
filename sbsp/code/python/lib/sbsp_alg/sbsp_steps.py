@@ -482,7 +482,7 @@ def lower_case_non_5prime_in_msa(msa_t_aa, msa_t_nt):
             else:
                 new_seq_aa += msa_t_aa[i].seq._data[j_aa].lower()
 
-        seq_record_list.append(SeqRecord(Seq(new_seq_aa)))
+        seq_record_list.append(SeqRecord(Seq(new_seq_aa), id=msa_t_aa[i].id))
 
     return MSAType(MultipleSeqAlignment(seq_record_list))
 
@@ -1142,6 +1142,7 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
     )       # type: Label
 
     msa_t.add_marker(MSASinglePointMarker(start_position_in_msa, msa_t.alignment_length(), name="selected"))
+    msa_t.add_marker(MSASinglePointMarker(pos_of_upstream_in_msa, msa_t.alignment_length(), name="q-3prime"))
 
     df["predicted-at-step"] = predicted_at_step
     df["start-position-in-msa"] = start_position_in_msa
