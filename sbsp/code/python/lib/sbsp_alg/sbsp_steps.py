@@ -5,7 +5,7 @@ import timeit
 from typing import *
 
 from Bio.Align import MultipleSeqAlignment
-from Bio.Align.Applications import ClustalwCommandline
+from Bio.Align.Applications import ClustalwCommandline, ClustalOmegaCommandline
 from Bio.Blast import NCBIXML, Record
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -330,6 +330,7 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
 
     # for each alignment to a target protein for the current query
     list_entries = list()
+    logger.debug("Reading {} targets from blast".format(len(r.alignments)))
     for alignment in r.alignments:
 
         target_info = unpack_fasta_header(alignment.title)
@@ -394,11 +395,20 @@ def run_msa_on_sequence_file(pf_fasta, sbsp_options, pf_msa):
     gapopen = sbsp_options.safe_get("msa-gapopen")
     gapext = sbsp_options.safe_get("msa-gapext")
 
-    clustalw_cline = ClustalwCommandline(
-        "clustalw2", infile=pf_fasta, outfile=pf_msa,
-        gapopen=gapopen,
-        gapext=gapext,
-        outorder="input"
+    # clustalw_cline = ClustalwCommandline(
+    #     "clustalw2", infile=pf_fasta, outfile=pf_msa,
+    #     gapopen=gapopen,
+    #     gapext=gapext,
+    #     outorder="input"
+    # )
+
+    clustalw_cline = ClustalOmegaCommandline(
+        "clustalo", infile=pf_fasta, outfile=pf_msa,
+        #gapopen=gapopen,
+        #gapext=gapext,
+        outputorder="input-order",
+        force=True,
+        outfmt="clustal",
     )
 
     clustalw_cline()
@@ -446,7 +456,7 @@ def convert_msa_aa_to_nt(msa_t_aa, df):
 
     seq_record_list = list()
     # query sequence
-    seq_record_list.append(SeqRecord(convert_gapped_aa_to_gapped_nt(msa_t_aa[0].seq, df["q-lorf_nt"])))
+    seq_record_list.append(SeqRecord(convert_gapped_aa_to_gapped_nt(msa_t_aa[0].seq, df.iloc[0]["q-lorf_nt"])))
 
     # targets
     for i in range(1, msa_t_aa.number_of_sequences()):
@@ -467,10 +477,10 @@ def lower_case_non_5prime_in_msa(msa_t_aa, msa_t_nt):
         for j_aa in range(msa_t_aa.alignment_length()):
             j_nt = j_aa * 3
 
-            if is_valid_start(msa_t_nt[j_nt:j_nt+3], "+"):
-                new_seq_aa += msa_t_aa[j_aa].seq._data.upper()
+            if is_valid_start(msa_t_nt[i].seq._data[j_nt:j_nt+3], "+"):
+                new_seq_aa += msa_t_aa[i].seq._data[j_aa].upper()
             else:
-                new_seq_aa += msa_t_aa[j_aa].seq._data.lower()
+                new_seq_aa += msa_t_aa[i].seq._data[j_aa].lower()
 
         seq_record_list.append(SeqRecord(Seq(new_seq_aa)))
 
@@ -557,7 +567,7 @@ def filter_df_based_on_msa(df, msa_t, sbsp_options, inplace=False, multiple_filt
             # find sequences that have no gaps in that region
             for j in range(1, num_sequences_aligned):
                 if msa_t[j][i:i + gap_width].seq._data.count("-") == 0:
-                    sequences_that_contribute_to_block.append(j)
+                    sequences_that_contribute_to_block.append(j-1)
 
             # compute fraction of these sequences
             num_sequences_that_contribute_to_block = len(sequences_that_contribute_to_block)
@@ -565,14 +575,15 @@ def filter_df_based_on_msa(df, msa_t, sbsp_options, inplace=False, multiple_filt
 
             # remove those sequences if they are very few
             if fraction != 0 and fraction < seq_frac:
-                row_numbers_to_drop.add(*sequences_that_contribute_to_block)
+                for s in sequences_that_contribute_to_block:
+                    row_numbers_to_drop.add(s)
 
                 if not multiple_filterings:
                     break
 
     # remove any rows necessary
     if len(row_numbers_to_drop) > 0:
-        df.drop(df.index[row_numbers_to_drop], inplace=True)
+        df.drop(df.index[list(row_numbers_to_drop)], inplace=True)
 
     return df
 
@@ -798,7 +809,7 @@ def select_by_upstream_1_4_rule(msa_t, sbsp_options, pos_of_upstream_in_msa):
     start_position_in_msa = None
     radius_aa = 2
 
-    if pos_of_upstream_in_msa >= 0:
+    if pos_of_upstream_in_msa is not None and pos_of_upstream_in_msa >= 0:
         # check upstream of position
         start_position_in_msa = find_first_5prime_that_satisfies_5prime_threshold(
             msa_t, sbsp_options, pos_of_upstream_in_msa, radius_aa, "upstream", True
@@ -938,9 +949,10 @@ def step_b_find_first_candidate_with_strong_5prime_score(msa_t, candidate_positi
             "downstream", True
         )
 
-        start_position_in_msa = select_from_two_neighboring_candidates(
-            msa_t, sbsp_options, start_position_in_msa, downstream_start_position_in_msa,
-        )
+        if downstream_start_position_in_msa is not None:
+            start_position_in_msa = select_from_two_neighboring_candidates(
+                msa_t, sbsp_options, start_position_in_msa, downstream_start_position_in_msa,
+            )
 
     return start_position_in_msa
 
@@ -1078,8 +1090,6 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
     pos_of_upstream_in_msa = compute_position_of_upstream_in_msa_for_query(df, msa_t)
 
     # get all candidates before conserved block
-    import pdb
-    pdb.set_trace()
     candidate_positions = get_all_candidates_before_conserved_block(
         msa_t, sbsp_options,
         at_least_until=pos_of_upstream_in_msa
@@ -1112,9 +1122,16 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
     else:
         predicted_at_step = "A"
 
+    if start_position_in_msa is not None and start_position_in_msa < 0:
+        logger.critical("Somehow, start position {} < 0".format(start_position_in_msa))
+        start_position_in_msa = None
+
     # if all steps failed
     if start_position_in_msa is None:
-        pass        # FIXME: implement recovery strategy
+        df.drop(df.index, inplace=True)
+        return  # FIXME: implement recovery strategy
+
+
 
     # get label of new start in genome
     q_label_sbsp = get_label_from_start_position_in_msa(
@@ -1163,6 +1180,7 @@ def perform_msa_on_df_with_single_query(env, df, sbsp_options, **kwargs):
             break
 
     if len(df) > 0:
+        logger.debug("Searching for start on {} targets".format(len(df)))
         search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options)
 
     return df
@@ -1189,6 +1207,8 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
 
     # read targets and filter out what isn't needed - construct data frame ready for MSA
     df = create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwargs)
+
+    logger.debug("Number of targets after filtering: {}".format(len(df)))
 
     # run MSA(s) and find gene-start
     perform_msa_on_df_with_single_query(
@@ -1243,8 +1263,6 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
     for r in records:
         df_result = find_start_for_query_blast_record(env, r, sbsp_options, **kwargs)
         append_data_frame_to_csv(df_result, pf_output)
-        import pdb
-        pdb.set_trace()
 
     return pf_output
 
