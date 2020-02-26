@@ -1208,7 +1208,7 @@ def write_msa_to_directory(df, pd_msa, **kwargs):
         pf_msa = os.path.join(pd_msa, "msa_{}_{}.txt".format(fn_tmp_prefix, msa_number))
 
         r = df_group.iloc[0]
-        msa_t[0].id = "{};{};{}".format(r["q-left"], r["q-right"], r["q-strand"])
+        msa_t[0].id = "{};{};{};{}".format(r["q-left"], r["q-right"], r["q-strand"], r["predicted-at-step"])
         msa_t.to_file(pf_msa)
         df.loc[df_group.index, "pf-msa-output"] = pf_msa
 
