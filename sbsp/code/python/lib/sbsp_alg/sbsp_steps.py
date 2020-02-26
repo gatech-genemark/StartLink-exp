@@ -21,7 +21,7 @@ from sbsp_alg.msa import run_sbsp_msa, get_files_per_key, run_sbsp_msa_from_mult
     run_sbsp_msa_from_multiple_for_multiple_queries, perform_msa_on_df, move_files_using_scp, should_count_in_neighbor
 from sbsp_general.blast import run_blast
 from sbsp_general.labels import Label, Coordinates
-from sbsp_general.msa_2 import MSAType
+from sbsp_general.msa_2 import MSAType, MSASinglePointMarker
 from sbsp_io.general import mkdir_p, remove_p, write_string_to_file
 from sbsp_general.general import get_value, except_if_not_in_set
 from sbsp_alg.ortholog_finder import get_orthologs_from_files, extract_labeled_sequences_for_genomes, \
@@ -1141,11 +1141,14 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
         s="q"
     )       # type: Label
 
+    msa_t.add_marker(MSASinglePointMarker(start_position_in_msa, msa_t.alignment_length(), name="selected"))
+
     df["predicted-at-step"] = predicted_at_step
     df["start-position-in-msa"] = start_position_in_msa
     df["q-left-sbsp"] = q_label_sbsp.left() + 1
     df["q-right-sbsp"] = q_label_sbsp.right() + 1
     df["q-strand-sbsp"] = q_label_sbsp.strand()
+    df["msa"] = msa_t
 
 
 def perform_msa_on_df_with_single_query(env, df, sbsp_options, **kwargs):

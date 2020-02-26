@@ -2170,6 +2170,19 @@ def move_files_using_scp(df, pd_msa):
         copyfile(pf_msa_old, pf_msa_new)
         copyfile(pf_msa_old + "_nt", pf_msa_new + "_nt")
 
+def write_msa_to_directory(df, pd_msa):
+    # type: (pd.DataFrame, str) -> None
+    from shutil import copyfile
+
+    msa_number = 0
+    for _, df_group in df.groupby("q-3prime", as_index=False):
+        pf_msa = os.path.join(pd_msa, "msa_{}.txt".format(msa_number))
+
+        df["msa"].to_file(pf_msa)
+        df.loc[df_group.index, "pf-msa-output"] = pf_msa
+
+        msa_number += 1
+
 
 def run_sbsp_msa_from_multiple_for_multiple_queries(env, dict_qkey_to_list_pf_data, pf_output, **kwargs):
     # type: (Environment, Dict[str, List[str]], str, Dict[str, Any]) -> str
@@ -2203,7 +2216,7 @@ def run_sbsp_msa_from_multiple_for_multiple_queries(env, dict_qkey_to_list_pf_da
 
     if pd_msa_final is not None:
         try:
-            move_files_using_scp(df, pd_msa_final)
+            write_msa_to_directory(df, pd_msa_final)
         except Exception:
             pass
 
