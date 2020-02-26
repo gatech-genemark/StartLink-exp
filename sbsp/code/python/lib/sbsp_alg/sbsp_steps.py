@@ -792,6 +792,9 @@ def find_first_5prime_that_satisfies_5prime_threshold(msa_t, sbsp_options, begin
         if curr_pos is None or curr_pos < 0 or curr_pos >= msa_t.alignment_length():
             break
 
+        if not msa_t[0][curr_pos].isupper():
+            continue
+
         number_5prime = count_number_of_5prime_candidates_at_position(msa_t, curr_pos, sbsp_options)
 
         # if threshold
