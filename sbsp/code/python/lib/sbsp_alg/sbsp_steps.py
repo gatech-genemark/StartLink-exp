@@ -1189,14 +1189,18 @@ def perform_msa_on_df_with_single_query(env, df, sbsp_options, **kwargs):
 
     return df
 
-def write_msa_to_directory(df, pd_msa):
-    # type: (pd.DataFrame, str) -> None
+def write_msa_to_directory(df, pd_msa, **kwargs):
+    # type: (pd.DataFrame, str, Dict[str, Any]) -> None
     from shutil import copyfile
 
-    msa_number = 0
-    for msa_t, df_group in df.groupby("msa", as_index=False):
-        pf_msa = os.path.join(pd_msa, "msa_{}.txt".format(msa_number))
+    msa_number = get_value(kwargs, "msa_number", 0)
+    fn_tmp_prefix = get_value(kwargs, "fn_tmp_prefix", 0)
 
+    for msa_t, df_group in df.groupby("msa", as_index=False):
+        pf_msa = os.path.join(pd_msa, "msa_{}_{}.txt".format(fn_tmp_prefix, msa_number))
+
+        r = df_group.iloc[0]
+        msa_t[0].id = "{};{};{}".format(r["q-left"], r["q-right"], r["q-strand"])
         msa_t.to_file(pf_msa)
         df.loc[df_group.index, "pf-msa-output"] = pf_msa
 
@@ -1219,6 +1223,7 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
 
     msa_number = get_value(kwargs, "msa_number", 0)
     stats = get_value(kwargs, "stats", init=dict)
+    fn_tmp_prefix = get_value(kwargs, "msa_output_start", None)
 
     pd_msa_final = get_value(kwargs, "pd_msa_final", None)
 
@@ -1237,7 +1242,7 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
     # for each query in blast
     if pd_msa_final is not None:
         try:
-            write_msa_to_directory(df, pd_msa_final)
+            write_msa_to_directory(df, pd_msa_final, fn_tmp_prefix=fn_tmp_prefix, msa_number=msa_number)
         except Exception:
             pass
 
@@ -1276,9 +1281,10 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
 
     records = NCBIXML.parse(f_blast_results)
 
+    msa_number = 0
     # for each query, find start
     for r in records:
-        df_result = find_start_for_query_blast_record(env, r, sbsp_options, **kwargs)
+        df_result = find_start_for_query_blast_record(env, r, sbsp_options, msa_number=msa_number, **kwargs)
         append_data_frame_to_csv(df_result, pf_output)
 
     return pf_output
