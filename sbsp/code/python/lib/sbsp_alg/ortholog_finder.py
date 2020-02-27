@@ -303,9 +303,14 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
     for r in records:
 
         query_info = unpack_fasta_header(r.query)
+        num_selected_targets_for_query = 0
 
         # for each alignment to a target protein for the current query
         for alignment in r.alignments:
+
+            if num_selected_targets_for_query >= 100:
+                logger.debug("Stopping at 100 targets (from {}) for query".format(len(r.alignments)))
+                break
 
             hsp = select_representative_hsp(alignment, hsp_criteria)
 
@@ -330,6 +335,7 @@ def parse_filter_and_convert_to_csv(pf_blast_results, pf_output, **kwargs):
             # FIXME: thresholds should be from input configuration files
             if distance > distance_min and distance < distance_max:
             #if True:
+                num_selected_targets_for_query  += 1
 
                 output_info = create_info_for_query_target_pair(
                     query_info, target_info, hsp,
