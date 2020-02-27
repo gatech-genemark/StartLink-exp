@@ -334,6 +334,9 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
     distance_max = sbsp_options.safe_get("distance-max")
     max_targets = 50
 
+    filter_orthologs_with_equal_kimura_to_query = sbsp_options.safe_get("filter-orthologs-with-equal-kimura")
+    set_target_kimuras = set()
+
     # for each alignment to a target protein for the current query
     list_entries = list()
     logger.debug("Reading {} targets from blast".format(len(r.alignments)))
@@ -354,7 +357,18 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
                                                              original_t_nt=original_t_nt,
                                                              **kwargs)
 
+
         if distance > distance_min and distance < distance_max:
+            if filter_orthologs_with_equal_kimura_to_query is not None:
+                rounded = round(distance, filter_orthologs_with_equal_kimura_to_query)
+                # if another target with equal (to decimal place) exists, skip this one.
+                if rounded in set_target_kimuras:
+                    logger.debug("Filtered due to equal Kimura")
+                    continue
+                else:
+                    set_target_kimuras.add(rounded)
+
+
             output_info = create_info_for_query_target_pair(
                 query_info, target_info, hsp,
                 distance_blast=distance,
