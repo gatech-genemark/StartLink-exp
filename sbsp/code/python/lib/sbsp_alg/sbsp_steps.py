@@ -326,13 +326,21 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
     df = pd.DataFrame()
     query_info = unpack_fasta_header(r.query)
 
+    # if query_info["left"] != 178270:
+    #     logger.debug("{} != 178270".format(query_info["left"]))
+    #     return pd.DataFrame()
+
     distance_min = sbsp_options.safe_get("distance-min")
     distance_max = sbsp_options.safe_get("distance-max")
+    max_targets = 50
 
     # for each alignment to a target protein for the current query
     list_entries = list()
     logger.debug("Reading {} targets from blast".format(len(r.alignments)))
     for alignment in r.alignments:
+        if len(list_entries) > max_targets:
+            logger.debug("Reached limit on number of targets: {} from {}".format(max_targets, len(r.alignments)))
+            break
 
         target_info = unpack_fasta_header(alignment.title)
         hsp = select_representative_hsp(alignment, "")  # get reference hit for target
@@ -798,6 +806,7 @@ def find_first_5prime_that_satisfies_5prime_threshold(msa_t, sbsp_options, begin
             break
 
         if not msa_t[0][curr_pos].isupper():
+            curr_pos = get_next_position_in_msa(curr_pos, msa_t, direction, skip_gaps_in_query)
             continue
 
         number_5prime = count_number_of_5prime_candidates_at_position(msa_t, curr_pos, sbsp_options)
@@ -820,7 +829,7 @@ def select_by_upstream_1_4_rule(msa_t, sbsp_options, pos_of_upstream_in_msa):
     if pos_of_upstream_in_msa is not None and pos_of_upstream_in_msa >= 0:
         # check upstream of position
         start_position_in_msa = find_first_5prime_that_satisfies_5prime_threshold(
-            msa_t, sbsp_options, pos_of_upstream_in_msa, radius_aa, "upstream", True
+            msa_t, sbsp_options, pos_of_upstream_in_msa, radius_aa+1, "upstream", True
         )
 
         # if not found, try downstream of position
@@ -1096,11 +1105,14 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
     predicted_at_step = ""
 
     pos_of_upstream_in_msa = compute_position_of_upstream_in_msa_for_query(df, msa_t)
+    at_least_until = None
+    if pos_of_upstream_in_msa is not None and pos_of_upstream_in_msa >= 0:
+        at_least_until = pos_of_upstream_in_msa + sbsp_options["block-region-length-aa"]
 
     # get all candidates before conserved block
     candidate_positions = get_all_candidates_before_conserved_block(
         msa_t, sbsp_options,
-        at_least_until=pos_of_upstream_in_msa
+        at_least_until=at_least_until
     )
 
     # step A: check if LORF
@@ -1209,6 +1221,11 @@ def write_msa_to_directory(df, pd_msa, **kwargs):
 
         r = df_group.iloc[0]
         msa_t[0].id = "{};{};{};{}".format(r["q-left"], r["q-right"], r["q-strand"], r["predicted-at-step"])
+
+        # add distance
+        for i in range(1, msa_t.number_of_sequences()):
+            msa_t[i].id = "{};{}".format(msa_t[i].id, round(df_group.iloc[i-1]["distance"], 4))
+
         msa_t.to_file(pf_msa)
         df.loc[df_group.index, "pf-msa-output"] = pf_msa
 
@@ -1238,6 +1255,13 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
 
     # read targets and filter out what isn't needed - construct data frame ready for MSA
     df = create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwargs)
+
+    # FIXME  REMOVE
+    # if len(df) > 0 and df.iloc[0]["q-left"] == 178270:
+    #     pass
+    # else:
+    #     df.drop(df.index, inplace=True)
+    #     return df
 
     logger.debug("Number of targets after filtering: {}".format(len(df)))
 
@@ -1306,6 +1330,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
     remove_p(pf_blast_output)
     try:
         run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_options, **kwargs)
+        pass
     except ValueError:
         raise ValueError("Couldn't run blast successfully")
 
@@ -1316,6 +1341,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
         raise ValueError("Could not open blast results file: {}".format(pf_blast_output))
 
     records = NCBIXML.parse(f_blast_results)
+    #num_processors = None
 
     if num_processors is None or num_processors == 0:
         msa_number = 0
