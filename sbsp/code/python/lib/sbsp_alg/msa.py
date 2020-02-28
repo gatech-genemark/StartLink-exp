@@ -1497,6 +1497,8 @@ def filter_by_pairwise_kimura_from_msa(list_sequences_aligned_nt, msa_options):
         min_val = float(values[0]) if values[0] is not None else min_val
         max_val = float(values[1]) if values[1] is not None else max_val
 
+    logger.debug("Pairwise filtering: {} {}".format(min_val, max_val))
+
     indices_to_keep = get_indices_after_filtering(kimura_mat, min_val, max_val, "random")
 
     for i in sorted(indices_to_keep):
