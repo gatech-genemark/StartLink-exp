@@ -396,10 +396,12 @@ def extract_sequences_from_df_for_msa(df):
 
     if len(df) > 0:
 
-        list_sequences.append(Seq(df.iloc[0]["q-lorf_nt"]).translate())
+        max_position = min(len(df.iloc[0]["q-lorf_nt"]), df.iloc[0]["q-offset"] + 9000)
+        list_sequences.append(Seq(df.iloc[0]["q-lorf_nt"][:max_position]).translate())
 
         for _, row in df.iterrows():
-            list_sequences.append(Seq(row["t-lorf_nt"]).translate())
+            max_position = min(len(row["t-lorf_nt"]), row["t-offset"] + 9000)
+            list_sequences.append(Seq(row["t-lorf_nt"][:max_position]).translate())
 
     return list_sequences
 
