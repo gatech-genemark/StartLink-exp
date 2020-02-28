@@ -1368,36 +1368,45 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
 
         logger.debug("Run in parallel mode with {} processors".format(num_processors))
 
-        # read all records from disk. TODO: allow parallelization without the need for this step
-        records = [r for r in records]      # type: List[Record]
+        num_simulataneous_records_in_memory = 32
+        while True:
 
-        split_records = [list() for _ in range(num_processors)]     # type: List[List[Record]]
+            list_records = list()           # type: List[Record]
+            for r in records:
+                list_records.append(r)
+                if len(list_records) == num_simulataneous_records_in_memory:
+                    break
 
-        # split records across N workers, where N = number of processors
-        for i, r in enumerate(records):
-            split_records[i % num_processors].append(r)
+            if len(list_records) == 0:
+                break
 
-        # run separate process on each split
-        lock = Lock()
+            split_records = [list() for _ in range(num_processors)]     # type: List[List[Record]]
 
-        kwargs_duplicated = kwargs.copy()
-        kwargs_duplicated["num_processors"] = 1
+            # split records across N workers, where N = number of processors
+            for i, r in enumerate(list_records):
+                split_records[i % num_processors].append(r)
 
-        processes = dict()
-        for worker_id in range(len(split_records)):
-            p = Process(target=process_find_start_for_multiple_query_blast_record,
-                        args=(lock, worker_id, env, split_records[worker_id], sbsp_options, pf_output),
-                        kwargs={**kwargs_duplicated}
-                        )
+            # run separate process on each split
+            lock = Lock()
 
-            logger.debug("Starting process {}".format(worker_id))
-            p.start()
-            processes[worker_id] = p
+            kwargs_duplicated = kwargs.copy()
+            kwargs_duplicated["num_processors"] = 1
 
-        # wait until all processes are done
-        for i, p in processes.items():
-            p.join()
-            logger.debug("Done running process {}".format(i))
+            processes = dict()
+            for worker_id in range(len(split_records)):
+                p = Process(target=process_find_start_for_multiple_query_blast_record,
+                            args=(lock, worker_id, env, split_records[worker_id], sbsp_options, pf_output),
+                            kwargs={**kwargs_duplicated}
+                            )
+
+                logger.debug("Starting process {}".format(worker_id))
+                p.start()
+                processes[worker_id] = p
+
+            # wait until all processes are done
+            for i, p in processes.items():
+                p.join()
+                logger.debug("Done running process {}".format(i))
 
 
 
