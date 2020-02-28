@@ -1,6 +1,7 @@
 import copy
 import os
 import logging
+import time
 import timeit
 from multiprocessing import Process, Manager, Lock
 from typing import *
@@ -1315,20 +1316,10 @@ def thread_safe_find_start_and_save_to_csv(env, r, sbsp_options, msa_number, pf_
 
 
 def process_find_start_for_multiple_query_blast_record(lock, process_number, env, records, sbsp_options, pf_output, **kwargs):
-    # type: (Lock, int, Environment, Generator[Record], SBSPOptions, str, Dict[str, Any]) -> None
+    # type: (Lock, int, Environment, List[Record], SBSPOptions, str, Dict[str, Any]) -> None
 
     msa_number = 0
-    # for r in records:
-    while True:
-        lock.acquire()
-        try:
-            r = next(records)
-        finally:
-            lock.release()
-            
-        if not r:
-            break
-
+    for r in records:
         df_result = find_start_for_query_blast_record(env, r, sbsp_options, msa_number="{}_{}".format(process_number, msa_number), **kwargs)
 
         lock.acquire()
@@ -1378,28 +1369,65 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
 
         logger.debug("Run in parallel mode with {} processors".format(num_processors))
 
+        num_simultaneous_records_per_process = 4
+        active_processes = dict()
+        worker_id = 0
+        kwargs_duplicated = kwargs.copy()
+        kwargs_duplicated["num_processors"] = 1
 
         # run separate process on each split
         lock = Lock()
 
-        kwargs_duplicated = kwargs.copy()
-        kwargs_duplicated["num_processors"] = 1
+        while True:
 
-        processes = dict()
-        for worker_id in range(num_processors):
-            p = Process(target=process_find_start_for_multiple_query_blast_record,
-                        args=(lock, worker_id, env, records, sbsp_options, pf_output),
-                        kwargs={**kwargs_duplicated}
-                        )
+            no_more_records = False
 
-            logger.debug("Starting process {}".format(worker_id))
-            p.start()
-            processes[worker_id] = p
+            while len(active_processes) < num_processors:
+                list_records = list()           # type: List[Record]
 
-        # wait until all processes are done
-        for i, p in processes.items():
+                for r in records:
+                    list_records.append(r)
+                    if len(list_records) == num_simultaneous_records_per_process:
+                        break
+
+                if len(list_records) == 0:
+                    no_more_records = True
+                    break
+
+                p = Process(target=process_find_start_for_multiple_query_blast_record,
+                            args=(lock, worker_id, env, list_records, sbsp_options, pf_output),
+                            kwargs={**kwargs_duplicated}
+                            )
+
+                logger.debug("Starting process {}".format(worker_id))
+                p.start()
+                active_processes[worker_id] = p
+                worker_id += 1
+
+            if no_more_records:
+                break
+
+            # wait until all processes are done
+            if len(active_processes) > 0:
+                while True:
+                    completed_process_ids = set()
+                    for i, p in active_processes.items():
+                        if p.is_alive():
+                            completed_process_ids.add(i)
+                            logger.debug("Done running process {}".format(i))
+
+                    # clean up
+                    if len(completed_process_ids) > 0:
+                        for i in completed_process_ids:
+                            del active_processes[i]
+
+                        break
+                    else:
+                        time.sleep(1)
+
+        # wait for remaining processes
+        for p in active_processes.values():
             p.join()
-            logger.debug("Done running process {}".format(i))
 
 
 
