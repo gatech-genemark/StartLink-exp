@@ -20,7 +20,8 @@ import sbsp_ml.msa_features_2
 from sbsp_alg.feature_computation import compute_features
 from sbsp_alg.filtering import filter_orthologs
 from sbsp_alg.msa import run_sbsp_msa, get_files_per_key, run_sbsp_msa_from_multiple, \
-    run_sbsp_msa_from_multiple_for_multiple_queries, perform_msa_on_df, move_files_using_scp, should_count_in_neighbor
+    run_sbsp_msa_from_multiple_for_multiple_queries, perform_msa_on_df, move_files_using_scp, should_count_in_neighbor, \
+    filter_by_pairwise_kimura_from_msa
 from sbsp_general.blast import run_blast
 from sbsp_general.labels import Label, Coordinates
 from sbsp_general.msa_2 import MSAType, MSASinglePointMarker
@@ -518,12 +519,12 @@ def lower_case_non_5prime_in_msa(msa_t_aa, msa_t_nt):
 
 
 def construct_msa_from_df(env, df, sbsp_options, **kwargs):
-    # type: (Environment, pd.DataFrame, SBSPOptions, Dict[str, Any]) -> Union[None, MSAType]
+    # type: (Environment, pd.DataFrame, SBSPOptions, Dict[str, Any]) -> Tuple[Union[None, MSAType], Union[None, MSAType]]
 
     # extract sequences
     sequences = extract_sequences_from_df_for_msa(df)
     if len(sequences) == 0:
-        return None
+        return None, None
 
     msa_t_aa = run_msa_on_sequences(env, sequences, sbsp_options, **kwargs)
 
@@ -532,7 +533,7 @@ def construct_msa_from_df(env, df, sbsp_options, **kwargs):
 
     msa_t_aa = lower_case_non_5prime_in_msa(msa_t_aa, msa_t_nt)
 
-    return msa_t_aa
+    return msa_t_aa, msa_t_nt
 
 def number_of_sequences_with_gap_in_position(msa_t, pos):
     # type: (MSAType, int) -> int
@@ -564,11 +565,24 @@ def get_position_from_which_to_start_gap_filtering(msa_t):
     return first_start_codon_position
 
 
-def filter_df_based_on_msa(df, msa_t, sbsp_options, inplace=False, multiple_filterings=False):
-    # type: (pd.DataFrame, MSAType, SBSPOptions, bool, bool) -> pd.DataFrame
+def filter_df_based_on_msa(df, msa_t, msa_t_nt, sbsp_options, inplace=False, multiple_filterings=False):
+    # type: (pd.DataFrame, MSAType, MSAType, SBSPOptions, bool, bool) -> pd.DataFrame
 
     if not inplace:
         df = df.copy()
+
+    row_numbers_to_drop = set()
+
+    # pairwise Kimura
+    if sbsp_options.safe_get("filter-by-pairwise-kimura-from-msa"):
+        _, indices_to_keep = filter_by_pairwise_kimura_from_msa(
+            [msa_t_nt[i].seq._data for i in range(msa_t_nt.number_of_sequences())], sbsp_options
+        )
+
+        indices_in_msa_to_remove = set(range(msa_t_nt.number_of_sequences())).difference(indices_to_keep)
+        for i in indices_in_msa_to_remove:
+            row_numbers_to_drop.add(i-1)
+
 
     params = sbsp_options.safe_get("filter-remove-sequences-that-introduce-gaps")
     gap_width = params[0]
@@ -580,7 +594,7 @@ def filter_df_based_on_msa(df, msa_t, sbsp_options, inplace=False, multiple_filt
     # get to first start codon in the query and make sure most targets have reached that point
     first_start_codon_position = get_position_from_which_to_start_gap_filtering(msa_t)
 
-    row_numbers_to_drop = set()
+
 
     end_search = int(alignment_length / 2.0) - gap_width
     for i in range(first_start_codon_position, end_search):
@@ -1209,10 +1223,12 @@ def perform_msa_on_df_with_single_query(env, df, sbsp_options, **kwargs):
 
     # construct msa and filter (if necessary)
     while True:
-        msa_t = construct_msa_from_df(env, df, sbsp_options, **kwargs)
+        msa_t_aa, msa_t_nt = construct_msa_from_df(env, df, sbsp_options, **kwargs)
 
+        # pairwise kimura filter
         targets_before = len(df)
-        filter_df_based_on_msa(df, msa_t, sbsp_options, inplace=True)
+
+        filter_df_based_on_msa(df, msa_t_aa, msa_t_nt, sbsp_options, inplace=True)
 
         # if nothing has been filtered or if everything has been filtered, we're done
         if targets_before == len(df) or len(df) == 0:
@@ -1220,7 +1236,7 @@ def perform_msa_on_df_with_single_query(env, df, sbsp_options, **kwargs):
 
     if len(df) > 0:
         logger.debug("Searching for start on {} targets".format(len(df)))
-        search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options)
+        search_for_start_for_msa_and_update_df(df, msa_t_aa, sbsp_options)
 
     return df
 
