@@ -4,6 +4,7 @@ import logging
 import time
 import timeit
 from multiprocessing import Process, Manager, Lock
+from random import shuffle
 from typing import *
 
 from Bio.Align import MultipleSeqAlignment
@@ -342,7 +343,9 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
     # for each alignment to a target protein for the current query
     list_entries = list()
     logger.debug("Reading {} targets from blast".format(len(r.alignments)))
-    for alignment in r.alignments:
+    shuffled_alignments = shuffle(r.alignments)
+
+    for alignment in shuffled_alignments:
         if len(list_entries) > max_targets:
             logger.debug("Reached limit on number of targets: {} from {}".format(max_targets, len(r.alignments)))
             break
@@ -1363,8 +1366,9 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
     pf_blast_output = os.path.join(env["pd-work"], "blast_output.xml")
     remove_p(pf_blast_output)
     try:
+        curr_time = timeit.default_timer()
         run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_options, **kwargs)
-        pass
+        logger.info("Blast runtime (min): {}".format((timeit.default_timer() - curr_time)/float(60)))
     except ValueError:
         raise ValueError("Couldn't run blast successfully")
 
