@@ -231,6 +231,10 @@ def create_info_for_query_target_pair(query_info, target_info, hsp, **kwargs):
     output["t-prot-position-of-5prime-in-msa-fragment-no-gaps"] = target_info["offset"] / 3
     output["t-nucl-position-of-5prime-in-msa-fragment-no-gaps"] = target_info["offset"]
 
+    output["q-key"] = "{};{};{};{}".format(
+        query_info["accession"], query_info["left"], query_info["right"], query_info["strand"]
+    )
+
     #output["q-prot-msa"] = Seq(query_info["lorf_nt"]).translate()._data
     #output["t-prot-msa"] = Seq(target_info["lorf_nt"]).translate()._data
 

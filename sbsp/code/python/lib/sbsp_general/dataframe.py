@@ -459,10 +459,12 @@ def df_filter(env, df, **kwargs):
 
 
 
-def df_get_label_from_row(df, row_number, source, suffix_coordinates=None):
+def df_get_label_from_row(df, row_number, source, suffix_coordinates=None, **kwargs):
     # type: (pd.DataFrame, int, str, str) -> sbsp_general.labels.Label
 
     except_if_not_in_set(source, ["q", "t"])
+
+    extra_attributes = get_value(kwargs, "attributes", None)
 
     suffix = ""
     if suffix_coordinates is not None:
@@ -471,6 +473,9 @@ def df_get_label_from_row(df, row_number, source, suffix_coordinates=None):
     attributes = dict()
     if "predicted-at-step" in df:
         attributes["predicted-at-step"] = df.at[row_number, "predicted-at-step"]
+
+    if extra_attributes is not None:
+        attributes.update(extra_attributes)
 
     return sbsp_general.labels.Label.from_fields(
         {
@@ -506,9 +511,13 @@ def df_get_labels_per_genome(df, source, **kwargs):
 
     labels_per_genome = dict()
 
-    for index, row in df.iterrows():
+    for q_key, df_group in df.groupby("q-key", as_index=False):
 
-        label = df_get_label_from_row(df, index, source, suffix_coordinates)
+        index = df_group.index[0]
+
+        label = df_get_label_from_row(df, index, source, suffix_coordinates, attributes={
+            "num_support": len(df_group)
+        })
         genome = df.at[index, "{}-{}".format(source, "genome")]
 
         curr_key = sbsp_general.labels.create_gene_key_from_label(label)

@@ -855,7 +855,7 @@ def select_by_upstream_1_4_rule(msa_t, sbsp_options, pos_of_upstream_in_msa):
     # type: (MSAType, SBSPOptions, int) -> Union[int, None]
 
     start_position_in_msa = None
-    radius_aa = 2
+    radius_aa = 4
 
     if pos_of_upstream_in_msa is not None and pos_of_upstream_in_msa >= 0:
         # check upstream of position
@@ -1021,6 +1021,7 @@ def step_c_find_rightmost_by_standard_aa_score(msa_t, candidate_positions, sbsp_
         if penalized_start_score < threshold:
             logger.debug("SAAS < threshold ({}). Select it".format(penalized_start_score))
             start_position_in_msa = i
+            break
 
     logger.debug("No candidate found with low SAAS")
 
