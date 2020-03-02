@@ -1229,12 +1229,20 @@ def perform_msa_on_df_with_single_query(env, df, sbsp_options, **kwargs):
 
     # construct msa and filter (if necessary)
     while True:
+        curr_time = timeit.default_timer()
         msa_t_aa, msa_t_nt = construct_msa_from_df(env, df, sbsp_options, **kwargs)
+        logger.debug("MSA: Time (min): {}, Support: {}, Key: {}".format(
+            round((timeit.default_timer() - curr_time)/60.0, 2), len(df), df.iloc[0]["q-key"]
+        ))
 
         # pairwise kimura filter
         targets_before = len(df)
 
+        curr_time = timeit.default_timer()
         filter_df_based_on_msa(df, msa_t_aa, msa_t_nt, sbsp_options, inplace=True)
+        logger.debug("Filter: Time (min): {}, Support: {}, Key: {}".format(
+            round((timeit.default_timer() - curr_time) / 60.0, 2), len(df), df.iloc[0]["q-key"]
+        ))
 
         # if nothing has been filtered or if everything has been filtered, we're done
         if targets_before == len(df) or len(df) == 0:
@@ -1242,7 +1250,11 @@ def perform_msa_on_df_with_single_query(env, df, sbsp_options, **kwargs):
 
     if len(df) > 0:
         logger.debug("Searching for start on {} targets".format(len(df)))
+        curr_time = timeit.default_timer()
         search_for_start_for_msa_and_update_df(df, msa_t_aa, sbsp_options)
+        logger.debug("Search: Time (min): {}, Support: {}, Key: {}".format(
+            round((timeit.default_timer() - curr_time) / 60.0, 2), len(df), df.iloc[0]["q-key"]
+        ))
 
     return df
 
