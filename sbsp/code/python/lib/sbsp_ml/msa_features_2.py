@@ -145,7 +145,7 @@ def compute_downstream_score(msa_t, position, msa_options, **kwargs):
 def compute_simple_saas(msa_t, i):
     # type: (MSAType, int) -> float
 
-    num_vli = sum(1 for j in range(msa_t.number_of_sequences()) if msa_t[j][i] in {"v", "l", "i"})
+    num_vli = sum(1 for j in range(msa_t.number_of_sequences()) if msa_t[j][i] in {"v", "l", "i", "-"})
 
     return float(num_vli) / msa_t.number_of_sequences()
 
