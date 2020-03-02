@@ -343,7 +343,8 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
     # for each alignment to a target protein for the current query
     list_entries = list()
     logger.debug("Reading {} targets from blast".format(len(r.alignments)))
-    shuffled_alignments = shuffle(r.alignments)
+    shuffled_alignments = [a for a in r.alignments]
+    shuffle(shuffled_alignments)
 
     for alignment in shuffled_alignments:
         if len(list_entries) > max_targets:
