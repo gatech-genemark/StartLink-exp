@@ -322,8 +322,6 @@ class PBS:
             pd_job_template
         )
 
-        print(cmd)
-
         return cmd
 
     @staticmethod

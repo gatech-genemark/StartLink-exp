@@ -87,7 +87,7 @@ class Options:
 
         try:
             f = open(pf_options, "r")
-            return yaml.load(f)
+            return yaml.load(f, Loader=yaml.FullLoader)
         except IOError:
             logger.warning("Options File Not Found: {}".format(pf_options))
             return dict()
@@ -98,7 +98,7 @@ class Options:
 
         try:
             f = open(pf_default, "r")
-            return yaml.load(f)
+            return yaml.load(f, Loader=yaml.FullLoader)
         except IOError:
             logger.warning("Defaults File Not Found: {}".format(pf_default))
             return dict()
