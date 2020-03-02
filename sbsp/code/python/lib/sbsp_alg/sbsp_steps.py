@@ -1227,7 +1227,7 @@ def perform_msa_on_df_with_single_query(env, df, sbsp_options, **kwargs):
     if len(df) == 0:
         return df
 
-    qkey = df.iloc["q-key"] if "q-key" in df else None
+    qkey = df.iloc[0]["q-key"] if "q-key" in df else None
 
     # construct msa and filter (if necessary)
     while True:

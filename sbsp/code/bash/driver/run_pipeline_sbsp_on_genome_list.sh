@@ -9,6 +9,7 @@ fn_q_labels_true=ncbi.gff
 fn_t_labels=ncbi.gff
 pbs_conf=defaults
 steps=""
+tag=
 email_on_complete=
 
 # getopts string
@@ -62,14 +63,14 @@ for pass in 1 2; do
         case $1 in
             --) shift; break;;
             -*) case $1 in
-                -q)                 query=$2; shift;;
-                -t)                 target=$2; shift;;
+                --pf-genome-list)   pf_genome_list=$2; shift;;
                 -s|--sbsp-conf)     sbsp_conf=$2; shift;;
                 -p|--pbs-conf)      pbs_conf=$2; shift;;
                 --steps)            steps="--steps $2"; shift;;
                 --q-labels-true)    fn_q_labels_true=$2; shift;;
                 --q-labels)         fn_q_labels=$2; shift;;
                 --t-labels)         fn_t_labels=$2; shift;;
+                --tag)              tag=$2; shift;;
                 -v|--verbose)       VERBOSE=$(($VERBOSE + 1));;
                 -e)                 email_on_complete=1; shift;;
                 --*)                error $1;;
@@ -88,16 +89,13 @@ done
 
 
 # Check options
-([ -z "$query" ] || [ -z "$target" ] || [ -z "${sbsp_conf}" ]) && usage
+([ -z "$pf_genome_list" ] || [ -z "${sbsp_conf}" ]) && usage
 
-pf_q_list=$lists/${query}.list;
-pf_t_list=$lists/${target}.list;
 pf_sbsp_conf=$config/sbsp_${sbsp_conf}.conf
 pf_pbs_conf=$config/pbs_${pbs_conf}.conf
 
 # check that files exist
-[ ! -f "${pf_q_list}" ] && { echo "File doesn't exist: $pf_q_list"; exit 1; };
-[ ! -f "${pf_t_list}" ] && { echo "File doesn't exist: $pf_t_list"; exit 1; };
+[ ! -f "${pf_genome_list}" ] && { echo "File doesn't exist: $pf_q_list"; exit 1; };
 [ ! -f "${pf_sbsp_conf}" ] && { echo "File doesn't exist: $pf_sbsp_conf"; exit 1; };
 [ ! -f "${pf_pbs_conf}" ] && { echo "File doesn't exist: $pf_pbs_conf"; exit 1; };
 
@@ -135,7 +133,13 @@ function run_sbsp_on_genome_list_entry() {
     echo "$entry" >> $pf_list
     
     local ancestor_valid=$(convert_string_to_valid_directory_name "$ancestor")
-    $bin/run_pipeline_sbsp_sh.sh  -q tmp_$gcfid -t genbank_${ancestor_valid}  -s 1 -p 1 --q-labels ncbi.gff --q-labels-true ncbi.gff
+    local tag_option=""
+    if [ ! -z "$tag" ]; then
+        tag_option="--tag $tag"
+        echo "Tag: ${tag_option}"
+    fi
+
+    $bin/run_pipeline_sbsp_sh.sh  -q tmp_$gcfid -t genbank_${ancestor_valid}  -s ${sbsp_conf} -p ${pbs_conf} --q-labels ncbi.gff --q-labels-true ncbi.gff ${tag_option}
     rm $pf_list
 }
 
@@ -146,11 +150,12 @@ function run_sbsp_on_genome_list() {
     
     local total=$(wc -l $pf_genome_list | awk '{print $1-1}')
     local current=1
-    awk -F "," '{if (NR > 1) print }' | while read -r line; do
+    awk -F "," '{if (NR > 1) print }' $pf_genome_list | while read -r line; do
         local gcfid=$(parse_entry_for_gcfid "$line")
-        echo -n "Progress: $current/$total. GCFID=$gcfid\r"
+        echo -e "Progress: $current/$total. GCFID=$gcfid"
         
         run_sbsp_on_genome_list_entry "$line"
+        current=$((current + 1))
     done
 }
 

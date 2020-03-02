@@ -7,6 +7,7 @@ import logging
 import argparse
 import os
 import threading
+import timeit
 import random
 from typing import *
 
@@ -71,7 +72,7 @@ def create_pbs_file_for_transfer(env, pf_pbs, sender, receiver, pf_data_from, pf
     cmd += "cd $PBS_O_WORKDIR\n"
 
     if sender is None:
-        cmd += "rsync {} {}\n".format(sender, pf_data_from, pf_data_to)
+        cmd += "rsync {} {}\n".format(pf_data_from, pf_data_to)
     else:
         cmd += "rsync {}:{} {}\n".format(sender, pf_data_from, pf_data_to)
 
@@ -88,8 +89,7 @@ def transfer_from_compute_to_compute(env, sender, receiver, pf_data_from, pf_dat
 
     pf_pbs = os.path.join(env["pd-work"], "{}_transfer.pbs".format(fn_tmp_prefix))
     create_pbs_file_for_transfer(env, pf_pbs, sender, receiver, pf_data_from, pf_data_to)
-    return
-    job_id = run_shell_cmd("qsub -V {}".format(pf_pbs))
+    job_id = run_shell_cmd("qsub -V {}".format(pf_pbs)).strip()
 
     cmd = r'while [ $(qstat -a | grep " R\|Q\|H " | grep ' + job_id + r'  | wc -l) != 0 ]; do sleep 60 ; done'
 
@@ -104,8 +104,7 @@ def transfer_from_head_to_compute(env, receiver, pf_data_from, pf_data_to, fn_tm
 
     pf_pbs = os.path.join(env["pd-work"], "{}_transfer.pbs".format(fn_tmp_prefix))
     create_pbs_file_for_transfer(env, pf_pbs, None, receiver, pf_data_from, pf_data_to)
-    return
-    job_id = run_shell_cmd("qsub -V {}".format(pf_pbs))
+    job_id = run_shell_cmd("qsub -V {}".format(pf_pbs)).strip()
 
     cmd = r'while [ $(qstat -a | grep " R\|Q\|H " | grep ' + job_id + r'  | wc -l) != 0 ]; do sleep 60 ; done'
 
@@ -127,16 +126,20 @@ class TransferThread (threading.Thread):
 
 
     def run(self):
+
+        start_time = timeit.default_timer()
         transfer_from_compute_to_compute(
             self.env, self.sender, self.receiver, self.pf_data, self.pf_data, fn_tmp_prefix=self.thread_id
         )
+        elapsed_time = (timeit.default_timer() - start_time) / float(60)
+
+        logger.debug("Time (min) for transfer ({} -> {}): {}".format(self.sender, self.receiver, elapsed_time))
 
         run_shell_cmd("sleep {}".format(random.randint(1, 2)))
 
 
 def get_up_nodes():
     # type: () -> List[str]
-    return ["node{}".format(x) for x in range(20)]
     output = run_shell_cmd("pbsnodes -l up | awk '{print $1}'", True)
     return output.strip().split("\n")
 
@@ -153,7 +156,7 @@ def smart_transfer(env, pf_data, pd_destination):
     receiver = list_can_receive.pop()
     pf_compute_data = os.path.join(pd_destination, os.path.basename(pf_data))
 
-
+    logger.info("Transfering: {} -> {}".format("head", receiver))
     transfer_from_head_to_compute(env, receiver, pf_data, pf_compute_data, "head")
     list_can_send.append(receiver)
 
@@ -173,13 +176,15 @@ def smart_transfer(env, pf_data, pd_destination):
             if sender is None:
                 raise RuntimeError("No sender available, something went wrong.")
 
+            logger.info("Transfering: {} -> {}".format(sender, receiver))
+
             thread = TransferThread(env, thread_id, pf_compute_data, sender, receiver, lock)
             thread.start()
 
 
             active_threads.add(thread)
 
-        thread_id += 1
+            thread_id += 1
 
         # wait until at least one thread is done
         completed_threads = set()
@@ -191,6 +196,8 @@ def smart_transfer(env, pf_data, pd_destination):
                     # add to lists
                     list_can_send.append(t.receiver)
                     list_can_send.append(t.sender)
+
+                    logger.info("Completed: {} -> {}".format(t.sender, t.receiver))
 
                     order_of_completion.append((t.sender, t.receiver, t.thread_id))
 

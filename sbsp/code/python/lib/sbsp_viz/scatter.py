@@ -20,10 +20,11 @@ def scatter(df, column_x, column_y, figure_options=None, **kwargs):
 
     _, ax = plt.subplots()
 
+
+    sns.jointplot(df[column_x], df[column_y], kind="scatter", alpha=0.3, s=10, linewidth=0)
+    #sns.scatterplot(df[column_x], df[column_y], hue=hue, alpha=0.3, s=10, linewidth=0)
     if identity:
         add_identity(ax, color="r", ls="--")
-
-    sns.scatterplot(df[column_x], df[column_y], hue=hue, alpha=0.3, s=10, linewidth=0)
 
     FigureOptions.set_properties_for_axis(ax, figure_options)
     if figure_options is not None and figure_options.save_fig is not None:

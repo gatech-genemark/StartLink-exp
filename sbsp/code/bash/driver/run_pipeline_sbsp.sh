@@ -93,13 +93,12 @@ done
 ([ -z "$query" ] || [ -z "$target" ] || [ -z "${sbsp_conf}" ]) && usage
 
 pf_q_list=$lists/${query}.list;
-pf_t_list=$lists/${target}.list;
+pf_t_list=/scratch/karl/sbsp_data/${target}.dmnd;
 pf_sbsp_conf=$config/sbsp_${sbsp_conf}.conf
 pf_pbs_conf=$config/pbs_${pbs_conf}.conf
 
 # check that files exist
 [ ! -f "${pf_q_list}" ] && { echo "File doesn't exist: $pf_q_list"; exit 1; };
-[ ! -f "${pf_t_list}" ] && { echo "File doesn't exist: $pf_t_list"; exit 1; };
 [ ! -f "${pf_sbsp_conf}" ] && { echo "File doesn't exist: $pf_sbsp_conf"; exit 1; };
 [ ! -f "${pf_pbs_conf}" ] && { echo "File doesn't exist: $pf_pbs_conf"; exit 1; };
 
@@ -121,7 +120,7 @@ if verbose $INFO; then
     echo "Working directory: $pd_run"
 fi
 
-$bin/pipeline_msa_py.sh --pf-q-list $pf_q_list --pf-t-list $pf_t_list --fn-q-labels $fn_q_labels --fn-t-labels $fn_t_labels --pf-msa-options $pf_sbsp_conf --pf-pbs-options $pf_pbs_conf --pf-output $pf_output --pd-work $pd_run --fn-q-labels-true $fn_q_labels_true --dn-compute ${dn_compute} $steps
+$bin/pipeline_msa_py.sh --pf-q-list $pf_q_list --pf-t-db $pf_t_list --fn-q-labels $fn_q_labels --pf-sbsp-options $pf_sbsp_conf --pf-pbs-options $pf_pbs_conf --pf-output $pf_output --pd-work $pd_run --fn-q-labels-true $fn_q_labels_true --dn-compute ${dn_compute} $steps
 
 if [ ! -z ${email_on_complete} ]; then
     mail -s "Done" <<< "Job at ${pd_run}"  2> /dev/null
