@@ -323,38 +323,62 @@ def run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_opti
         raise ValueError("Couldn't run blast")
 
 
-# def quick_filter_alignments(list_alignments, original_q_nt):
-#     # type: (List) -> List
-#     if len(list_alignments) < 10:
-#         return list_alignments
-#
-#
-#
-#     threshold = 0.6
-#     # binary search your way
-#
-#     begin = 0
-#     end = len(list_alignments) - 1
-#
-#     while begin != end:
-#         mid = int((end - begin) / 2)
-#
-#         alignment = list_alignments[mid]
-#
-#         target_info = unpack_fasta_header(alignment.title)
-#         hsp = select_representative_hsp(alignment, "")  # get reference hit for target
-#
-#         # get nucleotide sequence that corresponds to proteins
-#
-#         original_t_nt = target_info["lorf_nt"]
-#
-#         distance = compute_distance_based_on_local_alignment(query_info, target_info, hsp,
-#                                                              original_q_nt=original_q_nt,
-#                                                              original_t_nt=original_t_nt,
-#                                                              original_q_nt_offset=query_info["offset"],
-#                                                              original_t_nt_offset=target_info["offset"],
-#                                                              **kwargs)
-#
+def quick_filter_alignments(list_alignments, query_info, **kwargs):
+    # type: (List, Dict[str, Any]) -> List
+    if len(list_alignments) < 10:
+        return list_alignments
+
+    threshold = 0.6
+    threshold_int = int(threshold * 10)
+    # binary search your way
+    original_q_nt = query_info["lorf_nt"]
+
+
+    begin = 0
+    end = len(list_alignments) - 1
+
+    index_closest = end
+    diff_closest = float("inf")
+
+    while begin != end:
+        mid = int((end + begin) / 2)
+
+        alignment = list_alignments[mid]
+
+        target_info = unpack_fasta_header(alignment.title)
+        hsp = select_representative_hsp(alignment, "")  # get reference hit for target
+
+        # get nucleotide sequence that corresponds to proteins
+
+        original_t_nt = target_info["lorf_nt"]
+
+        distance = compute_distance_based_on_local_alignment(query_info, target_info, hsp,
+                                                             original_q_nt=original_q_nt,
+                                                             original_t_nt=original_t_nt,
+                                                             original_q_nt_offset=query_info["offset"],
+                                                             original_t_nt_offset=target_info["offset"],
+                                                             **kwargs)
+
+        distance_int = int(distance * 10)
+
+        diff = distance_int - threshold_int
+
+        if diff > 0 and diff < diff_closest:
+            index_closest = mid
+            diff_closest = diff
+
+        if diff == 0:
+            index_closest = mid
+            break
+
+
+        if distance_int > threshold_int:
+            end = mid
+        elif distance_int < threshold_int:
+            begin = mid
+
+    return list_alignments[:index_closest]
+
 
 
 
@@ -384,8 +408,11 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
     # for each alignment to a target protein for the current query
     list_entries = list()
     logger.debug("Reading {} targets from blast".format(len(r.alignments)))
-    shuffled_alignments = [a for a in r.alignments]
+    # shuffled_alignments = [a for a in r.alignments]
+    before = len(r.alignments)
+    shuffled_alignments = quick_filter_alignments(r.alignments, query_info, **kwargs)
     shuffle(shuffled_alignments)
+    logger.debug("Quick filter: {} -> {}".format(before, len(shuffled_alignments)))
 
     original_q_nt = query_info["lorf_nt"]
 
