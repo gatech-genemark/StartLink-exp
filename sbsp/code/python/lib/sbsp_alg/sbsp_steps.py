@@ -322,6 +322,8 @@ def run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_opti
     except ValueError:
         raise ValueError("Couldn't run blast")
 
+    remove_p(pf_q_sequences)
+
 
 def quick_filter_alignments(list_alignments, query_info, **kwargs):
     # type: (List, Dict[str, Any]) -> List
@@ -1593,6 +1595,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
         #                 completed_threads.add(p)
 
 
+    remove_p(pf_blast_output)
 
     return pf_output
 

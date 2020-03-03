@@ -67,6 +67,8 @@ def split_dict(data, num_splits, pd_work, **kwargs):
     for split_number in range(1, len(list_splits)+1):
         list_splits[split_number-1]["pf_output"] = pf_output_template.format(split_number)
         list_splits[split_number-1]["msa_output_start"] = split_number
+        list_splits[split_number-1]["fn_tmp_prefix"] = split_number
+
 
     return list_splits
 
