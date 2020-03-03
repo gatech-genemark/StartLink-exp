@@ -342,9 +342,13 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
 
     # for each alignment to a target protein for the current query
     list_entries = list()
-    logger.debug("Reading {} targets from blast".format(len(r.alignments)))
+    key = "{};{};{};{}".format(query_info["accession"], query_info["left"], query_info["right"], query_info["strand"])
+    logger.debug("{}: Reading {} targets from blast".format(key, len(r.alignments)))
     shuffled_alignments = [a for a in r.alignments]
     shuffle(shuffled_alignments)
+
+    num_analyzed = 0
+    acc_lengths = 0
 
     for alignment in shuffled_alignments:
         if len(list_entries) > max_targets:
@@ -363,6 +367,10 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
                                                              original_t_nt=original_t_nt,
                                                              **kwargs)
 
+
+        acc_lengths += len(original_q_nt)
+        num_analyzed += 1
+        logger.debug("{}, {}".format(round(distance, 2), len(original_q_nt)))
 
         if distance > distance_min and distance < distance_max:
             if filter_orthologs_with_equal_kimura_to_query is not None:
@@ -389,6 +397,8 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
 
     if len(list_entries) > 0:
         df = pd.DataFrame(list_entries)
+
+    logger.info("Analyzed: {}, {}".format(num_analyzed, round(acc_lengths/float(num_analyzed),2)))
 
     return df
 
@@ -1305,7 +1315,10 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
     pd_msa_final = get_value(kwargs, "pd_msa_final", None)
 
     # read targets and filter out what isn't needed - construct data frame ready for MSA
+    curr_time = timeit.default_timer()
     df = create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwargs)
+    elapsed_time = round((timeit.default_timer() - curr_time) / 60.0, 2)
+    logger.info("CDFFMSFBR ({}): {} (min) for {} orthologs".format(msa_number, elapsed_time, len(r.alignments)))
 
     # FIXME  REMOVE
     # if len(df) > 0 and df.iloc[0]["q-left"] == 178270:
@@ -1317,6 +1330,7 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
     logger.debug("Number of targets after filtering: {}".format(len(df)))
 
     # run MSA(s) and find gene-start
+    curr_time = timeit.default_timer()
     perform_msa_on_df_with_single_query(
         env, df, sbsp_options, inplace=True,
         msa_output_start=msa_number,
@@ -1324,6 +1338,8 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
         fn_tmp_prefix=msa_number,
         num_processors=num_processors
     )
+    elapsed_time = round((timeit.default_timer() - curr_time) / 60.0, 2)
+    logger.info("PMODWSQ ({}): {} (min) for {} orthologs".format(msa_number, elapsed_time, len(df)))
 
     # for each query in blast
     if pd_msa_final is not None:
@@ -1378,10 +1394,10 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
 
     # Run blast
     pf_blast_output = os.path.join(env["pd-work"], "blast_output.xml")
-    remove_p(pf_blast_output)
+    #remove_p(pf_blast_output)
     try:
         curr_time = timeit.default_timer()
-        run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_options, **kwargs)
+        #run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_options, **kwargs)
         logger.info("Blast runtime (min): {}".format((timeit.default_timer() - curr_time)/float(60)))
     except ValueError:
         raise ValueError("Couldn't run blast successfully")
@@ -1393,12 +1409,19 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
         raise ValueError("Could not open blast results file: {}".format(pf_blast_output))
 
     records = NCBIXML.parse(f_blast_results)
-    #num_processors = None
+
+    # FIXME`
+    num_processors = None
+
 
     if num_processors is None or num_processors == 0:
         msa_number = 0
         # for each query, find start
         for r in records:
+            if len(r.alignments) != 26091:
+                continue
+            logger.info("{}".format(len(r.alignments)))
+
             df_result = find_start_for_query_blast_record(env, r, sbsp_options, msa_number=msa_number, **kwargs)
             append_data_frame_to_csv(df_result, pf_output)
             msa_number += 1
