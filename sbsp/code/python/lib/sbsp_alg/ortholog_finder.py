@@ -159,10 +159,10 @@ def map_aligned_aa_to_aligned_nt(q_aligned_seq_aa, original_q_nt, q_start_aa, q_
         ))
 
     output = Seq("")
-    pos_nt_no_gaps = offset_nt +  q_start_aa * 3
+    pos_nt_no_gaps = offset_nt + q_start_aa * 3
     max_pos_nt_no_gaps = offset_nt + (q_end_aa + 1) * 3
 
-    for pos_aa in range(len(q_aligned_seq_aa)):
+    for pos_aa in range(min(200, len(q_aligned_seq_aa))):
         curr_aa = q_aligned_seq_aa[pos_aa]
 
         if curr_aa == "-":

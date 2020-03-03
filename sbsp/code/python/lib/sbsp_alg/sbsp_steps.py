@@ -323,10 +323,11 @@ def run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_opti
         raise ValueError("Couldn't run blast")
 
 
-# def quick_filter_alignments(list_alignments):
+# def quick_filter_alignments(list_alignments, original_q_nt):
 #     # type: (List) -> List
 #     if len(list_alignments) < 10:
 #         return list_alignments
+#
 #
 #
 #     threshold = 0.6
@@ -338,7 +339,23 @@ def run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_opti
 #     while begin != end:
 #         mid = int((end - begin) / 2)
 #
+#         alignment = list_alignments[mid]
 #
+#         target_info = unpack_fasta_header(alignment.title)
+#         hsp = select_representative_hsp(alignment, "")  # get reference hit for target
+#
+#         # get nucleotide sequence that corresponds to proteins
+#
+#         original_t_nt = target_info["lorf_nt"]
+#
+#         distance = compute_distance_based_on_local_alignment(query_info, target_info, hsp,
+#                                                              original_q_nt=original_q_nt,
+#                                                              original_t_nt=original_t_nt,
+#                                                              original_q_nt_offset=query_info["offset"],
+#                                                              original_t_nt_offset=target_info["offset"],
+#                                                              **kwargs)
+#
+
 
 
 
