@@ -151,7 +151,7 @@ def select_representative_hsp(alignment, hsp_criteria):
     return selected_hsp
 
 
-def map_aligned_aa_to_aligned_nt(q_aligned_seq_aa, original_q_nt, q_start_aa, q_end_aa):
+def map_aligned_aa_to_aligned_nt(q_aligned_seq_aa, original_q_nt, q_start_aa, q_end_aa, offset_nt=0):
     # type: (Seq, Seq, int, int) -> Seq
     if len(original_q_nt) < (q_end_aa - q_start_aa + 1) * 3:
         raise ValueError("Nucleotide sequence length less than aligned amino acid fragment: {} < {}".format(
@@ -159,8 +159,8 @@ def map_aligned_aa_to_aligned_nt(q_aligned_seq_aa, original_q_nt, q_start_aa, q_
         ))
 
     output = Seq("")
-    pos_nt_no_gaps = q_start_aa * 3
-    max_pos_nt_no_gaps = (q_end_aa + 1) * 3
+    pos_nt_no_gaps = offset_nt * 3 +  q_start_aa * 3
+    max_pos_nt_no_gaps = offset_nt * 3 + (q_end_aa + 1) * 3
 
     for pos_aa in range(len(q_aligned_seq_aa)):
         curr_aa = q_aligned_seq_aa[pos_aa]
@@ -182,6 +182,8 @@ def compute_distance_based_on_local_alignment(query_info, target_info, hsp, **kw
 
     original_q_nt = get_value(kwargs, "original_q_nt", required=True)
     original_t_nt = get_value(kwargs, "original_t_nt", required=True)
+    original_q_nt_offset = get_value(kwargs, "original_q_nt_offset", default=0)
+    original_t_nt_offset = get_value(kwargs, "original_t_nt_offset", default=0)
 
     # aligned fragments (aa)
     q_aligned_seq_aa = hsp.query
@@ -193,8 +195,8 @@ def compute_distance_based_on_local_alignment(query_info, target_info, hsp, **kw
 
     # aligned fragments (nt)
     try:
-        q_aligned_seq_nt = map_aligned_aa_to_aligned_nt(q_aligned_seq_aa, original_q_nt, q_start, q_end)
-        t_aligned_seq_nt = map_aligned_aa_to_aligned_nt(t_aligned_seq_aa, original_t_nt, t_start, t_end)
+        q_aligned_seq_nt = map_aligned_aa_to_aligned_nt(q_aligned_seq_aa, original_q_nt, q_start, q_end, offset_nt=original_q_nt_offset)
+        t_aligned_seq_nt = map_aligned_aa_to_aligned_nt(t_aligned_seq_aa, original_t_nt, t_start, t_end, offset_nt=original_t_nt_offset)
     except ValueError:
         return 100  # FIXME: the hell is going on
 
