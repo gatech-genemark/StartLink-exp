@@ -471,7 +471,8 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
     if len(list_entries) > 0:
         df = pd.DataFrame(list_entries)
 
-    logger.info("Analyzed: {}, {}".format(num_analyzed, round(acc_lengths/float(num_analyzed),2)))
+    if num_analyzed > 0:
+        logger.info("Analyzed: {}, {}".format(num_analyzed, round(acc_lengths/float(num_analyzed),2)))
 
     return df
 
