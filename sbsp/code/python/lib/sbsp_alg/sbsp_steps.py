@@ -340,7 +340,7 @@ def quick_filter_alignments(list_alignments, query_info, **kwargs):
     index_closest = end
     diff_closest = float("inf")
 
-    while begin != end:
+    while (end - begin) > 1:
         mid = int((end + begin) / 2)
 
         alignment = list_alignments[mid]
@@ -376,6 +376,7 @@ def quick_filter_alignments(list_alignments, query_info, **kwargs):
             end = mid
         elif distance_int < threshold_int:
             begin = mid
+
 
     return list_alignments[:index_closest]
 
@@ -442,7 +443,7 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
 
         acc_lengths += len(original_q_nt)
         num_analyzed += 1
-        logger.debug("{}, {}".format(round(distance, 2), len(original_q_nt)))
+#        logger.debug("{}, {}".format(round(distance, 2), len(original_q_nt)))
 
         if distance > distance_min and distance < distance_max:
             if filter_orthologs_with_equal_kimura_to_query is not None:
@@ -1466,10 +1467,10 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
 
     # Run blast
     pf_blast_output = os.path.join(env["pd-work"], "blast_output.xml")
-    #remove_p(pf_blast_output)
+    remove_p(pf_blast_output)
     try:
         curr_time = timeit.default_timer()
-        #run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_options, **kwargs)
+        run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_options, **kwargs)
         logger.info("Blast runtime (min): {}".format((timeit.default_timer() - curr_time)/float(60)))
     except ValueError:
         raise ValueError("Couldn't run blast successfully")
@@ -1483,15 +1484,11 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
     records = NCBIXML.parse(f_blast_results)
 
     # FIXME`
-    num_processors = None
-
 
     if num_processors is None or num_processors == 0:
         msa_number = 0
         # for each query, find start
         for r in records:
-            if len(r.alignments) != 26091:
-                continue
             logger.info("{}".format(len(r.alignments)))
 
             df_result = find_start_for_query_blast_record(env, r, sbsp_options, msa_number=msa_number, **kwargs)
