@@ -325,7 +325,7 @@ def run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_opti
 
 def quick_filter_alignments(list_alignments, query_info, **kwargs):
     # type: (List, Dict[str, Any]) -> List
-    if len(list_alignments) < 100:
+    if len(list_alignments) < 2000:
         return list_alignments
 
     threshold = 0.6
