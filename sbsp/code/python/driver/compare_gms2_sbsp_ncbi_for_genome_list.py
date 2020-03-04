@@ -22,6 +22,7 @@ from sbsp_general import Environment
 #           Parse CMD            #
 # ------------------------------ #
 from sbsp_general.general import get_value
+from sbsp_general.labels import Labels
 from sbsp_general.labels_comparison_detailed import LabelsComparisonDetailed
 from sbsp_io.general import read_rows_to_list
 from sbsp_io.labels import read_labels_from_file
@@ -65,9 +66,18 @@ def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
     pf_venn = get_value(kwargs, "pf_venn", os.path.join(env["pd-work"], "venn.pdf"))
     pf_prodigal = get_value(kwargs, "pf_prodigal", None)
 
+    predicted_at_step = get_value(kwargs, "predicted_at_step", None)
+
     labels_gms2 = read_labels_from_file(pf_gms2, name="GMS2")
     labels_sbsp = read_labels_from_file(pf_sbsp, name="SBSP")
     labels_ncbi = read_labels_from_file(pf_ncbi, name="NCBI")
+
+    if predicted_at_step is not None:
+        labels_sbsp = Labels(
+            [l for l in labels_sbsp if l.get_attribute_value("predicted-at-step") == predicted_at_step],
+            name="SBSP"
+        )
+
 
     lcd = LabelsComparisonDetailed(labels_gms2, labels_sbsp,
                                    name_a="gms2",
@@ -150,11 +160,23 @@ def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output
         out["Name"] = name
         out["Ancestor"] = ancestor
 
+        # if step information included, do analysis for steps
+        valid_steps = ["A", "B", "C", "U"]
+
+        for v in valid_steps:
+            out_step = compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, pf_prodigal=pf_prodigal,
+                               venn_title="{}, {}".format(name, ancestor),
+                               pf_venn="venn_{}.pdf".format(gi.name),
+                                              predicted_at_step=v)
+
+            out["{}: GMS2=SBSP".format(v)] = out_step["GMS2=SBSP"]
+            out["{}: GMS2=SBSP=NCBI".format(v)] = out_step["GMS2=SBSP=NCBI"]
+
         list_summary.append(out)
 
     if len(list_summary) > 0:
 
-        ordered_header = ["GCFID", "Name", "Ancestor", "GMS2", "SBSP", "Prodigal", "GMS2=SBSP", "GMS2=SBSP=NCBI"]
+        ordered_header = ["GCFID", "Name", "Ancestor", "GMS2", "SBSP", "GMS2=SBSP", "GMS2=SBSP=NCBI"]
         remaining_header = sorted(
             set(list_summary[0].keys()).difference(ordered_header)
         )
