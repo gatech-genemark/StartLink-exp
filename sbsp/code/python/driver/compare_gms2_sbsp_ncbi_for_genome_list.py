@@ -146,13 +146,13 @@ def distance_to_upstream(row, source):
     """
 
     # if no upstream gene
-    if row["{}-upstream-left".format(source)] == -1:
+    if row["{}-upstream_left".format(source)] == -1:
         return None
 
     if row["{}-strand".format(source)] == "+":
-        d = row["{}-left".format(source)] - row["{}-upstream-right".format(source)]
+        d = row["{}_left".format(source)] - row["{}-upstream_right".format(source)]
     else:
-        d = row["{}-upstream-left".format(source)] - row["{}-right".format(source)]
+        d = row["{}-upstream_left".format(source)] - row["{}_right".format(source)]
 
     return d
 
