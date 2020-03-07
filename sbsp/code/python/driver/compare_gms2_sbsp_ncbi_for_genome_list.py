@@ -5,6 +5,8 @@
 import logging
 import argparse
 import os
+
+import numpy
 import pandas as pd
 from typing import *
 
@@ -134,6 +136,68 @@ def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
     }
 
 
+def distance_to_upstream(row, source):
+    # type: (pd.Series, str) -> Union[int, None]
+    """
+    0 means overlap by 1 nt. Positive numbers mean no overlap. Negatives mean overlap
+    :param series:
+    :param source:
+    :return:
+    """
+
+    # if no upstream gene
+    if row["{}-upstream-left".format(source)] == -1:
+        return None
+
+    if row["{}-strand".format(source)] == "+":
+        d = row["{}-left".format(source)] - row["{}-upstream-right".format(source)]
+    else:
+        d = row["{}-upstream-left".format(source)] - row["{}-right".format(source)]
+
+    return d
+
+
+def get_upstream_info(pf_sbsp_details):
+    # type: (str) -> Dict[str, Any]
+
+    df = pd.read_csv(pf_sbsp_details, header=0)
+
+    accumulator = 0
+    denominator = 0
+
+    # for each query
+    for q_key, df_group in df.groupby("q-key", as_index=False):
+
+        # skip in small numbers
+        if len(df_group) < 10:
+            continue
+
+        total_genes = len(df_group)
+
+        number_with_overlap = 0
+
+        d = distance_to_upstream(df_group.iloc[0], "q")
+
+        if -3 <= d <= 0:
+            number_with_overlap += 1
+
+        for index, row in df_group.iterrows():
+            d = distance_to_upstream(row, "t")
+            if -3 <= d <= 0:
+                number_with_overlap += 1
+
+
+        # if at least one as overlap
+        if number_with_overlap > 0:
+            accumulator += number_with_overlap / float(total_genes)
+            denominator += 1
+
+    consistency = 0 if denominator == 0 else accumulator / float(denominator)
+    return {
+        "Overlap Consistency": consistency
+    }
+
+
 def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output_summary, **kwargs):
     # type: (Environment, GenomeInfoList, Dict[str, str], str, Dict[str, Any]) -> None
 
@@ -159,6 +223,10 @@ def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output
         out["GCFID"] = gi.name
         out["Name"] = name
         out["Ancestor"] = ancestor
+
+        pf_sbsp_details = os.path.join(gcfid_to_pd_sbsp[gi.name], "output.csv")
+        if os.path.isfile(pf_sbsp_details):
+            out.update(get_upstream_info(pf_sbsp_details))
 
         # if step information included, do analysis for steps
         valid_steps = ["A", "B", "C", "U"]
