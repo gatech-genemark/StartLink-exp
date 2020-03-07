@@ -1442,7 +1442,11 @@ def get_indices_after_filtering_random(edge_mat, min_range, max_range):
         if i in removed_nodes:
             continue
 
-        for j in range(1, i):  # skip query
+        #for j in range(1, i):  # skip query
+        for j in range(i-2, i):
+
+            if j <= 1:
+                continue
 
             if i == j:
                 continue
