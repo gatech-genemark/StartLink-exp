@@ -91,10 +91,10 @@ def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
 
     labels_gms2_sbsp_ncbi_3p_5p = lcd_2.intersection("a")
 
-    venn_diagram_5prime(labels_gms2, labels_sbsp, labels_ncbi, FigureOptions(
-        title=venn_title,
-        save_fig=pf_venn
-    ))
+    # venn_diagram_5prime(labels_gms2, labels_sbsp, labels_ncbi, FigureOptions(
+    #     title=venn_title,
+    #     save_fig=pf_venn
+    # ))
 
     labels_prodigal = None
     prodigal_info = dict()
@@ -133,6 +133,29 @@ def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
         **prodigal_info
     }
 
+def compute_gc_from_file(pf_sequence):
+    # type: (str) -> float
+
+    from sbsp_io.sequences import read_fasta_into_hash
+    sequences = read_fasta_into_hash(pf_sequence)
+
+
+    counts = {"A": 0, "C": 0, "G": 0, "T": 0}
+
+    for seq in sequences.values():
+        for s in seq:
+            if s.upper() in {"A", "C", "G", "T"}:
+                counts[s] += 1
+
+    total = sum(counts.values())
+    count_gc = counts["G"] + counts["C"]
+
+    if total == 0:
+        return 0.0
+
+    return count_gc / float(total)
+
+
 
 def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output_summary, **kwargs):
     # type: (Environment, GenomeInfoList, Dict[str, str], str, Dict[str, Any]) -> None
@@ -140,10 +163,14 @@ def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output
     prodigal = get_value(kwargs, "prodigal", None)
     list_summary = list()
     for gi in gil:
+        logger.info("{}".format(gi.name))
         pd_genome = os.path.join(env["pd-data"], gi.name)
         pf_gms2 = os.path.join(pd_genome, "runs", "gms2", "gms2.gff")
         pf_sbsp = os.path.join(gcfid_to_pd_sbsp[gi.name], "accuracy", "{}.gff".format(gi.name))
         pf_ncbi = os.path.join(pd_genome, "ncbi.gff")
+
+        pf_sequence = os.path.join(pd_genome, "sequence.fasta")
+        gc = compute_gc_from_file(pf_sequence)
 
         pf_prodigal = None
         if prodigal:
@@ -159,6 +186,7 @@ def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output
         out["GCFID"] = gi.name
         out["Name"] = name
         out["Ancestor"] = ancestor
+        out["GC"] = gc
 
         # if step information included, do analysis for steps
         valid_steps = ["A", "B", "C", "U"]
@@ -176,7 +204,7 @@ def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output
 
     if len(list_summary) > 0:
 
-        ordered_header = ["GCFID", "Name", "Ancestor", "GMS2", "SBSP", "GMS2=SBSP", "GMS2=SBSP=NCBI"]
+        ordered_header = ["GCFID", "Name", "Ancestor", "GC", "GMS2", "SBSP", "GMS2=SBSP", "GMS2=SBSP=NCBI"]
         remaining_header = sorted(
             set(list_summary[0].keys()).difference(ordered_header)
         )
