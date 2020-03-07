@@ -150,9 +150,9 @@ def distance_to_upstream(row, source):
         return None
 
     if row["{}-strand".format(source)] == "+":
-        d = row["{}_left".format(source)] - row["{}-upstream_right".format(source)]
+        d = row["{}-left".format(source)] - row["{}-upstream_right".format(source)]
     else:
-        d = row["{}-upstream_left".format(source)] - row["{}_right".format(source)]
+        d = row["{}-upstream_left".format(source)] - row["{}-right".format(source)]
 
     return d
 
