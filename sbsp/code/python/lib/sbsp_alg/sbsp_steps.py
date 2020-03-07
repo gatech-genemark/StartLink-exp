@@ -476,6 +476,9 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
     if num_analyzed > 0:
         logger.info("Analyzed: {}, {}".format(num_analyzed, round(acc_lengths/float(num_analyzed),2)))
 
+    # sort by distance
+    df.sort_values("distance", inplace=True).reset_index(inplace=True)
+
     return df
 
 def extract_sequences_from_df_for_msa(df):
