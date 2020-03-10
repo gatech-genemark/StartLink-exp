@@ -95,6 +95,21 @@ def add_percentages(df):
     df["(GMS2=SBSP)!=NCBI"] = df["GMS2=SBSP"] - df["GMS2=SBSP=NCBI"]
 
 
+def convert_overlap_consistency_list_to_one_per_row(df):
+    # type: (pd.DataFrame) -> pd.DataFrame
+
+    list_rows = list()
+
+    for index, row in df.iterrows():
+
+        ancestor = row["Ancestor"]
+        str_list = row["Overlap Consistency List"]
+        l = [float(i) for i in str_list.strip("[]").split(",")]
+        for c in l:
+
+            list_rows.append({"Ancestor": ancestor, "Consistency": c})
+
+    return pd.DataFrame(list_rows)
 
 
 def main(env, args):
@@ -111,69 +126,111 @@ def main(env, args):
 
     # plot steps
     fig_num = 0
-    for col in ["{}: GMS2=SBSP %", "{}: GMS2=SBSP=NCBI %", "{}: (GMS2=SBSP)!=NCBI"]:
+    # for col in ["{}: GMS2=SBSP %", "{}: GMS2=SBSP=NCBI %", "{}: (GMS2=SBSP)!=NCBI"]:
+    #
+    #     df_stacked = stack_columns_as_rows(
+    #         df,
+    #         [col.format(s) for s in steps],
+    #         col.format("M"),
+    #         steps,
+    #         "Step"
+    #     )
+    #
+    #     for kind in ["bar", "box"]: #["point", "bar", "strip", "swarm", "box", "violin", "boxen"]:
+    #     # for kind in ["point", "bar", "strip", "swarm", "box", "violin", "boxen"]:
+    #         # plt.figure(figsize=(12, 4))
+    #
+    #         g = sns.catplot(x="Ancestor", y=col.format("M"), hue="Step", kind=kind, data=df_stacked,
+    #                 dodge=True, legend=False, aspect=2)
+    #
+    #         plt.legend(loc='center right', bbox_to_anchor=(1.125, 0.5))
+    #         plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    #         plt.show()
+    #
+    #         fig_num += 1
+    #
+    #
+    # g = sns.scatterplot(x="GC", y="GMS2=SBSP=NCBI %", hue="Ancestor", data=df)
+    # g.set(ylim=[50, 100])
+    # plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    # plt.show()
+    # fig_num += 1
+    #
+    # g = sns.scatterplot(x="GC", y="(GMS2=SBSP)!=NCBI", hue="Ancestor", data=df)
+    #
+    # plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    # plt.show()
+    # fig_num += 1
+    #
+    #
+    # g = sns.scatterplot(x="GC", y="GMS2=SBSP %", hue="Ancestor", data=df)
+    # g.set(ylim=[50, 100])
+    # plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    # plt.show()
+    # fig_num += 1
+    #
+    # # number of genes
+    # g = sns.scatterplot(x="GC", y="GMS2=SBSP", hue="Ancestor", data=df)
+    # plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    # plt.show()
+    # fig_num += 1
+    #
+    # # number of genes
+    # plt.figure(figsize=(6, 3))
+    # g = sns.catplot(x="Ancestor", y="GMS2=SBSP", kind="box", data=df, legend=False, aspect=1.5)
+    # plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    # plt.show()
+    # fig_num += 1
+    #
+    # # number of genomes
+    # plt.figure(figsize=(6, 3))
+    # g = sns.countplot(x="Ancestor", data=df )
+    # g.set(ylabel="Number of genomes")
+    # plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    # plt.show()
+    # fig_num += 1
 
-        df_stacked = stack_columns_as_rows(
-            df,
-            [col.format(s) for s in steps],
-            col.format("M"),
-            steps,
-            "Step"
-        )
-
-        for kind in ["bar", "box"]: #["point", "bar", "strip", "swarm", "box", "violin", "boxen"]:
-        # for kind in ["point", "bar", "strip", "swarm", "box", "violin", "boxen"]:
-            # plt.figure(figsize=(12, 4))
-
-            g = sns.catplot(x="Ancestor", y=col.format("M"), hue="Step", kind=kind, data=df_stacked,
-                    dodge=True, legend=False, aspect=2)
-
-            plt.legend(loc='center right', bbox_to_anchor=(1.125, 0.5))
-            plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-            plt.show()
-
-            fig_num += 1
-
-
-    g = sns.scatterplot(x="GC", y="GMS2=SBSP=NCBI %", hue="Ancestor", data=df)
-    g.set(ylim=[50, 100])
-    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-    plt.show()
-    fig_num += 1
-
-    g = sns.scatterplot(x="GC", y="(GMS2=SBSP)!=NCBI", hue="Ancestor", data=df)
-
-    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-    plt.show()
-    fig_num += 1
-
-
-    g = sns.scatterplot(x="GC", y="GMS2=SBSP %", hue="Ancestor", data=df)
-    g.set(ylim=[50, 100])
-    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-    plt.show()
-    fig_num += 1
-
-    # number of genes
-    g = sns.scatterplot(x="GC", y="GMS2=SBSP", hue="Ancestor", data=df)
-    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-    plt.show()
-    fig_num += 1
-
-    # number of genes
+    # overlap consistency per genome
     plt.figure(figsize=(6, 3))
-    g = sns.catplot(x="Ancestor", y="GMS2=SBSP", kind="box", data=df, legend=False, aspect=1.5)
-    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-    plt.show()
-    fig_num += 1
-
-    # number of genomes
-    plt.figure(figsize=(6, 3))
-    g = sns.countplot(x="Ancestor", data=df )
+    g = sns.distplot(df["Overlap Consistency"], bins=50)
     g.set(ylabel="Number of genomes")
     plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
     plt.show()
     fig_num += 1
+
+    # overlap consistency per gene
+
+    df_tmp = convert_overlap_consistency_list_to_one_per_row(df)
+
+    plt.figure(figsize=(6, 3))
+    g = sns.distplot(df_tmp["Consistency"], bins=50, kde=False)
+    g.set(ylabel="Number of genes")
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    # overap per gene per ancestor
+    plt.figure(figsize=(6, 3))
+    unique_vals = sorted(set(df_tmp['Ancestor']))
+    targets = [df_tmp.loc[df_tmp['Ancestor'] == val] for val in unique_vals]
+
+    for target in targets:
+        sns.distplot(target[['Consistency']], kde=False)
+
+    g.set(ylabel="Number of genes")
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    # boxplot
+    plt.figure(figsize=(12, 4))
+
+    g = sns.catplot(x="Ancestor", y="Consistency", data=df_tmp, kind="box", aspect=2)
+    g.set(ylabel="Number of genes")
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
 
     print(df["Ancestor"].value_counts())
     print(df[["Ancestor", "GMS2=SBSP"]].groupby("Ancestor").agg("sum"))

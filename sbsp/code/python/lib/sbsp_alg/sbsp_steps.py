@@ -760,7 +760,7 @@ def compute_conservation_in_region(msa_t, start, end, scorer, **kwargs):
     """
 
     direction = get_value(kwargs, "direction", choices=["upstream", "downstream"], default="downstream")
-    score_on_all_pairs = get_value(kwargs, "score_on_all_pairs", False)
+    score_on_all_pairs = True #get_value(kwargs, "score_on_all_pairs", False) #FIXME
     skip_gaps_in_query = get_value(kwargs, "skip_gaps_in_query", False)
 
     if start < 0 or start >= msa_t.alignment_length():
@@ -779,11 +779,10 @@ def compute_conservation_in_region(msa_t, start, end, scorer, **kwargs):
 
     for n in range(num_positions_to_analyze):
 
-        if curr_pos == None:
+        if curr_pos is None:
             raise ValueError("Not enough region to compute score")
 
-
-        if not score_on_all_pairs:
+        if score_on_all_pairs:
             for i in range(num_sequences):
                 element_i = msa_t[i][curr_pos]
                 for j in range(i+1, num_sequences):
@@ -797,7 +796,6 @@ def compute_conservation_in_region(msa_t, start, end, scorer, **kwargs):
                 total_number_of_computations += 1
 
         curr_pos = get_next_position_in_msa(curr_pos, msa_t, direction, skip_gaps_in_query)
-
 
     return pos_score / float(total_number_of_computations)
 
