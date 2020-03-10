@@ -477,7 +477,8 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
         logger.info("Analyzed: {}, {}".format(num_analyzed, round(acc_lengths/float(num_analyzed),2)))
 
     # sort by distance
-    df.sort_values("distance", inplace=True).reset_index(inplace=True)
+    df.sort_values("distance", inplace=True)
+    df.reset_index(inplace=True)
 
     return df
 
