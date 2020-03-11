@@ -472,13 +472,13 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
 
     if len(list_entries) > 0:
         df = pd.DataFrame(list_entries)
+        # sort by distance
+        df.sort_values("distance", inplace=True)
+        df.reset_index(inplace=True)
 
     if num_analyzed > 0:
         logger.info("Analyzed: {}, {}".format(num_analyzed, round(acc_lengths/float(num_analyzed),2)))
 
-    # sort by distance
-    df.sort_values("distance", inplace=True)
-    df.reset_index(inplace=True)
 
     return df
 
@@ -1271,6 +1271,8 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
 
     # if all steps failed
     if start_position_in_msa is None:
+
+        logger.debug("Search could not find start. Support: {}".format(len(df)))
         df.drop(df.index, inplace=True)
         return  # FIXME: implement recovery strategy
 
