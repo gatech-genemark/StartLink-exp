@@ -317,9 +317,24 @@ def run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_opti
     # start clean
     remove_p(pf_blast_output)
 
-    try:
-        run_blast_on_sequence_file(env, pf_q_sequences, pf_t_db, pf_blast_output, sbsp_options=sbsp_options)
-    except ValueError:
+    block_size = 0.5
+
+    blast_successful = False
+    max_attempts = 3
+    attempt = 0
+
+    while not blast_successful and attempt < max_attempts:
+        attempt += 1
+        try:
+            run_blast_on_sequence_file(env, pf_q_sequences, pf_t_db, pf_blast_output, sbsp_options=sbsp_options,
+                                   block_size=block_size)
+            blast_successful = True
+            break
+        except ValueError:
+            block_size = block_size / 2.0
+            logger.debug("Blast failed. Trying again with block size {}".format(block_size))
+
+    if not blast_successful:
         raise ValueError("Couldn't run blast")
 
     remove_p(pf_q_sequences)

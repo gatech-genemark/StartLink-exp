@@ -16,10 +16,11 @@ def gen_cmd_run_blastp(pf_q_sequences, pf_blast_db, pf_blast_out, use_diamond, *
     # type: (str, str, str, bool, **str) -> str
 
     max_evalue = sbsp_general.general.get_value(kwargs, "max_evalue", None)
+    block_size = sbsp_general.general.get_value(kwargs, "block_size", 2, default_if_none=True)
 
     if use_diamond:
-        cmd = "diamond blastp -b 0.5 -d {} -q {} -o {} --outfmt 5 --quiet -k 0 --subject-cover 80 --query-cover 80 ".format(
-            pf_blast_db, pf_q_sequences, pf_blast_out
+        cmd = "diamond blastp -b {} -d {} -q {} -o {} --outfmt 5 --quiet -k 0 --subject-cover 80 --query-cover 80 ".format(
+            block_size, pf_blast_db, pf_q_sequences, pf_blast_out
         )
 
         if max_evalue is not None:
