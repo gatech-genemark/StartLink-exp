@@ -2,6 +2,7 @@
 # Georgia Institute of Technology
 #
 # Created: 1/15/20
+import collections
 import logging
 import argparse
 import os
@@ -179,6 +180,26 @@ def distance_to_upstream(row, source):
 
     return d
 
+def most_frequent(items):
+    # type: (Iterable[Any]) -> Any
+    occurence_count = collections.Counter(items)
+    return occurence_count.most_common(1)[0][0]
+
+
+def compute_consistency(distances, pivot, flexibility=0):
+    # type: (List[int], int, int) -> float
+
+    if flexibility == 0:
+        return len([1 for d in distances if d == pivot]) / float(len(distances))
+    else:
+        numerator = 0
+        for d in distances:
+            if d <= pivot + flexibility and d >= pivot - flexibility:
+                numerator += 1
+
+        return float(numerator) / len(distances)
+    pass
+
 
 def get_upstream_info(pf_sbsp_details, **kwargs):
     # type: (str) -> Dict[str, Any]
@@ -188,6 +209,10 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
     accumulator = 0
     denominator = 0
     list_consistency = list()
+    list_consistency_m1_f0 = list()
+    list_consistency_m4_f0 = list()
+    list_consistency_m1_f3 = list()
+    list_consistency_m4_f3 = list()
 
     # for each query
     for q_key, df_group in df.groupby("q-key", as_index=False):
@@ -227,10 +252,29 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
             list_consistency.append(number_close / float(total_genes))
             denominator += 1
 
+            # choose overlap group
+            most_common_distance = most_frequent(distances)
+
+            c_f0 = compute_consistency(distances, most_common_distance, flexibility=0)
+            c_f3 = compute_consistency(distances, most_common_distance, flexibility=3)
+
+            # m1
+            if most_common_distance == 0:
+                list_consistency_m1_f0.append(c_f0)
+                list_consistency_m1_f3.append(c_f3)
+            elif most_common_distance == -3:
+                list_consistency_m4_f0.append(c_f0)
+                list_consistency_m4_f3.append(c_f3)
+
+
     consistency = 0 if denominator == 0 else accumulator / float(denominator)
     return {
         "Overlap Consistency": consistency,
-        "Overlap Consistency List": list_consistency
+        "Overlap Consistency List": list_consistency,
+        "OCL M1 F0": list_consistency_m1_f0,
+        "OCL M1 F3": list_consistency_m1_f3,
+        "OCL M4 F0": list_consistency_m4_f0,
+        "OCL M4 F3": list_consistency_m4_f3,
     }
 
 

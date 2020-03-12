@@ -95,15 +95,15 @@ def add_percentages(df):
     df["(GMS2=SBSP)!=NCBI"] = df["GMS2=SBSP"] - df["GMS2=SBSP=NCBI"]
 
 
-def convert_overlap_consistency_list_to_one_per_row(df):
-    # type: (pd.DataFrame) -> pd.DataFrame
+def convert_overlap_consistency_list_to_one_per_row(df, col):
+    # type: (pd.DataFrame, str) -> pd.DataFrame
 
     list_rows = list()
 
     for index, row in df.iterrows():
 
         ancestor = row["Ancestor"]
-        str_list = row["Overlap Consistency List"]
+        str_list = row[col]
         l = [float(i) for i in str_list.strip("[]").split(",")]
         for c in l:
 
@@ -200,36 +200,37 @@ def main(env, args):
 
     # overlap consistency per gene
 
-    df_tmp = convert_overlap_consistency_list_to_one_per_row(df)
+    for col in ["Overlap Consistency List", "OCL M1 F0", "OCL M1 F3", "OCL M4 F0", "OCL M4 F3"]:
+        df_tmp = convert_overlap_consistency_list_to_one_per_row(df, col)
 
-    plt.figure(figsize=(6, 3))
-    g = sns.distplot(df_tmp["Consistency"], bins=50, kde=False)
-    g.set(ylabel="Number of genes")
-    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-    plt.show()
-    fig_num += 1
+        plt.figure(figsize=(6, 3))
+        g = sns.distplot(df_tmp["Consistency"], bins=50, kde=False)
+        g.set(ylabel="Number of genes")
+        plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+        plt.show()
+        fig_num += 1
 
-    # overap per gene per ancestor
-    plt.figure(figsize=(6, 3))
-    unique_vals = sorted(set(df_tmp['Ancestor']))
-    targets = [df_tmp.loc[df_tmp['Ancestor'] == val] for val in unique_vals]
+        # overap per gene per ancestor
+        plt.figure(figsize=(6, 3))
+        unique_vals = sorted(set(df_tmp['Ancestor']))
+        targets = [df_tmp.loc[df_tmp['Ancestor'] == val] for val in unique_vals]
 
-    for target in targets:
-        sns.distplot(target[['Consistency']], kde=False)
+        for target in targets:
+            sns.distplot(target[['Consistency']], kde=False)
 
-    g.set(ylabel="Number of genes")
-    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-    plt.show()
-    fig_num += 1
+        g.set(ylabel="Number of genes")
+        plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+        plt.show()
+        fig_num += 1
 
-    # boxplot
-    plt.figure(figsize=(12, 4))
+        # boxplot
+        plt.figure(figsize=(12, 4))
 
-    g = sns.catplot(x="Ancestor", y="Consistency", data=df_tmp, kind="box", aspect=2)
-    g.set(ylabel="Number of genes")
-    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-    plt.show()
-    fig_num += 1
+        g = sns.catplot(x="Ancestor", y="Consistency", data=df_tmp, kind="box", aspect=2)
+        g.set(ylabel="Number of genes")
+        plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+        plt.show()
+        fig_num += 1
 
 
     print(df["Ancestor"].value_counts())
