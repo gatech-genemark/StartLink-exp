@@ -194,7 +194,7 @@ def compute_consistency(distances, pivot, flexibility=0):
     else:
         numerator = 0
         for d in distances:
-            if d <= pivot + flexibility and d >= pivot - flexibility:
+            if d is not None and  d <= pivot + flexibility and d >= pivot - flexibility:
                 numerator += 1
 
         return float(numerator) / len(distances)
@@ -228,7 +228,8 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
         distances = list()
 
         d = distance_to_upstream(df_group.iloc[0], "q")
-        distances.append(d)
+        if d is not None:
+            distances.append(d)
 
         if d is not None and d <= 0:
             number_with_overlap += 1
@@ -237,7 +238,8 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
 
         for index, row in df_group.iterrows():
             d = distance_to_upstream(row, "t")
-            distances.append(d)
+            if d is not None:
+                distances.append(d)
 
             if d is not None and  d <= 0:
                 number_with_overlap += 1
