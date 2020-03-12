@@ -180,13 +180,14 @@ def distance_to_upstream(row, source):
     return d
 
 
-def get_upstream_info(pf_sbsp_details):
+def get_upstream_info(pf_sbsp_details, **kwargs):
     # type: (str) -> Dict[str, Any]
 
     df = pd.read_csv(pf_sbsp_details, header=0)
 
     accumulator = 0
     denominator = 0
+    list_consistency = list()
 
     # for each query
     for q_key, df_group in df.groupby("q-key", as_index=False):
@@ -195,29 +196,41 @@ def get_upstream_info(pf_sbsp_details):
         if len(df_group) < 10:
             continue
 
-        total_genes = len(df_group)
+        total_genes = len(df_group) + 1
 
         number_with_overlap = 0
+        number_close = 0
+        distances = list()
 
         d = distance_to_upstream(df_group.iloc[0], "q")
+        distances.append(d)
 
-        if -3 <= d <= 0:
+        if d is not None and d <= 0:
             number_with_overlap += 1
+        if d is not None and d <= 3:
+            number_close += 1
 
         for index, row in df_group.iterrows():
             d = distance_to_upstream(row, "t")
-            if -3 <= d <= 0:
+            distances.append(d)
+
+            if d is not None and  d <= 0:
                 number_with_overlap += 1
 
 
+            if d is not None and d <= 3:
+                number_close += 1
+
         # if at least one as overlap
-        if number_with_overlap > 0:
-            accumulator += number_with_overlap / float(total_genes)
+        if number_with_overlap > 0.2*total_genes:
+            accumulator += number_close / float(total_genes)
+            list_consistency.append(number_close / float(total_genes))
             denominator += 1
 
     consistency = 0 if denominator == 0 else accumulator / float(denominator)
     return {
-        "Overlap Consistency": consistency
+        "Overlap Consistency": consistency,
+        "Overlap Consistency List": list_consistency
     }
 
 
