@@ -213,6 +213,8 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
     list_consistency_m4_f0 = list()
     list_consistency_m1_f3 = list()
     list_consistency_m4_f3 = list()
+    list_consistency_mr_f0 = list()
+    list_consistency_mr_f3 = list()
 
     # for each query
     for q_key, df_group in df.groupby("q-key", as_index=False):
@@ -258,6 +260,7 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
             c_f0 = compute_consistency(distances, most_common_distance, flexibility=0)
             c_f3 = compute_consistency(distances, most_common_distance, flexibility=3)
 
+
             # m1
             if most_common_distance == 0:
                 list_consistency_m1_f0.append(c_f0)
@@ -265,6 +268,10 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
             elif most_common_distance == -3:
                 list_consistency_m4_f0.append(c_f0)
                 list_consistency_m4_f3.append(c_f3)
+            elif most_common_distance < -3:
+                list_consistency_mr_f0.append(c_f0)
+                list_consistency_mr_f3.append(c_f3)
+
 
 
     consistency = 0 if denominator == 0 else accumulator / float(denominator)
@@ -275,6 +282,8 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
         "OCL M1 F3": list_consistency_m1_f3,
         "OCL M4 F0": list_consistency_m4_f0,
         "OCL M4 F3": list_consistency_m4_f3,
+        "OCL MR F0": list_consistency_mr_f0,
+        "OCL MR F3": list_consistency_mr_f3
     }
 
 
