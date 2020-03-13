@@ -81,7 +81,7 @@ def main(env, args):
 
     sequences = read_fasta_into_hash(args.pf_sequence)
     label = Label(
-        Coordinates(args.left, args.right, args.strand),
+        Coordinates(args.left-1, args.right-1, args.strand),
         args.accession
     )
 
