@@ -202,19 +202,21 @@ def compute_consistency(distances, pivot, flexibility=0):
 
 
 def get_upstream_info(pf_sbsp_details, **kwargs):
-    # type: (str) -> Dict[str, Any]
+    # type: (str, Dict[str, Any]) -> Dict[str, Any]
 
     df = pd.read_csv(pf_sbsp_details, header=0)
 
     accumulator = 0
     denominator = 0
     list_consistency = list()
-    list_consistency_m1_f0 = list()
-    list_consistency_m4_f0 = list()
-    list_consistency_m1_f3 = list()
-    list_consistency_m4_f3 = list()
-    list_consistency_mr_f0 = list()
-    list_consistency_mr_f3 = list()
+
+    t_to_r_to_rpc = {
+        t: {r: list() for r in {0,3}} for t in {"0", "-3", "R"}
+    }       # type: Dict[str, Dict[int, List[float]]]
+
+    num_queries_considered = 0
+    num_queries_assigned_to_overlap_group = 0
+
 
     # for each query
     for q_key, df_group in df.groupby("q-key", as_index=False):
@@ -222,6 +224,8 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
         # skip in small numbers
         if len(df_group) < 10:
             continue
+
+        num_queries_considered += 1
 
         total_genes = len(df_group) + 1
 
@@ -243,15 +247,16 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
             if d is not None:
                 distances.append(d)
 
-            if d is not None and  d <= 0:
+            if d is not None and d <= 0:
                 number_with_overlap += 1
-
 
             if d is not None and d <= 3:
                 number_close += 1
 
         # if at least one as overlap
         if number_with_overlap > 0.2*total_genes:
+            num_queries_assigned_to_overlap_group += 1
+
             accumulator += number_close / float(total_genes)
             list_consistency.append(number_close / float(total_genes))
             denominator += 1
@@ -263,29 +268,26 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
             c_f3 = compute_consistency(distances, most_common_distance, flexibility=3)
 
 
-            # m1
-            if most_common_distance == 0:
-                list_consistency_m1_f0.append(c_f0)
-                list_consistency_m1_f3.append(c_f3)
-            elif most_common_distance == -3:
-                list_consistency_m4_f0.append(c_f0)
-                list_consistency_m4_f3.append(c_f3)
+            if most_common_distance in {0, -3}:
+                t_key = str(most_common_distance)
+                t_to_r_to_rpc[t_key][0].append(c_f0)
+                t_to_r_to_rpc[t_key][3].append(c_f3)
             elif most_common_distance < -3:
-                list_consistency_mr_f0.append(c_f0)
-                list_consistency_mr_f3.append(c_f3)
-
-
+                t_key = "R"
+                t_to_r_to_rpc[t_key][0].append(c_f0)
+                t_to_r_to_rpc[t_key][3].append(c_f3)
 
     consistency = 0 if denominator == 0 else accumulator / float(denominator)
+    pog = 0 if num_queries_considered == 0 else 100 * num_queries_assigned_to_overlap_group / float(num_queries_considered)
     return {
         "Overlap Consistency": consistency,
         "Overlap Consistency List": list_consistency,
-        "OCL M1 F0": list_consistency_m1_f0,
-        "OCL M1 F3": list_consistency_m1_f3,
-        "OCL M4 F0": list_consistency_m4_f0,
-        "OCL M4 F3": list_consistency_m4_f3,
-        "OCL MR F0": list_consistency_mr_f0,
-        "OCL MR F3": list_consistency_mr_f3
+        "Percent of Overlap Groups": pog,
+        **{
+            "D{}, RPC({},{})".format(t, int(t)-r, int(t)+r): t_to_r_to_rpc[t][r]
+            for t in t_to_r_to_rpc.keys()
+            for r in t_to_r_to_rpc[t].keys()
+        }
     }
 
 

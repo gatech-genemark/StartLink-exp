@@ -334,10 +334,10 @@ def run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_opti
             block_size = block_size / 2.0
             logger.debug("Blast failed. Trying again with block size {}".format(block_size))
 
+    remove_p(pf_q_sequences)
+
     if not blast_successful:
         raise ValueError("Couldn't run blast")
-
-    remove_p(pf_q_sequences)
 
 
 def quick_filter_alignments(list_alignments, query_info, **kwargs):
@@ -1495,6 +1495,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
         run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_options, **kwargs)
         logger.info("Blast runtime (min): {}".format((timeit.default_timer() - curr_time)/float(60)))
     except ValueError:
+        remove_p(pf_blast_output)
         raise ValueError("Couldn't run blast successfully")
 
     # open blast stream
