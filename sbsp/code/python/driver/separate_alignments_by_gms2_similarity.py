@@ -146,7 +146,7 @@ def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output
 
                 # make sure SBSP 5' matches GMS2
                 label_sbsp = Label(
-                    Coordinates(row["q-left-sbsp"], row["q-right-sbsp"], row["q-strand-sbsp"]),
+                    Coordinates(row["q-left-sbsp"]-1, row["q-right-sbsp"]-1, row["q-strand-sbsp"]),
                     seqname=row["q-accession"]
                 )
 
