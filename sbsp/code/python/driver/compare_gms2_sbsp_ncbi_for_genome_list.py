@@ -211,7 +211,7 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
     list_consistency = list()
 
     t_to_r_to_rpc = {
-        t: {r: list() for r in {0,3}} for t in {"0", "-3", "R"}
+        t: {r: list() for r in {0,3}} for t in {"3", "0", "-3", "R"}
     }       # type: Dict[str, Dict[int, List[float]]]
 
     num_queries_considered = 0
@@ -268,7 +268,7 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
             c_f3 = compute_consistency(distances, most_common_distance, flexibility=3)
 
 
-            if most_common_distance in {0, -3}:
+            if most_common_distance in {3, 0, -3}:
                 t_key = str(most_common_distance)
                 t_to_r_to_rpc[t_key][0].append(c_f0)
                 t_to_r_to_rpc[t_key][3].append(c_f3)
