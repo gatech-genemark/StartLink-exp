@@ -136,7 +136,6 @@ function run_sbsp_on_genome_list_entry() {
     local tag_option=""
     if [ ! -z "$tag" ]; then
         tag_option="--tag $tag"
-        echo "Tag: ${tag_option}"
     fi
 
     $bin/run_pipeline_sbsp_sh.sh  -q tmp_$gcfid -t genbank_${ancestor_valid}  -s ${sbsp_conf} -p ${pbs_conf} --q-labels ncbi.gff --q-labels-true ncbi.gff ${tag_option}
@@ -154,8 +153,9 @@ function run_sbsp_on_genome_list() {
         local gcfid=$(parse_entry_for_gcfid "$line")
         echo -e "Progress: $current/$total. GCFID=$gcfid"
         
-        run_sbsp_on_genome_list_entry "$line"
+        run_sbsp_on_genome_list_entry "$line" &
         current=$((current + 1))
+        sleep 5
     done
 }
 
