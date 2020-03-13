@@ -284,7 +284,7 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
         "Overlap Consistency List": list_consistency,
         "Percent of Overlap Groups": pog,
         **{
-            "D{}, RPC({},{})".format(t, int(t)-r, int(t)+r): t_to_r_to_rpc[t][r]
+            "D{}, RPC({},{})".format(t, t, r): t_to_r_to_rpc[t][r]
             for t in t_to_r_to_rpc.keys()
             for r in t_to_r_to_rpc[t].keys()
         }
