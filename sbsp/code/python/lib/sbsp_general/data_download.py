@@ -162,6 +162,54 @@ def download_assembly_summary_entry(entry, pd_output, **kwargs):
 
     return output
 
+def compute_gc_from_file(pf_sequence):
+    # type: (str) -> float
+
+    from sbsp_io.sequences import read_fasta_into_hash
+    sequences = read_fasta_into_hash(pf_sequence)
+
+
+    counts = {"A": 0, "C": 0, "G": 0, "T": 0}
+
+    for seq in sequences.values():
+        for s in seq:
+            if s.upper() in {"A", "C", "G", "T"}:
+                counts[s] += 1
+
+    total = sum(counts.values())
+    count_gc = counts["G"] + counts["C"]
+
+    if total == 0:
+        return 0.0
+
+    return count_gc / float(total)
+
+def count_cds(pf_labels):
+    # type: (str) -> int
+
+    return int(run_shell_cmd("grep -c CDS {}".format(pf_labels), do_not_log=True))
+
+def get_annotation_date(pf_labels):
+    return run_shell_cmd("annotation_date_raw=$( grep \"annotation-date\" {}".format(pf_labels) +
+                         r" | awk '{print $2}');")
+
+
+def get_genome_specific_attributes(pd_data, info):
+    # type: (str, Dict[str, Any]) -> Dict[str, Any]
+    gcfid = "{}_{}".format(info["assembly_accession"], info["asm_name"]),
+
+    pd_gcfid = os.path.join(pd_data, gcfid)
+    pf_sequences = os.path.join(pd_gcfid, "sequence.fasta")
+    pf_labels = os.path.join(pd_gcfid, "ncbi.gff")
+
+    gc = compute_gc_from_file(pf_sequences)
+    num_genes = count_cds(pf_labels)
+    annotation_date = get_annotation_date(pf_labels)
+
+    return {"gc": gc, "num_genes": num_genes, "annotation_date": annotation_date}
+
+
+
 
 def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs):
     # type: (pd.DataFrame, str, Dict[str, Any]) -> GenomeInfoList
@@ -204,6 +252,7 @@ def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs
             11,
             attributes={
                 "name": d["name"],
+                **get_genome_specific_attributes(pd_output, d),
                 **attributes
             }
         ) for d in success_downloads

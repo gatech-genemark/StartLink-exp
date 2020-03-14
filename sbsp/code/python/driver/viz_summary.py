@@ -203,7 +203,9 @@ def main(env, args):
 
     # overlap consistency per gene
 
-    for col in ["Overlap Consistency List", "OCL M1 F0", "OCL M1 F3", "OCL M4 F0", "OCL M4 F3"]:
+    pc_columns = ["Overlap Consistency List"] + [x for x in df.columns if "RPC" in x]
+
+    for col in pc_columns:
         df_tmp = convert_overlap_consistency_list_to_one_per_row(df, col)
 
         plt.figure(figsize=(6, 3))
@@ -235,6 +237,29 @@ def main(env, args):
         # plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
         # plt.show()
         # fig_num += 1
+
+
+    # boxplot
+    plt.figure(figsize=(12, 4))
+
+    g = sns.catplot(x="Ancestor", y="Percent of Overlap Groups", data=df, kind="box", aspect=2)
+    g.set(ylabel="Percent of groups")
+    g.set(title="Percent of query/ortholog groups with most common distance < 3")
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    # boxplot
+    plt.figure(figsize=(12, 4))
+
+    g = sns.lmplot(x="GC", y="Percent of Overlap Groups", hue="Ancestor", data=df, aspect=2, legend=False, ci=None)
+    g.set(ylabel="Percent of groups")
+    g.set(title="Percent of query/ortholog groups with most common distance < 3")
+    plt.legend(bbox_to_anchor=(1.05, 0.75), loc=2, borderaxespad=0.)
+
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
 
 
     print(df["Ancestor"].value_counts())
