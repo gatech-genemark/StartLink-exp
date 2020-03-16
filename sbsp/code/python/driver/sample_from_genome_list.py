@@ -56,19 +56,24 @@ logger = logging.getLogger("logger")  # type: logging.Logger
 def sample_from_genome_list(gil, n):
     # type: (GenomeInfoList, int) -> GenomeInfoList
 
-    if n < len(gil):
+    if len(gil) < n:
         return copy(gil)
+
+    for gi in gil:
+        if len(gi.attributes["annotation_date"].strip()) == 0:
+            gi.attributes["annotation_date"] = "01/01/0001"
+        # datetime.datetime.strptime(gi.attributes["annotation_date"], "%m/%d/%Y")
 
     df = pd.DataFrame({
         "parent_id": gi.attributes["parent_id"],
-        "gc": gi.attributes["gc"],
-        "gc_int": int(gi.attributes["gc"]),
+        "gc": float(gi.attributes["gc"]),
+        "gc_int": int(float(gi.attributes["gc"])),
         "annotation_date": datetime.datetime.strptime(gi.attributes["annotation_date"], "%m/%d/%Y"),
         "gi": gi
     } for gi in gil)
 
     # remove anything before 2020
-    df = df[df["annotation_date"] >= "01/01/2020"]
+    df = df[df["annotation_date"] >= datetime.datetime.strptime("01/01/2020", "%m/%d/%Y")]
 
     num_unique_parents = len(df["parent_id"].unique())
     num_per_parent = ceil(n / float(num_unique_parents))
@@ -104,7 +109,7 @@ def sample_from_genome_list(gil, n):
     # loop over parents by size
 
     df_normalized = pd.DataFrame(list_normalized)
-    df_sampled = df_normalized.sample(n)
+    df_sampled = df_normalized.sample(min(n, len(df_normalized)))
 
     return GenomeInfoList([r["gi"] for _, r in df_sampled.iterrows()])
 
