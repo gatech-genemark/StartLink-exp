@@ -29,7 +29,7 @@ parser = argparse.ArgumentParser("Choose a sample of genomes from a list.")
 
 parser.add_argument('--pf-genome-list', required=True, help="Genome list")
 parser.add_argument('--pf-output', required=True, help="Output file")
-parser.add_argument('-n', required=True, help="Number of genomes")
+parser.add_argument('-n', required=True, type=int, help="Number of genomes")
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -115,7 +115,7 @@ def main(env, args):
     gil = GenomeInfoList.init_from_file(args.pf_genome_list)
 
     gil_n = sample_from_genome_list(gil, n=args.n)
-    pass
+    gil_n.to_file(args.pf_output)
 
 
 if __name__ == "__main__":
