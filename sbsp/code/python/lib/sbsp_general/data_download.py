@@ -196,7 +196,7 @@ def get_annotation_date(pf_labels):
 
 def get_genome_specific_attributes(pd_data, info):
     # type: (str, Dict[str, Any]) -> Dict[str, Any]
-    gcfid = "{}_{}".format(info["assembly_accession"], info["asm_name"]),
+    gcfid = "{}_{}".format(info["assembly_accession"], info["asm_name"])
 
     pd_gcfid = os.path.join(pd_data, gcfid)
     pf_sequences = os.path.join(pd_gcfid, "sequence.fasta")
