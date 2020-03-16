@@ -133,6 +133,8 @@ def download_assembly_summary_entry(entry, pd_output, **kwargs):
                         pd_gcfid
                     )
                 )
+            elif force_download == "no_download":
+                return output
             else:       # FIXME: it's getting out of control. Create different lists: updated, all valid, etc...
                 raise ValueError("nope")
         else:
@@ -182,7 +184,7 @@ def compute_gc_from_file(pf_sequence):
     if total == 0:
         return 0.0
 
-    return count_gc / float(total)
+    return round(100 * count_gc / float(total), 2)
 
 def count_cds(pf_labels):
     # type: (str) -> int
