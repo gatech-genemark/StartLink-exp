@@ -252,6 +252,7 @@ def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs
             11,
             attributes={
                 "name": d["name"],
+                "parent_id": d["parent_id"],
                 **get_genome_specific_attributes(pd_output, d),
                 **attributes
             }
@@ -284,6 +285,7 @@ def filter_assembly_summary_by_ancestor(ancestor_tag, tag_type, taxonomy_tree, d
             # add name to all genomes
             for i in range(len(info_list)):
                 info_list[i]["name"] = genome_node["name_txt"].replace(",", " ")
+                info_list[i]["parent_id"] = genome_node["parent_id"]
             list_rows += info_list
 
     df_filtered = df_filtered.append(list_rows)
