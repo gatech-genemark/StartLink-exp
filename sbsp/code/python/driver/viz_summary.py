@@ -92,6 +92,10 @@ def add_percentages(df):
     df["GMS2=SBSP %"] = 100 * df["GMS2=SBSP"] / df["GMS2"]
     df["GMS2=SBSP=NCBI %"] = 100 * df["GMS2=SBSP=NCBI"] / df["GMS2=SBSP"]
 
+    df["GMS2=SBSP % From SBSP"] = 100 * df["GMS2=SBSP"] / df["SBSP"]
+
+    df["SBSP % From NCBI"] = 100 * df["SBSP"] / df["NCBI"]
+
     df["(GMS2=SBSP)!=NCBI"] = df["GMS2=SBSP"] - df["GMS2=SBSP=NCBI"]
 
 
@@ -129,69 +133,96 @@ def main(env, args):
 
     # plot steps
     fig_num = 0
-    # for col in ["{}: GMS2=SBSP %", "{}: GMS2=SBSP=NCBI %", "{}: (GMS2=SBSP)!=NCBI"]:
-    #
-    #     df_stacked = stack_columns_as_rows(
-    #         df,
-    #         [col.format(s) for s in steps],
-    #         col.format("M"),
-    #         steps,
-    #         "Step"
-    #     )
-    #
-    #     for kind in ["bar", "box"]: #["point", "bar", "strip", "swarm", "box", "violin", "boxen"]:
-    #     # for kind in ["point", "bar", "strip", "swarm", "box", "violin", "boxen"]:
-    #         # plt.figure(figsize=(12, 4))
-    #
-    #         g = sns.catplot(x="Ancestor", y=col.format("M"), hue="Step", kind=kind, data=df_stacked,
-    #                 dodge=True, legend=False, aspect=2)
-    #
-    #         plt.legend(loc='center right', bbox_to_anchor=(1.125, 0.5))
-    #         plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-    #         plt.show()
-    #
-    #         fig_num += 1
-    #
-    #
-    # g = sns.scatterplot(x="GC", y="GMS2=SBSP=NCBI %", hue="Ancestor", data=df)
+    for col in ["{}: GMS2=SBSP %", "{}: GMS2=SBSP=NCBI %", "{}: (GMS2=SBSP)!=NCBI"]:
+
+        df_stacked = stack_columns_as_rows(
+            df,
+            [col.format(s) for s in steps],
+            col.format("M"),
+            steps,
+            "Step"
+        )
+
+        for kind in ["bar", "box"]: #["point", "bar", "strip", "swarm", "box", "violin", "boxen"]:
+        # for kind in ["point", "bar", "strip", "swarm", "box", "violin", "boxen"]:
+            # plt.figure(figsize=(12, 4))
+
+            g = sns.catplot(x="Ancestor", y=col.format("M"), hue="Step", kind=kind, data=df_stacked,
+                    dodge=True, legend=False, aspect=2)
+            g.set(ylabel=col.split(maxsplit=1)[1])
+
+            plt.legend(loc='center right', bbox_to_anchor=(1.125, 0.5))
+            plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+            plt.show()
+
+            fig_num += 1
+
+    plt.figure()
+    g = sns.scatterplot(x="GC", y="GMS2=SBSP=NCBI %", hue="Ancestor", data=df)
+    g.set(ylim=[50, 100])
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    plt.figure()
+    g = sns.scatterplot(x="GC", y="(GMS2=SBSP)!=NCBI", hue="Ancestor", data=df)
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    plt.figure()
+    g = sns.scatterplot(x="GC", y="GMS2=SBSP %", hue="Ancestor", data=df)
+    g.set(ylim=[50, 100])
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    plt.figure()
+    g = sns.catplot(x="Ancestor", y="GMS2=SBSP %", data=df, kind="box", aspect=1.5)
     # g.set(ylim=[50, 100])
-    # plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-    # plt.show()
-    # fig_num += 1
-    #
-    # g = sns.scatterplot(x="GC", y="(GMS2=SBSP)!=NCBI", hue="Ancestor", data=df)
-    #
-    # plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-    # plt.show()
-    # fig_num += 1
-    #
-    #
-    # g = sns.scatterplot(x="GC", y="GMS2=SBSP %", hue="Ancestor", data=df)
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    plt.figure()
+    g = sns.catplot(x="Ancestor", y="GMS2=SBSP % From SBSP", data=df, kind="box", aspect=1.5)
     # g.set(ylim=[50, 100])
-    # plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-    # plt.show()
-    # fig_num += 1
-    #
-    # # number of genes
-    # g = sns.scatterplot(x="GC", y="GMS2=SBSP", hue="Ancestor", data=df)
-    # plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-    # plt.show()
-    # fig_num += 1
-    #
-    # # number of genes
-    # plt.figure(figsize=(6, 3))
-    # g = sns.catplot(x="Ancestor", y="GMS2=SBSP", kind="box", data=df, legend=False, aspect=1.5)
-    # plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-    # plt.show()
-    # fig_num += 1
-    #
-    # # number of genomes
-    # plt.figure(figsize=(6, 3))
-    # g = sns.countplot(x="Ancestor", data=df )
-    # g.set(ylabel="Number of genomes")
-    # plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
-    # plt.show()
-    # fig_num += 1
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+
+    # number of genes
+
+    plt.figure(figsize=(6, 3))
+
+    g = sns.scatterplot(x="GC", y="GMS2=SBSP", hue="Ancestor", data=df)
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    # number of genes
+    plt.figure(figsize=(6, 3))
+    g = sns.catplot(x="Ancestor", y="GMS2=SBSP", kind="box", data=df, legend=False, aspect=1.5)
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+
+    plt.figure(figsize=(6, 3))
+    g = sns.catplot(x="Ancestor", y="SBSP % From NCBI", kind="box", data=df, aspect=1.5)
+    g.set(ylim=[50, 100])
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    # number of genomes
+    plt.figure(figsize=(6, 3))
+    g = sns.countplot(x="Ancestor", data=df )
+    g.set(ylabel="Number of genomes")
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
 
     # overlap consistency per genome
     plt.figure(figsize=(6, 3))

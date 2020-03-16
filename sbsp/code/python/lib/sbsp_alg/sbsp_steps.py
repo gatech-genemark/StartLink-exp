@@ -423,6 +423,11 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
     filter_orthologs_with_equal_kimura_to_query = sbsp_options.safe_get("filter-orthologs-with-equal-kimura")
     set_target_kimuras = set()
 
+    fsf = False     # filter source found?
+    if len(r.alignments) == 0:
+        logger.debug("Query Filtered: No blast hits")
+        fsf = True
+
     # for each alignment to a target protein for the current query
     list_entries = list()
     key = "{};{};{};{}".format(query_info["accession"], query_info["left"], query_info["right"], query_info["strand"])
@@ -432,6 +437,10 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
     shuffled_alignments = quick_filter_alignments(r.alignments, query_info, **kwargs)
     shuffle(shuffled_alignments)
     logger.debug("Quick filter: {} -> {}".format(before, len(shuffled_alignments)))
+
+    if not fsf and len(shuffled_alignments) == 0:
+        logger.debug("Query Filtered: Quick filter by BS")
+        fsf = True
 
     original_q_nt = query_info["lorf_nt"]
 
@@ -490,6 +499,10 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
         # sort by distance
         df.sort_values("distance", inplace=True)
         df.reset_index(inplace=True)
+
+    if not fsf and len(list_entries) == 0:
+        logger.debug("Query Filtered: Kimura at blast")
+        fsf = True
 
     if num_analyzed > 0:
         logger.info("Analyzed: {}, {}".format(num_analyzed, round(acc_lengths/float(num_analyzed),2)))
@@ -683,6 +696,8 @@ def filter_df_based_on_msa(df, msa_t, msa_t_nt, sbsp_options, inplace=False, mul
 
     row_numbers_to_drop = set()
 
+    fsf = False
+
     # pairwise Kimura
     if sbsp_options.safe_get("filter-by-pairwise-kimura-from-msa"):
         _, indices_to_keep = filter_by_pairwise_kimura_from_msa(
@@ -692,6 +707,10 @@ def filter_df_based_on_msa(df, msa_t, msa_t_nt, sbsp_options, inplace=False, mul
         indices_in_msa_to_remove = set(range(msa_t_nt.number_of_sequences())).difference(indices_to_keep)
         for i in indices_in_msa_to_remove:
             row_numbers_to_drop.add(i-1)
+
+        if not fsf and len(row_numbers_to_drop) == len(df):
+            logger.debug("Query Filtered: Pairwise Kimura")
+            fsf = True
 
 
     params = sbsp_options.safe_get("filter-remove-sequences-that-introduce-gaps")
@@ -736,6 +755,10 @@ def filter_df_based_on_msa(df, msa_t, msa_t_nt, sbsp_options, inplace=False, mul
     # remove any rows necessary
     if len(row_numbers_to_drop) > 0:
         df.drop(df.index[list(row_numbers_to_drop)], inplace=True)
+
+    if not fsf and len(df) == 0:
+        logger.debug("Query Filtered: MSA Gap")
+        fsf = True
 
     return df
 
@@ -1334,6 +1357,8 @@ def perform_msa_on_df_with_single_query(env, df, sbsp_options, **kwargs):
 
     qkey = df.iloc[0]["q-key"] if "q-key" in df else None
 
+    fsf = False
+
     # construct msa and filter (if necessary)
     while True:
         curr_time = timeit.default_timer()
@@ -1362,6 +1387,10 @@ def perform_msa_on_df_with_single_query(env, df, sbsp_options, **kwargs):
         logger.debug("Search: Time (min): {}, Support: {}, Key: {}".format(
             round((timeit.default_timer() - curr_time) / 60.0, 2), len(df), qkey
         ))
+
+        if not fsf and len(df) == 0:
+            logger.debug("Query Filtered: Start search")
+            fsf = True
 
     return df
 
