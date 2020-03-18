@@ -296,6 +296,7 @@ def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output
 
     prodigal = get_value(kwargs, "prodigal", None)
     list_summary = list()
+    import timeit
     for gi in gil:
         logger.info("{}".format(gi.name))
         pd_genome = os.path.join(env["pd-data"], gi.name)
@@ -304,7 +305,10 @@ def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output
         pf_ncbi = os.path.join(pd_genome, "ncbi.gff")
 
         pf_sequence = os.path.join(pd_genome, "sequence.fasta")
+
+        t = timeit.default_timer()
         gc = compute_gc_from_file(pf_sequence)
+        logger.info("Compute GC: {}".format((timeit.default_timer() - t)/60.0))
 
         pf_prodigal = None
         if prodigal:
@@ -313,9 +317,11 @@ def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output
         name = gi.attributes["name"] if "name" in gi.attributes else gi.name
         ancestor = gi.attributes["ancestor"] if "ancestor" in gi.attributes else ""
 
+        t = timeit.default_timer()
         out = compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, pf_prodigal=pf_prodigal,
                                venn_title="{}, {}".format(name, ancestor),
                                pf_venn="venn_{}.pdf".format(gi.name))
+        logger.info("Compare GMS2 SBSP NCBI: {}".format((timeit.default_timer() - t)/60.0))
 
         out["GCFID"] = gi.name
         out["Name"] = name
@@ -323,12 +329,15 @@ def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output
         out["GC"] = gc
 
         pf_sbsp_details = os.path.join(gcfid_to_pd_sbsp[gi.name], "output.csv")
+        t = timeit.default_timer()
         if os.path.isfile(pf_sbsp_details):
             out.update(get_upstream_info(pf_sbsp_details))
+        logger.info("Upstream Info: {}".format((timeit.default_timer() - t)/60.0))
 
         # if step information included, do analysis for steps
         valid_steps = ["A", "B", "C", "U"]
 
+        t = timeit.default_timer()
         for v in valid_steps:
             out_step = compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, pf_prodigal=pf_prodigal,
                                venn_title="{}, {}".format(name, ancestor),
@@ -337,6 +346,7 @@ def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output
 
             out["{}: GMS2=SBSP".format(v)] = out_step["GMS2=SBSP"]
             out["{}: GMS2=SBSP=NCBI".format(v)] = out_step["GMS2=SBSP=NCBI"]
+        logger.info("Stepwise Compare GMS2 SBSP NCBI: {}".format((timeit.default_timer() - t)/60.0))
 
         list_summary.append(out)
 
