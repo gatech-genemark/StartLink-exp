@@ -254,7 +254,7 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
                 number_close += 1
 
         # if at least one as overlap
-        if number_with_overlap > 0.2*total_genes:
+        if number_close > 0.2*total_genes:
             num_queries_assigned_to_overlap_group += 1
 
             accumulator += number_close / float(total_genes)
