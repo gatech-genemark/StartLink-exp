@@ -160,8 +160,8 @@ def compute_gc_from_file(pf_sequence):
 
 
 
-def distance_to_upstream(row, source):
-    # type: (NamedTuple, str) -> Union[int, None]
+def distance_to_upstream(df, index, source):
+    # type: (pd.DataFrame, pd.Index, str) -> Union[int, None]
     """
     0 means overlap by 1 nt. Positive numbers mean no overlap. Negatives mean overlap
     :param series:
@@ -170,13 +170,13 @@ def distance_to_upstream(row, source):
     """
 
     # if no upstream gene
-    if getattr(row, "{}-upstream_left".format(source)) == -1:
+    if df.at[index, "{}-upstream_left".format(source)] == -1:
         return None
 
-    if getattr(row, "{}-strand".format(source)) == "+":
-        d = getattr(row, "{}-left".format(source)) - getattr(row, "{}-upstream_right".format(source))
+    if df.at[index, "{}-strand".format(source)] == "+":
+        d = df.at[index, "{}-left".format(source)] - df.at[index, "{}-upstream_right".format(source)]
     else:
-        d = getattr(row, "{}-upstream_left".format(source)) - getattr(row, "{}-right".format(source))
+        d = df.at[index, "{}-upstream_left".format(source)] - df.at[index, "{}-right".format(source)]
 
     return d
 
@@ -219,7 +219,7 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
 
 
     # for each query
-    for q_key, df_group in df.groupby("q-key", as_index=False):
+    for q_key, df_group in df.groupby("q-key", as_index=False):     # type: pd.Index, pd.DataFrame
 
         # skip in small numbers
         if len(df_group) < 10:
@@ -233,7 +233,7 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
         number_close = 0
         distances = list()
 
-        d = distance_to_upstream(df_group.iloc[0], "q")
+        d = distance_to_upstream(df_group, df_group.first_valid_index, "q")
         if d is not None:
             distances.append(d)
 
@@ -242,8 +242,8 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
         if d is not None and d <= 3:
             number_close += 1
 
-        for index, row in df_group.itertuples():
-            d = distance_to_upstream(row, "t")
+        for index, in df_group.index:
+            d = distance_to_upstream(df_group, index, "t")
             if d is not None:
                 distances.append(d)
 
