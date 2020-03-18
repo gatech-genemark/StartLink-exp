@@ -160,28 +160,8 @@ def compute_gc_from_file(pf_sequence):
 
 
 
-# def distance_to_upstream(df, index, source):
-#     # type: (pd.DataFrame, pd.Index, str) -> Union[int, None]
-#     """
-#     0 means overlap by 1 nt. Positive numbers mean no overlap. Negatives mean overlap
-#     :param series:
-#     :param source:
-#     :return:
-#     """
-#
-#     # if no upstream gene
-#     if df.at[index, "{}-upstream_left".format(source)] == -1:
-#         return None
-#
-#     if df.at[index, "{}-strand".format(source)] == "+":
-#         d = df.at[index, "{}-left".format(source)] - df.at[index, "{}-upstream_right".format(source)]
-#     else:
-#         d = df.at[index, "{}-upstream_left".format(source)] - df.at[index, "{}-right".format(source)]
-#
-#     return d
-
-def distance_to_upstream(row, source):
-    # type: (pd.Series, str) -> Union[int, None]
+def distance_to_upstream(df, index, source):
+    # type: (pd.DataFrame, pd.Index, str) -> Union[int, None]
     """
     0 means overlap by 1 nt. Positive numbers mean no overlap. Negatives mean overlap
     :param series:
@@ -190,13 +170,13 @@ def distance_to_upstream(row, source):
     """
 
     # if no upstream gene
-    if row["{}-upstream_left".format(source)] == -1:
+    if df.at[index, "{}-upstream_left".format(source)] == -1:
         return None
 
-    if row["{}-strand".format(source)] == "+":
-        d = row["{}-left".format(source)] - row["{}-upstream_right".format(source)]
+    if df.at[index, "{}-strand".format(source)] == "+":
+        d = df.at[index, "{}-left".format(source)] - df.at[index, "{}-upstream_right".format(source)]
     else:
-        d = row["{}-upstream_left".format(source)] - row["{}-right".format(source)]
+        d = df.at[index, "{}-upstream_left".format(source)] - df.at[index, "{}-right".format(source)]
 
     return d
 
@@ -237,10 +217,6 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
     num_queries_considered = 0
     num_queries_assigned_to_overlap_group = 0
 
-    # compute upstream distances
-    df["q-upstream-distance"] = df.apply(lambda row: distance_to_upstream(row, "q"), axis=1)
-    df["t-upstream-distance"] = df.apply(lambda row: distance_to_upstream(row, "t"), axis=1)
-
 
     # for each query
     for q_key, df_group in df.groupby("q-key", as_index=False):     # type: pd.Index, pd.DataFrame
@@ -257,8 +233,7 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
         number_close = 0
         distances = list()
 
-        # d = distance_to_upstream(df_group, df_group.index[0], "q")
-        d = df_group.at[df_group.index[0], "q-upstream-distance"]
+        d = distance_to_upstream(df_group, df_group.index[0], "q")
         if d is not None:
             distances.append(d)
 
@@ -267,23 +242,16 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
         if d is not None and d <= 3:
             number_close += 1
 
-        #
-        # for index in df_group.index:
-        #     d = distance_to_upstream(df_group, index, "t")
-        #     if d is not None:
-        #         distances.append(d)
-        #
-        #     if d is not None and d <= 0:
-        #         number_with_overlap += 1
-        #
-        #     if d is not None and d <= 3:
-        #         number_close += 1
+        for index in df_group.index:
+            d = distance_to_upstream(df_group, index, "t")
+            if d is not None:
+                distances.append(d)
 
-        distances += list(df_group["t-upstream-distance"])
+            if d is not None and d <= 0:
+                number_with_overlap += 1
 
-        number_with_overlap += len(df_group[df_group["t-upstream-distance"] <= 0])
-        number_close += len(df_group[df_group["t-upstream-distance"] <= 3])
-
+            if d is not None and d <= 3:
+                number_close += 1
 
         # if at least one as overlap
         if number_close > 0.2*total_genes:
