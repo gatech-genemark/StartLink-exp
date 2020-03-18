@@ -233,7 +233,7 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
         number_close = 0
         distances = list()
 
-        d = distance_to_upstream(df_group, df_group.first_valid_index, "q")
+        d = distance_to_upstream(df_group, df_group.index[0], "q")
         if d is not None:
             distances.append(d)
 
@@ -242,7 +242,7 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
         if d is not None and d <= 3:
             number_close += 1
 
-        for index, in df_group.index:
+        for index in df_group.index:
             d = distance_to_upstream(df_group, index, "t")
             if d is not None:
                 distances.append(d)
