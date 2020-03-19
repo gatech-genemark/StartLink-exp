@@ -1472,6 +1472,7 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
         except Exception:
             pass
 
+    df.drop(["q-lorf_nt", "t-lorf_nt"], inplace=True)
     return df
 
 
