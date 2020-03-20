@@ -71,7 +71,7 @@ def get_stats_a_from_b_3p(labels_a, labels_b, output):
         a_name: len(labels_a),
         b_name: len(labels_b),
         "Number 3p match: {} from {}".format(a_name, b_name): len(lcd.match_3p("a")),
-        "Percentage 3p match: {} from {}".format(a_name, b_name): len(lcd.match_3p("a"))
+        "Percentage 3p match: {} from {}".format(a_name, b_name): round(100 * len(lcd.match_3p("a")) / float(len(labels_b)), 2)
     })
 
 
@@ -96,8 +96,8 @@ def get_stats_sn_sp(labels_a, labels_b, output):
     match_3p = len(lcd.match_3p("a"))
     match_3p_5p = len(lcd.match_3p_5p("a"))
 
-    sp = 0 if a_total == 0 else match_3p / float(a_total)
-    sn = 0 if match_3p == 0 else match_3p_5p / float(match_3p)
+    sp = 0 if a_total == 0 else round(100 * match_3p / float(a_total), 2)
+    sn = 0 if match_3p == 0 else round(100 * match_3p_5p / float(match_3p), 2)
 
     output.update({
         a_name: a_total,
@@ -163,8 +163,8 @@ def analyze_predictions_on_verified_genes_for_genome_list(env, gil, gcfid_to_pd_
         try:
             pd_sbsp = gcfid_to_pd_sbsp[gcfid]
             info_per_gcfid[gcfid] = analyze_predictions_on_verified_genes(env, gi, pd_sbsp, **kwargs)
-            info_per_gcfid[gcfid]["Genome"] = gi.attributes["name_txt"]
-            info_per_gcfid["gi"] = gi
+            info_per_gcfid[gcfid]["Genome"] = gi.attributes["name"]
+            #info_per_gcfid["gi"] = gi
         except KeyError:
             logger.warning("Couldn't get SBSP directory for: {}".format(gcfid))
 
