@@ -68,12 +68,15 @@ def sample_from_genome_list(gil, n):
         "parent_id": gi.attributes["parent_id"],
         "gc": float(gi.attributes["gc"]),
         "gc_int": int(float(gi.attributes["gc"])),
+        "num_genes": int(gi.attributes["num_genes"]),
         "annotation_date": datetime.datetime.strptime(gi.attributes["annotation_date"], "%m/%d/%Y"),
         "gi": gi
     } for gi in gil)
 
     # remove anything before 2020
     df = df[df["annotation_date"] >= datetime.datetime.strptime("01/01/2020", "%m/%d/%Y")]
+    df = df[df["num_genes"] < 6000]
+
 
     num_unique_parents = len(df["parent_id"].unique())
     num_per_parent = ceil(n / float(num_unique_parents))
@@ -91,6 +94,7 @@ def sample_from_genome_list(gil, n):
     list_normalized = list()
     missed = 0          # in case a group doesn't have enough data, allow gathering from other groups
     for df_group in list_df_group:
+
         if len(df_group) <= num_per_parent:
             list_normalized += [r for _, r in df_group.iterrows()]
 
@@ -99,8 +103,17 @@ def sample_from_genome_list(gil, n):
         # otherwise, sample as much as possible
         else:
 
-            amount_to_sample = min(len(df_group), num_per_parent + missed)
-            missed -= amount_to_sample - len(df_group)
+            recovered_from_missed = 0
+
+            # cannot recover all
+            if len(df_group) < num_per_parent + missed:
+                amount_to_sample = len(df_group)
+                recovered_from_missed = amount_to_sample - num_per_parent
+            else:
+                amount_to_sample = num_per_parent + missed
+                recovered_from_missed = missed
+
+            missed -= recovered_from_missed
 
             df_sampled = df_group.sample(amount_to_sample)
 
