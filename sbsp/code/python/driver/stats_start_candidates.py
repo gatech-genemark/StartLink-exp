@@ -279,6 +279,7 @@ def count_candidates_per_gene_for_genomes(env, gil, **kwargs):
 
         df_gi = count_candidates_per_gene(sequences, labels, **kwargs)
         df_gi["gcfid"] = gi.name
+        df_gi["ancestor"] = gi.attributes["ancestor"]
 
         list_df.append(df_gi)
 
