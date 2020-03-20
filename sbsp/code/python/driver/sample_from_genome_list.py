@@ -24,12 +24,15 @@ from sbsp_general import Environment
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
+from sbsp_general.general import get_value
 
 parser = argparse.ArgumentParser("Choose a sample of genomes from a list.")
 
 parser.add_argument('--pf-genome-list', required=True, help="Genome list")
 parser.add_argument('--pf-output', required=True, help="Output file")
 parser.add_argument('-n', required=True, type=int, help="Number of genomes")
+
+parser.add_argument('--pf-gcfid-to-ignore', required=False)
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -53,8 +56,12 @@ logging.basicConfig(level=parsed_args.loglevel)
 logger = logging.getLogger("logger")  # type: logging.Logger
 
 
-def sample_from_genome_list(gil, n):
-    # type: (GenomeInfoList, int) -> GenomeInfoList
+def sample_from_genome_list(gil, n, **kwargs):
+    # type: (GenomeInfoList, int, Dict[str, Any]) -> GenomeInfoList
+
+    gcfid_to_ignore = get_value(kwargs, "gcfid_to_ignore", None)
+    if gcfid_to_ignore is None:
+        gcfid_to_ignore = set()
 
     if len(gil) < n:
         return copy(gil)
@@ -69,8 +76,12 @@ def sample_from_genome_list(gil, n):
         "gc": float(gi.attributes["gc"]),
         "gc_int": int(float(gi.attributes["gc"])),
         "annotation_date": datetime.datetime.strptime(gi.attributes["annotation_date"], "%m/%d/%Y"),
+        "gcfid": gi.name,
         "gi": gi
     } for gi in gil)
+
+    if len(gcfid_to_ignore) > 0:
+        df = df[~df["gcfid"].isin(gcfid_to_ignore)]
 
     # remove anything before 2020
     df = df[df["annotation_date"] >= datetime.datetime.strptime("01/01/2020", "%m/%d/%Y")]
@@ -119,7 +130,12 @@ def main(env, args):
 
     gil = GenomeInfoList.init_from_file(args.pf_genome_list)
 
-    gil_n = sample_from_genome_list(gil, n=args.n)
+    gcfid_to_ignore = None
+    if args.pf_gcfid_to_ignore is not None:
+        df_gti = pd.read_csv(args.pf_gcfid_to_ignore)
+        gcfid_to_ignore = set(df_gti["gcfid"])
+
+    gil_n = sample_from_genome_list(gil, n=args.n, gcfid_to_ignore=gcfid_to_ignore)
     gil_n.to_file(args.pf_output)
 
 
