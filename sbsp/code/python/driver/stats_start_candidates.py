@@ -269,6 +269,29 @@ def read_labels_for_genome(env, genome_info, **kwargs):
     return read_labels_from_file(pf_ncbi)
 
 
+def compute_gc_from_file(pf_sequence):
+    # type: (str) -> float
+
+    from sbsp_io.sequences import read_fasta_into_hash
+    sequences = read_fasta_into_hash(pf_sequence)
+
+
+    counts = {"A": 0, "C": 0, "G": 0, "T": 0}
+
+    for seq in sequences.values():
+        for s in seq:
+            if s.upper() in {"A", "C", "G", "T"}:
+                counts[s] += 1
+
+    total = sum(counts.values())
+    count_gc = counts["G"] + counts["C"]
+
+    if total == 0:
+        return 0.0
+
+    return count_gc / float(total)
+
+
 def count_candidates_per_gene_for_genomes(env, gil, **kwargs):
     # type: (Environment, GenomeInfoList, Dict[str, Any]) -> pd.DataFrame
 
@@ -280,6 +303,7 @@ def count_candidates_per_gene_for_genomes(env, gil, **kwargs):
         df_gi = count_candidates_per_gene(sequences, labels, **kwargs)
         df_gi["gcfid"] = gi.name
         df_gi["ancestor"] = gi.attributes["ancestor"]
+        df_gi["gc"] = compute_gc_from_file(os.path.join(env["pd-data"], gi.name, "sequence.fasta"))
 
         list_df.append(df_gi)
 
