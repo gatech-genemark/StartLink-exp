@@ -31,6 +31,7 @@ parser = argparse.ArgumentParser("Description of driver.")
 
 parser.add_argument('--pf-genome-list', required=True, help="List containing genome information")
 parser.add_argument('--pf-gcfid-to-pd-sbsp', required=True, help="CSV file containing GCFID to SBSP run directory")
+parser.add_argument('--fn-prefix', required=False)
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -151,6 +152,69 @@ def analyze_predictions_on_verified_genes(env, gi, pd_sbsp, **kwargs):
     return stats
 
 
+def df_to_pf_csv(df, pf_csv):
+    # type: (pd.DataFrame, str) -> None
+    df.to_csv(pf_csv, index=None)
+
+def mk_pf(name, *prefixes):
+    # type: (str, List[Any]) -> str
+    out = ""
+    if prefixes is not None and len(prefixes) > 0:
+        non_empty_prefixes = [x for x in prefixes if len(x) > 0]
+        "_".join(non_empty_prefixes)
+        out += "_"
+
+    out += name
+    return out
+
+
+def print_csvs(env, df, **kwargs):
+    # type: (Environment, pd.DataFrame, Dict[str, Any]) -> None
+
+    fn_prefix = get_value(kwargs, "fn_prefix", "", default_if_none=True)
+    pd_work = env["pd-work"]
+
+    num = 0
+
+    df_to_pf_csv(
+        df[["Genome", "NCBI", "Verified",
+            "Number 3p match: Verified from NCBI", "Percent 3p match: Verified from NCBI",
+            "Number 5p-3p match: Verified from NCBI", "Percent 5p-3p match: Verified from NCBI"
+            ]],
+        mk_pf(os_join(pd_work, "summary"), fn_prefix, num)
+    )
+    num += 1
+
+    df_to_pf_csv(
+        df[["Genome", "GMS2", "Verified",
+            "Number 3p match: Verified from GMS2", "Percent 3p match: Verified from GMS2",
+            "Number 5p-3p match: Verified from GMS2", "Percent 5p-3p match: Verified from GMS2"
+            ]],
+        mk_pf(os_join(pd_work, "summary"), fn_prefix, num)
+    )
+    num += 1
+
+    df_to_pf_csv(
+        df[["Genome", "SBSP", "Verified",
+            "Number 3p match: Verified from SBSP", "Percent 3p match: Verified from SBSP",
+            "Number 5p-3p match: Verified from SBSP", "Percent 5p-3p match: Verified from SBSP"
+            ]],
+        mk_pf(os_join(pd_work, "summary"), fn_prefix, num)
+    )
+    num += 1
+
+    df_to_pf_csv(
+        df[["Genome", "Verified", "GMS2=SBSP",
+            "Number 3p match: Verified from GMS2=SBSP", "Percent 3p match: Verified from GMS2=SBSP",
+            "Number 5p-3p match: Verified from GMS2=SBSP", "Percent 5p-3p match: Verified from GMS2=SBSP"
+            ]],
+        mk_pf(os_join(pd_work, "summary"), fn_prefix, num)
+    )
+    num += 1
+
+
+
+
 def analyze_predictions_on_verified_genes_for_genome_list(env, gil, gcfid_to_pd_sbsp, **kwargs):
     # type: (Environment, GenomeInfoList, Dict[str, str], Dict[str, Any]) -> None
 
@@ -172,7 +236,11 @@ def analyze_predictions_on_verified_genes_for_genome_list(env, gil, gcfid_to_pd_
 
     df = pd.DataFrame(list_stats)
 
+    print_csvs(env, df, **kwargs)
+
     df.to_csv(os_join(env["pd-work"], "{}summary.csv".format(fn_prefix)))
+
+
 
 
 def main(env, args):
@@ -185,7 +253,8 @@ def main(env, args):
         x["gcfid"]: x["pd-sbsp"] for _, x in df.iterrows()
     }
 
-    analyze_predictions_on_verified_genes_for_genome_list(env, gil, gcfid_to_pd_sbsp)
+    analyze_predictions_on_verified_genes_for_genome_list(env, gil, gcfid_to_pd_sbsp,
+                                                          fn_prefix=args.fn_prefix)
 
 
 if __name__ == "__main__":
