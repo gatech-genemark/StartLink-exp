@@ -1472,7 +1472,8 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
         except Exception:
             pass
 
-    df.drop(["q-lorf_nt", "t-lorf_nt"], inplace=True)
+    if "q-lorf_nt" in df.columns and "t-lorf_nt" in df.columns:
+        df.drop(["q-lorf_nt", "t-lorf_nt"], axis=1, inplace=True)
     return df
 
 
@@ -1920,6 +1921,9 @@ def sbsp_step_accuracy(env, pipeline_options, list_pf_previous):
     logger.debug("Running: sbsp_step_accuracy")
 
     mkdir_p(env["pd-work"])
+
+    if len(list_pf_previous) == 0:
+        raise ValueError("Cannot compute accuracy: {}".format(pipeline_options["pf-q-list"]))
 
     df = pd.concat([pd.read_csv(f, header=0) for f in list_pf_previous], ignore_index=True)
 
