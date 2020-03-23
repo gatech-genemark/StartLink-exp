@@ -1422,7 +1422,10 @@ def compute_kimura_matrix(list_sequences_aligned_nt):
 
     for i in range(1, num_sequences):
         for j in range(i):
-            val = k2p_distance(list_sequences_aligned_nt[i], list_sequences_aligned_nt[j])
+            try:
+                val = k2p_distance(list_sequences_aligned_nt[i], list_sequences_aligned_nt[j])
+            except ValueError:
+                val = 100
 
             output[i, j] = val
             output[j, i] = val
