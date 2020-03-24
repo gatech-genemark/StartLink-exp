@@ -286,7 +286,7 @@ def analysis_per_query(env, gil, gcfid_to_pd_sbsp, pf_output_summary, **kwargs):
         df = analysis_per_query_for_genome(env, gi, gcfid_to_pd_sbsp[gi.name])
         df["GCFID"] = gi.name
         df["Name"] = gi.attributes["name"] if "name" in gi.attributes else gi.name
-        df["GC"] = gc
+        df["Genome GC"] = gc
         df["Ancestor"] = gi.attributes["ancestor"] if "ancestor" in gi.attributes else ""
 
         append_data_frame_to_csv(df, pf_output_summary)
