@@ -226,6 +226,7 @@ def analysis_per_query_for_genome(env, gi, pd_sbsp, **kwargs):
     labels_ncbi = read_labels_from_file(pf_ncbi, name="NCBI", **common_options)
     labels_prodigal = read_labels_from_file(pf_prodigal, name="Prodigal", **common_options)
     df_sbsp_details = pd.read_csv(pf_sbsp_details)
+    add_q_key_3p_to_df(df_sbsp_details, "q-key-3p")
 
     # get keys per label
     key_to_label_sbsp = map_key_3p_to_label(labels_sbsp)
@@ -236,7 +237,6 @@ def analysis_per_query_for_genome(env, gi, pd_sbsp, **kwargs):
 
     df_result = pd.DataFrame()
 
-    add_q_key_3p_to_df(df_result, "q-key-3p")
 
     # Sketch: Dataframe will contain one row per gene (3prime end), for all genes in
     # the union set of SBSP, GMS2, NCBI, and prodigal
