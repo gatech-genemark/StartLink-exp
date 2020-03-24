@@ -205,6 +205,9 @@ def get_upstream_info(pf_sbsp_details, **kwargs):
     # type: (str, Dict[str, Any]) -> Dict[str, Any]
 
     df = pd.read_csv(pf_sbsp_details, header=0)
+    headers = ["{}-{}".format(x, y) for x in {"q", "t"} for y in {"upstream_left", "upstream_right", "upstream_strand", "left", "right", "strand"}]
+    headers += ["q-key"]
+    df = df[headers]
 
     accumulator = 0
     denominator = 0
