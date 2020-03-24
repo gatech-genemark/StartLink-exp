@@ -28,13 +28,8 @@ from sbsp_general import Environment
 # ------------------------------ #
 from sbsp_general.general import get_value, os_join
 from sbsp_general.labels import Labels, Label
-from sbsp_general.labels_comparison_detailed import LabelsComparisonDetailed
-from sbsp_io.general import read_rows_to_list, remove_p
+from sbsp_io.general import remove_p
 from sbsp_io.labels import read_labels_from_file
-from sbsp_io.sequences import read_fasta_into_hash
-from sbsp_viz.general import FigureOptions
-from sbsp_viz.labels_venn import venn_diagram_5prime
-from stats_start_candidates import count_candidates_on_positive_strand, count_candidates_on_negative_strand
 
 parser = argparse.ArgumentParser("Description of driver.")
 
