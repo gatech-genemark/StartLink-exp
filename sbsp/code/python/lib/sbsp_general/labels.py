@@ -123,6 +123,10 @@ class Label:
 
         return self._attributes[attribute] if attribute in self._attributes else None
 
+    def set_attribute_value(self, attribute, value):
+        # type: (str, Any) -> None
+        self._attributes[attribute] = value
+
     def is_partial(self):
         # type: () -> bool
 

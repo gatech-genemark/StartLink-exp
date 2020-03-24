@@ -383,3 +383,8 @@ def list_find_first(a_list, a_filter):
         if a_filter(x):
             return x
     return None
+
+
+def os_join(*args):
+    # type: (List[Any]) -> str
+    return os.path.join(*args)
