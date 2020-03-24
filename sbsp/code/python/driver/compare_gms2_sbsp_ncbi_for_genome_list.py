@@ -12,6 +12,8 @@ import pandas as pd
 from typing import *
 
 # noinspection All
+from Bio.Seq import Seq
+
 import pathmagic
 
 # noinspection PyUnresolvedReferences
@@ -29,8 +31,10 @@ from sbsp_general.labels import Labels
 from sbsp_general.labels_comparison_detailed import LabelsComparisonDetailed
 from sbsp_io.general import read_rows_to_list
 from sbsp_io.labels import read_labels_from_file
+from sbsp_io.sequences import read_fasta_into_hash
 from sbsp_viz.general import FigureOptions
 from sbsp_viz.labels_venn import venn_diagram_5prime
+from stats_start_candidates import count_candidates_on_positive_strand, count_candidates_on_negative_strand
 
 parser = argparse.ArgumentParser("Description of driver.")
 
@@ -62,6 +66,35 @@ logging.basicConfig(level=parsed_args.loglevel)
 logger = logging.getLogger("logger")  # type: logging.Logger
 
 
+def count_candidates_per_gene_and_update_labels(sequences, labels, **kwargs):
+    # type: (Dict[str, Seq], Labels, Dict[str, Any]) -> None
+
+    list_stats = list()
+
+    for label in labels:
+        try:
+            sequence = sequences[label.seqname()]
+        except KeyError:
+            logger.warning("Could not get sequence for label witn sequence name: {}".format(label.seqname()))
+            continue
+
+        if label.strand() == "+":
+            stats = count_candidates_on_positive_strand(sequence, label, **kwargs)
+        else:
+            stats = count_candidates_on_negative_strand(sequence, label, **kwargs)
+
+        if stats is not None:
+            total_candidates = stats["upstream"] + stats["downstream"]
+            label.set_attribute_value("candidates", total_candidates)
+
+
+def add_number_of_start_candidates_to_labels(sequences, labels):
+    # type: (Dict[str, Seq], Labels) -> None
+    count_candidates_per_gene_and_update_labels(sequences, labels)
+
+
+
+
 def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
     # type: (Environment, str, str, str, Dict[str, Any]) -> Dict[str, Any]
 
@@ -69,11 +102,19 @@ def compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, **kwargs):
     pf_venn = get_value(kwargs, "pf_venn", os.path.join(env["pd-work"], "venn.pdf"))
     pf_prodigal = get_value(kwargs, "pf_prodigal", None)
 
+    start_candidate_analysis = get_value(kwargs, "start_candidate_analysis", False)
+    gcfid = get_value(kwargs, "gcfid", None)
+
     predicted_at_step = get_value(kwargs, "predicted_at_step", None)
 
     labels_gms2 = read_labels_from_file(pf_gms2, name="GMS2")
     labels_sbsp = read_labels_from_file(pf_sbsp, name="SBSP")
     labels_ncbi = read_labels_from_file(pf_ncbi, name="NCBI")
+
+    if start_candidate_analysis:
+        # add number of start candidates per gene
+        sequences = read_fasta_into_hash(os.path.join(env["pd-data"], gcfid, "sequence.fasta"))
+        add_number_of_start_candidates_to_labels(sequences, labels_gms2)
 
     if predicted_at_step is not None:
         labels_sbsp = Labels(
@@ -342,7 +383,7 @@ def compare_gms2_sbsp_ncbi_for_genome_list(env, gil, gcfid_to_pd_sbsp, pf_output
             out_step = compare_gms2_sbsp_ncbi(env, pf_gms2, pf_sbsp, pf_ncbi, pf_prodigal=pf_prodigal,
                                venn_title="{}, {}".format(name, ancestor),
                                pf_venn="venn_{}.pdf".format(gi.name),
-                                              predicted_at_step=v)
+                                              predicted_at_step=v, gcfid=gi.name)
 
             out["{}: GMS2=SBSP".format(v)] = out_step["GMS2=SBSP"]
             out["{}: GMS2=SBSP=NCBI".format(v)] = out_step["GMS2=SBSP=NCBI"]
