@@ -1514,6 +1514,7 @@ def filter_by_pairwise_kimura_from_msa(list_sequences_aligned_nt, msa_options):
     return output, sorted(indices_to_keep)
 
 
+
 def filter_sequences_that_introduce_gaps_in_msa(list_sequences_aligned, msa_options):
     """
 

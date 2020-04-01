@@ -2,19 +2,15 @@
 # Georgia Institute of Technology
 #
 # Created: 1/15/20
-import collections
 import logging
 import argparse
 import os
 
-import numpy
 import pandas as pd
 from typing import *
 
 # noinspection All
 from Bio.Seq import Seq
-
-import pathmagic
 
 # noinspection PyUnresolvedReferences
 import sbsp_log  # runs init in sbsp_log and configures logger
@@ -26,8 +22,9 @@ from sbsp_general import Environment
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
-from sbsp_general.general import get_value, os_join
-from sbsp_general.labels import Labels, Label
+from sbsp_general.general import os_join
+from sbsp_general.labels import Label
+from sbsp_general.shelf import add_q_key_3p_to_df, map_key_3p_to_label, map_key_3p_to_df_group, labels_match_5p_3p
 from sbsp_io.general import remove_p
 from sbsp_io.labels import read_labels_from_file
 
@@ -104,56 +101,6 @@ def distance_to_upstream(df, index, source):
         d = df.at[index, "{}-upstream_left".format(source)] - df.at[index, "{}-right".format(source)]
 
     return d
-
-
-
-def create_q_key_3p(accession, left, right, strand):
-    # type: (str, int, int, str) -> str
-    if strand == "+":
-        return "{};{};{};{}".format(accession, "", right, strand)
-    else:
-        return "{};{};{};{}".format(accession, left, "", strand)
-
-def create_q_key_5p_3p(accession, left, right, strand):
-    # type: (str, int, int, str) -> str
-    if strand == "+":
-        return "{};{};{};{}".format(accession, left, right, strand)
-    else:
-        return "{};{};{};{}".format(accession, left, right, strand)
-
-
-def add_q_key_3p_to_df(df, column):
-    # type: (pd.DataFrame, str) -> None
-
-    df[column] = df.apply(
-        lambda row: create_q_key_3p(
-            row["q-accession"], int(row["q-left"]), int(row["q-right"]), row["q-strand"]
-        ),
-        axis=1
-    )
-
-def map_key_3p_to_label(labels):
-    # type: (Labels) -> Dict[str, Label]
-
-    return {
-        create_q_key_3p(l.seqname(), l.left(), l.right(), l.strand()): l for l in labels
-    }
-
-
-def map_key_3p_to_df_group(df_sbsp_details):
-    # type; (pd.DataFrame) -> Dict[str, pd.DataFrame]
-
-    return {
-        key: df_group for key, df_group in df_sbsp_details.groupby("q-key-3p", as_index=False)
-    }
-
-def labels_match_5p_3p(label_a, label_b):
-    # type: (Label, Label) -> bool
-
-    key_a = create_q_key_5p_3p(label_a.seqname(), label_a.left(), label_a.right(), label_a.strand())
-    key_b = create_q_key_5p_3p(label_b.seqname(), label_b.left(), label_b.right(), label_b.strand())
-
-    return key_a == key_b
 
 
 def list_of_upstream_distances_from_df(df):

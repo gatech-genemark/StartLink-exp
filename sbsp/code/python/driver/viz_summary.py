@@ -93,10 +93,13 @@ def add_percentages(df):
     df["GMS2=SBSP=NCBI %"] = 100 * df["GMS2=SBSP=NCBI"] / df["GMS2=SBSP"]
 
     df["GMS2=SBSP % From SBSP"] = 100 * df["GMS2=SBSP"] / df["SBSP"]
+    df["GMS2=SBSP % From NCBI"] = 100 * df["GMS2=SBSP"] / df["NCBI"]
 
     df["SBSP % From NCBI"] = 100 * df["SBSP"] / df["NCBI"]
 
     df["(GMS2=SBSP)!=NCBI"] = df["GMS2=SBSP"] - df["GMS2=SBSP=NCBI"]
+
+    df["(GMS2=SBSP)!=NCBI % From GMS2=SBSP"] = 100 * df["(GMS2=SBSP)!=NCBI"] / df["GMS2=SBSP"]
 
 
 def convert_overlap_consistency_list_to_one_per_row(df, col):
@@ -130,6 +133,12 @@ def main(env, args):
     import matplotlib.pyplot as plt
     sns.set_context(context="paper", font_scale=1.5)
 
+    colors = ["windows blue", "amber", "faded green", "dusty purple"]
+    palette = sns.xkcd_palette(colors)
+    sns.palplot(palette)
+    plt.show()
+    sns.set_palette(palette)
+
 
     # plot steps
     fig_num = 0
@@ -157,22 +166,76 @@ def main(env, args):
 
             fig_num += 1
 
-    plt.figure()
-    g = sns.scatterplot(x="GC", y="GMS2=SBSP=NCBI %", hue="Ancestor", data=df)
+    common={"linewidth": 0}
+
+    plt.figure(figsize=(12,4))
+    g = sns.scatterplot(x="GC", y="GMS2=SBSP=NCBI %", hue="Ancestor", data=df, **common)
     g.set(ylim=[50, 100])
+    plt.legend(loc='center left',  bbox_to_anchor=(1.05, 0.5))
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+
+    plt.figure(figsize=(12,4))
+    g = sns.scatterplot(x="GC", y="GMS2=SBSP % From SBSP", hue="Ancestor", data=df, **common)
+    g.set(ylim=[50, 100])
+    plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5))
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    plt.figure(figsize=(12,4))
+    g = sns.scatterplot(x="GC", y="(GMS2=SBSP)!=NCBI", hue="Ancestor", data=df, **common)
+    plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5))
     plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
     plt.show()
     fig_num += 1
 
     plt.figure()
-    g = sns.scatterplot(x="GC", y="(GMS2=SBSP)!=NCBI", hue="Ancestor", data=df)
+    g = sns.catplot(x="Ancestor", y="(GMS2=SBSP)!=NCBI", data=df, kind="box", aspect=1.5)
+    # g.set(ylim=[50, 100])
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+
+    plt.figure(figsize=(12,4))
+    g = sns.scatterplot(x="GC", y="(GMS2=SBSP)!=NCBI % From GMS2=SBSP", hue="Ancestor", data=df, **common)
+    g.set(ylim=(0,None))
+    g.set(ylabel="(GMS2=SBSP)!=NCBI %\nFrom GMS2=SBSP")
+    plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5))
     plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
     plt.show()
     fig_num += 1
 
     plt.figure()
-    g = sns.scatterplot(x="GC", y="GMS2=SBSP %", hue="Ancestor", data=df)
+    g = sns.catplot(x="Ancestor", y="(GMS2=SBSP)!=NCBI % From GMS2=SBSP", data=df, kind="box", aspect=1.5)
+    g.set(ylabel="(GMS2=SBSP)!=NCBI %\nFrom GMS2=SBSP")
+    # g.set(ylim=[50, 100])
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    plt.figure(figsize=(12,4))
+    g = sns.scatterplot(x="GC", y="GMS2=SBSP %", hue="Ancestor", data=df, **common)
     g.set(ylim=[50, 100])
+    plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5))
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    plt.figure(figsize=(12, 4))
+    g = sns.scatterplot(x="GC", y="GMS2=SBSP % From NCBI", hue="Ancestor", data=df, **common)
+    g.set(ylim=[50, 100])
+    plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5))
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    plt.figure(figsize=(12, 4))
+    g = sns.scatterplot(x="GC", y="GMS2=SBSP", hue="Ancestor", data=df, **common)
+    plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5))
     plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
     plt.show()
     fig_num += 1
@@ -186,7 +249,14 @@ def main(env, args):
 
     plt.figure()
     g = sns.catplot(x="Ancestor", y="GMS2=SBSP % From SBSP", data=df, kind="box", aspect=1.5)
-    # g.set(ylim=[50, 100])
+    g.set(ylim=[50, 100])
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    g = sns.lmplot(x="GC", y="GMS2=SBSP % From SBSP", hue="Ancestor", data=df, aspect=2, legend=False, ci=None)
+    g.set(ylim=[50, 100])
+    plt.legend(bbox_to_anchor=(1.05, 0.75), loc=2, borderaxespad=0.)
     plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
     plt.show()
     fig_num += 1
@@ -196,7 +266,7 @@ def main(env, args):
 
     plt.figure(figsize=(6, 3))
 
-    g = sns.scatterplot(x="GC", y="GMS2=SBSP", hue="Ancestor", data=df)
+    g = sns.scatterplot(x="GC", y="GMS2=SBSP", hue="Ancestor", data=df, **common)
     plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
     plt.show()
     fig_num += 1
@@ -211,6 +281,23 @@ def main(env, args):
 
     plt.figure(figsize=(6, 3))
     g = sns.catplot(x="Ancestor", y="SBSP % From NCBI", kind="box", data=df, aspect=1.5)
+    g.set(ylim=[50, 100])
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    plt.figure(figsize=(12, 4))
+    g = sns.scatterplot(x="GC", y="SBSP % From NCBI", hue="Ancestor", data=df, **common)
+    plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5))
+    g.set(ylim=[50, 100])
+    plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
+    plt.show()
+    fig_num += 1
+
+    plt.figure(figsize=(12, 4))
+
+    g = sns.lmplot(x="GC", y="SBSP % From NCBI", hue="Ancestor", data=df, aspect=2, legend=False, ci=None)
+    plt.legend(bbox_to_anchor=(1.05, 0.75), loc=2, borderaxespad=0.)
     g.set(ylim=[50, 100])
     plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
     plt.show()
@@ -274,8 +361,8 @@ def main(env, args):
     plt.figure(figsize=(12, 4))
 
     g = sns.catplot(x="Ancestor", y="Percent of Overlap Groups", data=df, kind="box", aspect=2)
-    g.set(ylabel="Percent of groups")
-    g.set(title="Percent of query/ortholog groups with most common distance < 3")
+    g.set(ylabel="Percent of components")
+    g.set(title="Percent of components with most common upstream distance < 3nt")
     plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
     plt.show()
     fig_num += 1
@@ -284,8 +371,8 @@ def main(env, args):
     plt.figure(figsize=(12, 4))
 
     g = sns.lmplot(x="GC", y="Percent of Overlap Groups", hue="Ancestor", data=df, aspect=2, legend=False, ci=None)
-    g.set(ylabel="Percent of groups")
-    g.set(title="Percent of query/ortholog groups with most common distance < 3")
+    g.set(ylabel="Percent of components")
+    g.set(title="Percent of components with most common upstream distance < 3nt")
     plt.legend(bbox_to_anchor=(1.05, 0.75), loc=2, borderaxespad=0.)
 
     plt.savefig(os.path.join(env["pd-work"], "{}.pdf".format(fig_num)), bbox_inches='tight')
