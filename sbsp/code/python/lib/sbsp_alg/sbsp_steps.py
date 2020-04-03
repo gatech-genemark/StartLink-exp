@@ -786,6 +786,49 @@ def get_next_position_in_msa(l_curr_pos, l_msa_t, l_direction, l_skip_gaps_in_qu
             break
     return new_pos
 
+def check_each_column_below_gap_allowance(msa_t, start, end, max_frac_allowed_gaps, **kwargs):
+    # type: (MSAType, int, int, ScoringMatrix, Dict[str, Any]) -> float
+    """
+
+    :param msa_t:
+    :param start:
+    :param end: (exclusive)
+    :param scorer:
+    :param kwargs:
+    :return:
+    """
+
+    direction = get_value(kwargs, "direction", choices=["upstream", "downstream"], default="downstream")
+    skip_gaps_in_query = get_value(kwargs, "skip_gaps_in_query", False)
+
+    if start < 0 or start >= msa_t.alignment_length():
+        raise ValueError("Start of region out of bounds: {} not in [{},{}]".format(start, 0, msa_t.alignment_length()))
+    if end < start or end > msa_t.alignment_length():
+        raise ValueError("Start of region out of bounds: {} not in [{},{})".format(end, start, msa_t.alignment_length()))
+
+    num_positions_to_analyze = end - start
+
+    curr_pos = start if direction == "downstream" else end - 1
+    total_number_of_computations = 0
+    pos_score = 0
+    num_sequences = msa_t.number_of_sequences()
+
+    for n in range(num_positions_to_analyze):
+
+        if curr_pos is None:
+            raise ValueError("Not enough region to compute score")
+
+        num_gaps_in_pos = sum([1 for k in range(msa_t.number_of_sequences()) if msa_t[k][curr_pos] == "-"])
+
+        frac_gaps_in_pos = float(num_gaps_in_pos) / num_sequences
+
+        if frac_gaps_in_pos > max_frac_allowed_gaps:
+            return False
+
+        curr_pos = get_next_position_in_msa(curr_pos, msa_t, direction, skip_gaps_in_query)
+
+    return True
+
 def compute_conservation_in_region(msa_t, start, end, scorer, **kwargs):
     # type: (MSAType, int, int, ScoringMatrix, Dict[str, Any]) -> float
     """
@@ -841,9 +884,6 @@ def compute_conservation_in_region(msa_t, start, end, scorer, **kwargs):
 
 
 
-
-
-
 def get_all_candidates_before_conserved_block(msa_t, sbsp_options, at_least_until=0):
     # type: (MSAType, SBSPOptions, int) -> List[int]
 
@@ -860,35 +900,97 @@ def get_all_candidates_before_conserved_block(msa_t, sbsp_options, at_least_unti
 
     # find the positions of the first two candidate starts in the query
     start = 0
-    end = msa_t.alignment_length()
+    end = msa_t.alignment_length() - region_length
 
     candidates = list()             # type: List[int]
+    passed_column_of_no_gaps = False
     for i in range(start, end):
 
+        if not passed_column_of_no_gaps:
+            if sum([1 for k in range(msa_t.number_of_sequences()) if msa_t[k][i] != "-"]) == msa_t.number_of_sequences():
+                passed_column_of_no_gaps = True
+
         if msa_t[0][i].isupper():
+            candidates.append(i)
+        elif i >= at_least_until and len(candidates) > 0 and passed_column_of_no_gaps:
+            # compute conservation of block upstream of candidate
+            try:
+                conservation = compute_conservation_in_region(
+                    msa_t, i, i+region_length,
+                    scorer=scorer,
+                    direction="downstream",
+                    skip_gaps_in_query=True,
+                    score_on_all_pairs=score_on_all_pairs,
+                )
 
-            if i < region_length or i <= at_least_until:
-                candidates.append(i)
-            else:
-                # compute conservation of block upstream of candidate
-                try:
-                    conservation = compute_conservation_in_region(
-                        msa_t, i - region_length, i,
-                        scorer=scorer,
-                        direction="upstream",
-                        skip_gaps_in_query=True,
-                        score_on_all_pairs=score_on_all_pairs,
-                    )
+                columns_saturated = check_each_column_below_gap_allowance(msa_t, i, i+region_length, 0.2,
+                    direction="downstream",
+                    skip_gaps_in_query=True
+                )
+                first_column_conservation = compute_conservation_in_region(
+                    msa_t, i, i+1,
+                    scorer=scorer,
+                    direction="downstream",
+                    skip_gaps_in_query=False,
+                    score_on_all_pairs=score_on_all_pairs,
+                )
 
-                    # if block not conserved, add candidate
-                    if conservation < threshold:
-                        candidates.append(i)
-                    else:
-                        break
-                except ValueError:
-                    candidates.append(i)
+
+                # if block not conserved, add candidate
+                if conservation > threshold and columns_saturated and first_column_conservation > threshold:
+                    break
+            except ValueError:
+                pass
 
     return candidates
+
+
+
+# def get_all_candidates_before_conserved_block(msa_t, sbsp_options, at_least_until=0):
+#     # type: (MSAType, SBSPOptions, int) -> List[int]
+#
+#     logger.debug("Func: get-candidates-without-upstream-conservation")
+#
+#     region_length = sbsp_options["block-region-length-aa"]     # get_value(kwargs, "region_length", 10)
+#     threshold = 0.5         # FIXME
+#     score_on_all_pairs = False      # get_value(kwargs, "score_on_all_pairs", False)
+#
+#     if at_least_until is None:
+#         at_least_until = 0
+#
+#     scorer = ScoringMatrix("identity")          # FIXME: get from sbsp options
+#
+#     # find the positions of the first two candidate starts in the query
+#     start = 0
+#     end = msa_t.alignment_length()
+#
+#     candidates = list()             # type: List[int]
+#     for i in range(start, end):
+#
+#         if msa_t[0][i].isupper():
+#
+#             if i < region_length or i <= at_least_until:
+#                 candidates.append(i)
+#             else:
+#                 # compute conservation of block upstream of candidate
+#                 try:
+#                     conservation = compute_conservation_in_region(
+#                         msa_t, i - region_length, i,
+#                         scorer=scorer,
+#                         direction="upstream",
+#                         skip_gaps_in_query=True,
+#                         score_on_all_pairs=score_on_all_pairs,
+#                     )
+#
+#                     # if block not conserved, add candidate
+#                     if conservation < threshold:
+#                         candidates.append(i)
+#                     else:
+#                         break
+#                 except ValueError:
+#                     candidates.append(i)
+#
+#     return candidates
 
 
 def step_a_check_if_at_lorf(candidate_positions):
@@ -910,6 +1012,7 @@ def count_number_of_5prime_candidates_at_position(msa_t, curr_pos, sbsp_options)
     i = curr_pos
     num_upper = 0
     q_curr_type = msa_t[0][i]
+
 
     for j in range(msa_t.number_of_sequences()):
 
@@ -1001,12 +1104,12 @@ def select_by_upstream_1_4_rule(msa_t, sbsp_options, pos_of_upstream_in_msa):
     return start_position_in_msa
 
 
-def region_between_two_positions_is_conserved(msa_t, sbsp_options, pos_a, pos_b):
-    # type: (MSAType, SBSPOptions, int, int) -> bool
+def region_between_two_positions_is_conserved(msa_t, sbsp_options, pos_a, pos_b, **kwargs):
+    # type: (MSAType, SBSPOptions, int, int, Dict[str, Any]) -> bool
     # compute conservation of block upstream of candidate
     scorer = ScoringMatrix()
     score_on_all_pairs = sbsp_options.safe_get("score-on-all-pairs")
-    threshold = 0.5     # FIXME
+    threshold = get_value(kwargs, "threshold", 0.5, default_if_none=True)     # FIXME
 
     conservation = compute_conservation_in_region(
         msa_t, pos_a, pos_b+1,
@@ -1025,22 +1128,25 @@ def candidate_b_has_better_support(msa_t, sbsp_options, pos_a, pos_b, by_at_leas
     num_5prime_a = count_number_of_5prime_candidates_at_position(msa_t, pos_a, sbsp_options)
     num_5prime_b = count_number_of_5prime_candidates_at_position(msa_t, pos_b, sbsp_options)
 
+    support_a_raw = num_5prime_a / float(msa_t.number_of_sequences())
     support_a = by_at_least + num_5prime_a / float(msa_t.number_of_sequences())
     support_b = num_5prime_b / float(msa_t.number_of_sequences())
 
-    if isclose(support_a, support_b):
+    if isclose(support_a_raw, support_b):
 
         # run more stringent count
         copy_sbsp_options = copy.deepcopy(sbsp_options)
         copy_sbsp_options["search-neighbor"] = 0
+        copy_sbsp_options["search-limit-gap-skips"] = 0
 
-        num_5prime_a = count_number_of_5prime_candidates_at_position(msa_t, pos_a, sbsp_options)
-        num_5prime_b = count_number_of_5prime_candidates_at_position(msa_t, pos_b, sbsp_options)
+        num_5prime_a = count_number_of_5prime_candidates_at_position(msa_t, pos_a, copy_sbsp_options)
+        num_5prime_b = count_number_of_5prime_candidates_at_position(msa_t, pos_b, copy_sbsp_options)
 
+        support_a_raw = num_5prime_a / float(msa_t.number_of_sequences())
         support_a = by_at_least + num_5prime_a / float(msa_t.number_of_sequences())
         support_b = num_5prime_b / float(msa_t.number_of_sequences())
 
-        if isclose(support_a, support_b):
+        if isclose(support_a_raw, support_b):
             return False
         else:
             return support_b > support_a
@@ -1063,7 +1169,7 @@ def select_from_two_neighboring_candidates(msa_t, sbsp_options, pos_a,
 
     selected = None
 
-    if region_between_two_positions_is_conserved(msa_t, sbsp_options, pos_a, pos_b):
+    if not region_between_two_positions_is_conserved(msa_t, sbsp_options, pos_a, pos_b, threshold=0.3):
         if candidate_b_has_better_support(msa_t, sbsp_options, pos_a, pos_b):
             selected = pos_b
         else:
@@ -1080,7 +1186,7 @@ def select_from_two_neighboring_candidates(msa_t, sbsp_options, pos_a,
                 selected = pos_a
 
         if selected is None:
-            if candidate_b_has_better_support(msa_t, sbsp_options, pos_a, pos_b):
+            if candidate_b_has_better_support(msa_t, sbsp_options, pos_a, pos_b, by_at_least=0.3):
                 selected = pos_b
             else:
                 selected = pos_a
@@ -1121,15 +1227,51 @@ def step_b_find_first_candidate_with_strong_5prime_score(msa_t, candidate_positi
 
     # check for nearby downstream
     if start_position_in_msa is not None:
-        downstream_start_position_in_msa = find_first_5prime_that_satisfies_5prime_threshold(
-            msa_t, sbsp_options, start_position_in_msa+1, sbsp_options["search-better-downstream-aa"],
+        region_begin = start_position_in_msa + 1
+        region_end = min(region_begin + sbsp_options["search-better-downstream-aa"], msa_t.alignment_length())
+        region_len = region_end-region_begin
+        remaining_region = region_len
+        cursor = region_begin
+
+
+        pos_a = curr_pos
+        pos_b = find_first_5prime_that_satisfies_5prime_threshold(
+            msa_t, sbsp_options, cursor, remaining_region,
             "downstream", True
         )
 
-        if downstream_start_position_in_msa is not None:
-            start_position_in_msa = select_from_two_neighboring_candidates(
-                msa_t, sbsp_options, start_position_in_msa, downstream_start_position_in_msa,
+        if pos_b is not None:
+            cursor = pos_b + 1
+
+        while pos_b is not None:
+            new_pos = select_from_two_neighboring_candidates(
+                msa_t, sbsp_options, start_position_in_msa, pos_b,
             )
+            start_position_in_msa = new_pos
+
+            pos_a = new_pos
+            remaining_region = remaining_region - (pos_b - pos_a + 1)
+            if remaining_region <= 0:
+                break
+
+            pos_b = find_first_5prime_that_satisfies_5prime_threshold(
+                msa_t, sbsp_options, cursor, remaining_region,
+                "downstream", True
+            )
+            if pos_b is not None:
+                cursor = pos_b + 1
+        # downstream_start_position_in_msa = find_first_5prime_that_satisfies_5prime_threshold(
+        #     msa_t, sbsp_options, start_position_in_msa+1, sbsp_options["search-better-downstream-aa"],
+        #     "downstream", True
+        # )
+
+        # pos_a = curr_pos
+        # pos_b = downstream_start_position_in_msa
+
+        # if downstream_start_position_in_msa is not None:
+        #     start_position_in_msa = select_from_two_neighboring_candidates(
+        #         msa_t, sbsp_options, start_position_in_msa, downstream_start_position_in_msa,
+        #     )
 
     return start_position_in_msa
 
@@ -1291,8 +1433,15 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
 
             if start_position_in_msa is None:
                 # Step C:
-                start_position_in_msa = step_c_find_rightmost_by_standard_aa_score(
-                    msa_t, candidate_positions, sbsp_options, pos_of_upstream_in_msa=pos_of_upstream_in_msa
+                #start_position_in_msa = step_c_find_rightmost_by_standard_aa_score(
+                #    msa_t, candidate_positions, sbsp_options, pos_of_upstream_in_msa=pos_of_upstream_in_msa
+                #)
+                copy_sbsp_options = copy.deepcopy(sbsp_options)
+                copy_sbsp_options["search-neighbor"] = 4
+                copy_sbsp_options["search-limit-gap-skips"] = 2
+
+                start_position_in_msa = step_b_find_first_candidate_with_strong_5prime_score(
+                    msa_t, candidate_positions, copy_sbsp_options, pos_of_upstream_in_msa=pos_of_upstream_in_msa
                 )
                 if start_position_in_msa is not None:
                     predicted_at_step = "C"
@@ -1438,6 +1587,7 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
 
     pd_msa_final = get_value(kwargs, "pd_msa_final", None)
 
+
     # read targets and filter out what isn't needed - construct data frame ready for MSA
     curr_time = timeit.default_timer()
     df = create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwargs)
@@ -1509,12 +1659,40 @@ def process_find_start_for_multiple_query_blast_record(lock, process_number, env
         msa_number += 1
 
 
+def debug_filter_queries(q_sequences):
+    # type: (Dict[str, Any]) -> None
+    keys = {"1810240;1811058;+"}
+    strand_to_3prime_pos = {"+": 1, "-": 0}
+
+    keys_3prime = {"{};{}".format(k.split(";")[strand_to_3prime_pos[k.split(";")[2]]], k.split(";")[2]) for k in keys }
+
+    new_sequences = dict()
+
+    for k, v in q_sequences.items():
+        info = unpack_fasta_header(k)
+
+
+        l = info["left"]
+        r = info["right"]
+        s = info["strand"]
+
+        curr_key_3prime = "{};{}".format(r, s) if s == "+" else "{};{}".format(l, s)
+
+        if curr_key_3prime in keys_3prime:
+            new_sequences[k] = v
+
+    return new_sequences
+
+
 def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
     # type: (Environment, Dict[str, Seq], str, str, SBSPOptions, Dict[str, Any]) -> str
 
     num_processors = get_value(kwargs, "num_processors", None)
 
     q_sequences = data
+    # REMOVE
+    #q_sequences = debug_filter_queries(q_sequences)
+    #num_processors = None
 
     remove_p(pf_output)                     # start clean
 
@@ -1537,13 +1715,18 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
 
     records = NCBIXML.parse(f_blast_results)
 
-    # FIXME`
+    # REMOVE
 
     if num_processors is None or num_processors == 0:
         msa_number = 0
         # for each query, find start
         for r in records:
             logger.info("{}".format(len(r.alignments)))
+            # REMOVE
+            #query_info = unpack_fasta_header(r.query)
+            #if  int(query_info["right"]) not in {449870}:
+            #    logger.debug("Skipping: {}".format(query_info["right"]))
+            #    continue
 
             df_result = find_start_for_query_blast_record(env, r, sbsp_options, msa_number=msa_number, **kwargs)
             append_data_frame_to_csv(df_result, pf_output)
