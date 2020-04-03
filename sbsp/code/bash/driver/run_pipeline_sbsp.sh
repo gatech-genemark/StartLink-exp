@@ -114,6 +114,11 @@ pd_run=$exp/${tag}q_${query}_t_${target}_sbsp_${sbsp_conf}_ql_${fn_q_labels_no_e
 dn_compute=pbs_${tag}q_${query}_t_${target}_sbsp_${sbsp_conf}_ql_${fn_q_labels_no_ext}_tl_${fn_t_labels_no_ext}
 pf_output=${pd_run}/output.csv
 
+if [ -f $pd_run/accuracy/accuracy.csv ]; then
+    echo "Run exists $query"
+    exit
+fi
+
 mkdir -p $pd_run
 
 if verbose $INFO; then
