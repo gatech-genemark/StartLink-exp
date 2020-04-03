@@ -188,14 +188,16 @@ class MSAType:
                 marker_name = a.id[1:]
                 non_gap_positions = [x for x in range(len(a.seq._data)) if a.seq._data[x] != "-"]
                 position = None
+                mark_tag = "M"
                 if len(non_gap_positions) > 0:
                     position = non_gap_positions[0]
+                    mark_tag = a.seq._data[position]
 
-                list_markers_info.append((marker_name, position))
+                list_markers_info.append((marker_name, position, mark_tag))
 
         msa_t = MSAType(MultipleSeqAlignment(alignments_processed_list))
         for m in list_markers_info:
-            msa_t.add_marker(MSASinglePointMarker(m[1], msa_length=msa_t.alignment_length(), name=m[0]))
+            msa_t.add_marker(MSASinglePointMarker(m[1], msa_length=msa_t.alignment_length(), name=m[0], mark=m[2]))
 
         return msa_t
 

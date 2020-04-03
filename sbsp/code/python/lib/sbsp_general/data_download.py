@@ -48,7 +48,8 @@ def download_assembly_summary_entry(entry, pd_output, **kwargs):
     output = {
             "assembly_accession": gcf,
             "asm_name": acc,
-            "name": entry["name"]
+            "name": entry["name"],
+            "parent_id": entry["parent_id"]
             }
 
     ftplink = entry["ftp_path"]
@@ -166,6 +167,7 @@ def download_assembly_summary_entry(entry, pd_output, **kwargs):
 
 def compute_gc_from_file(pf_sequence):
     # type: (str) -> float
+    return 0.0
 
     from sbsp_io.sequences import read_fasta_into_hash
     sequences = read_fasta_into_hash(pf_sequence)
@@ -192,20 +194,24 @@ def count_cds(pf_labels):
     return int(run_shell_cmd("grep -c CDS {}".format(pf_labels), do_not_log=True))
 
 def get_annotation_date(pf_labels):
-    return run_shell_cmd("annotation_date_raw=$( grep \"annotation-date\" {}".format(pf_labels) +
-                         r" | awk '{print $2}');")
+    return run_shell_cmd("grep -m 1 \"annotation-date\" {}".format(pf_labels) +
+                         r" | awk '{print $2}'", do_not_log=True).strip()
 
 
 def get_genome_specific_attributes(pd_data, info):
     # type: (str, Dict[str, Any]) -> Dict[str, Any]
     gcfid = "{}_{}".format(info["assembly_accession"], info["asm_name"])
+    logger.debug("Genome specific: {}".format(gcfid))
 
     pd_gcfid = os.path.join(pd_data, gcfid)
     pf_sequences = os.path.join(pd_gcfid, "sequence.fasta")
     pf_labels = os.path.join(pd_gcfid, "ncbi.gff")
 
     gc = compute_gc_from_file(pf_sequences)
-    num_genes = count_cds(pf_labels)
+    try:
+        num_genes = count_cds(pf_labels)
+    except Exception:
+        num_genes = 0
     annotation_date = get_annotation_date(pf_labels)
 
     return {"gc": gc, "num_genes": num_genes, "annotation_date": annotation_date}

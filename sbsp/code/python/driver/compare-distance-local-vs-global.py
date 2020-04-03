@@ -60,6 +60,10 @@ def compare_distance_local_vs_global(env, df, **kwargs):
     ext = get_value(kwargs, "extension", "png")
     fn_prefix = get_value(kwargs, "fn_prefix", "", default_if_none=True)
 
+    df = df[df["global_distance"] < 0.5].copy()
+    df = df[df["global_distance"] > 0.001].copy()
+    df = df[df["global_length_without_gaps"] < 1100].copy()
+
     pf_distance = os.path.join(pd_work, "{}distance_local_vs_global.{}".format(fn_prefix, ext))
     pf_alignment_length = os.path.join(pd_work, "{}alignment_length_local_vs_global.{}".format(fn_prefix, ext))
     pf_ungapped_alignment_length = os.path.join(pd_work, "{}ungapped_alignment_length_local_vs_global.{}".format(fn_prefix, ext))
@@ -72,6 +76,8 @@ def compare_distance_local_vs_global(env, df, **kwargs):
         title="Distance by local vs global alignment",
         xlabel="Global",
         ylabel="Local",
+        xlim=[0,0.8],
+        ylim=[0,0.8],
         save_fig=pf_distance,
         balanced=True
     ),
