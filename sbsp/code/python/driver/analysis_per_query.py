@@ -277,8 +277,9 @@ def analysis_per_query(env, gil, gcfid_to_pd_sbsp, pf_output_summary, **kwargs):
     if os.path.isfile(pf_output_summary):
         remove_p(pf_output_summary)
 
+    counter = 0
     for gi in gil:
-        logger.info("{}".format(gi.name))
+        logger.info("{} / {}: {}".format(counter, len(gil), gi.name))
         pd_genome = os.path.join(env["pd-data"], gi.name)
         pf_sequence = os.path.join(pd_genome, "sequence.fasta")
         gc = compute_gc_from_file(pf_sequence)
@@ -290,6 +291,7 @@ def analysis_per_query(env, gil, gcfid_to_pd_sbsp, pf_output_summary, **kwargs):
         df["Ancestor"] = gi.attributes["ancestor"] if "ancestor" in gi.attributes else ""
 
         append_data_frame_to_csv(df, pf_output_summary)
+        counter += 1
 
 
 def main(env, args):
