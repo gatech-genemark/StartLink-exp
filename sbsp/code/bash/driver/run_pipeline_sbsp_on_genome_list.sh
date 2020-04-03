@@ -95,7 +95,7 @@ pf_sbsp_conf=$config/sbsp_${sbsp_conf}.conf
 pf_pbs_conf=$config/pbs_${pbs_conf}.conf
 
 # check that files exist
-[ ! -f "${pf_genome_list}" ] && { echo "File doesn't exist: $pf_q_list"; exit 1; };
+[ ! -f "${pf_genome_list}" ] && { echo "File doesn't exist: $pf_genome_list"; exit 1; };
 [ ! -f "${pf_sbsp_conf}" ] && { echo "File doesn't exist: $pf_sbsp_conf"; exit 1; };
 [ ! -f "${pf_pbs_conf}" ] && { echo "File doesn't exist: $pf_pbs_conf"; exit 1; };
 
@@ -138,7 +138,7 @@ function run_sbsp_on_genome_list_entry() {
         tag_option="--tag $tag"
     fi
 
-    $bin/run_pipeline_sbsp_sh.sh  -q tmp_$gcfid -t genbank_${ancestor_valid}  -s ${sbsp_conf} -p ${pbs_conf} --q-labels ncbi.gff --q-labels-true ncbi.gff ${tag_option}
+    $bin/run_pipeline_sbsp_sh.sh  -q tmp_$gcfid -t genbank_${ancestor_valid}  -s ${sbsp_conf} -p ${pbs_conf} --q-labels ncbi.gff --q-labels-true ${fn_q_labels_true} ${tag_option} $steps
     rm $pf_list
 }
 
@@ -154,8 +154,8 @@ function run_sbsp_on_genome_list() {
         echo -e "Progress: $current/$total. GCFID=$gcfid"
         
         run_sbsp_on_genome_list_entry "$line" &
-        current=$((current + 1))
         sleep 5
+        current=$((current + 1))
     done
 }
 
