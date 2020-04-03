@@ -126,6 +126,10 @@ def analyze_predictions_on_verified_genes(env, gi, pd_sbsp, **kwargs):
     labels_gms2 = read_labels_from_file(pf_gms2, name="GMS2", **kwargs_labels)
     labels_ncbi = read_labels_from_file(pf_ncbi, name="NCBI", **kwargs_labels)
 
+
+    labels_sbsp = Labels([l for l in labels_sbsp if l.get_attribute_value('predicted-at-step') != "C"], name="SBSP")
+
+
     labels_sbsp_eq_gms2 = LabelsComparisonDetailed(labels_sbsp, labels_gms2).match_3p_5p("a")
     labels_sbsp_eq_gms2.name = "GMS2=SBSP"
 
@@ -145,6 +149,8 @@ def analyze_predictions_on_verified_genes(env, gi, pd_sbsp, **kwargs):
 
     # Stats: SBSP Accuracy on verified
     get_stats_sn_sp(labels_verified, labels_sbsp, stats)
+    get_stats_sn_sp(labels_verified, labels_ncbi, stats)
+    get_stats_sn_sp(labels_verified, labels_gms2, stats)
 
     # Stats: GMS2=SBSP Accuracy on verified
     get_stats_sn_sp(labels_verified, labels_sbsp_eq_gms2, stats)
@@ -160,8 +166,9 @@ def mk_pf(name, *prefixes):
     # type: (str, List[Any]) -> str
     out = ""
     if prefixes is not None and len(prefixes) > 0:
-        non_empty_prefixes = [x for x in prefixes if len(x) > 0]
-        "_".join(non_empty_prefixes)
+        non_empty_prefixes = [str(x) for x in prefixes if len(str(x)) > 0]
+        print(non_empty_prefixes)
+        out += "_".join(non_empty_prefixes)
         out += "_"
 
     out += name
@@ -176,39 +183,40 @@ def print_csvs(env, df, **kwargs):
 
     num = 0
 
+    print (df.columns)
     df_to_pf_csv(
         df[["Genome", "NCBI", "Verified",
-            "Number 3p match: Verified from NCBI", "Percent 3p match: Verified from NCBI",
-            "Number 5p-3p match: Verified from NCBI", "Percent 5p-3p match: Verified from NCBI"
+            "Number 3p match: Verified from NCBI", "Percentage 3p match: Verified from NCBI",
+            "Number 5p-3p match: Verified from NCBI", "Percentage 5p-3p match: Verified from NCBI"
             ]],
-        mk_pf(os_join(pd_work, "summary"), fn_prefix, num)
+        os_join(pd_work, mk_pf("summary", fn_prefix, num))
     )
     num += 1
 
     df_to_pf_csv(
         df[["Genome", "GMS2", "Verified",
-            "Number 3p match: Verified from GMS2", "Percent 3p match: Verified from GMS2",
-            "Number 5p-3p match: Verified from GMS2", "Percent 5p-3p match: Verified from GMS2"
+            "Number 3p match: Verified from GMS2", "Percentage 3p match: Verified from GMS2",
+            "Number 5p-3p match: Verified from GMS2", "Percentage 5p-3p match: Verified from GMS2"
             ]],
-        mk_pf(os_join(pd_work, "summary"), fn_prefix, num)
+        os_join(pd_work, mk_pf("summary", fn_prefix, num))
     )
     num += 1
 
     df_to_pf_csv(
         df[["Genome", "SBSP", "Verified",
-            "Number 3p match: Verified from SBSP", "Percent 3p match: Verified from SBSP",
-            "Number 5p-3p match: Verified from SBSP", "Percent 5p-3p match: Verified from SBSP"
+            "Number 3p match: Verified from SBSP", "Percentage 3p match: Verified from SBSP",
+            "Number 5p-3p match: Verified from SBSP", "Percentage 5p-3p match: Verified from SBSP"
             ]],
-        mk_pf(os_join(pd_work, "summary"), fn_prefix, num)
+        os_join(pd_work, mk_pf("summary", fn_prefix, num))
     )
     num += 1
 
     df_to_pf_csv(
         df[["Genome", "Verified", "GMS2=SBSP",
-            "Number 3p match: Verified from GMS2=SBSP", "Percent 3p match: Verified from GMS2=SBSP",
-            "Number 5p-3p match: Verified from GMS2=SBSP", "Percent 5p-3p match: Verified from GMS2=SBSP"
+            "Number 3p match: Verified from GMS2=SBSP", "Percentage 3p match: Verified from GMS2=SBSP",
+            "Number 5p-3p match: Verified from GMS2=SBSP", "Percentage 5p-3p match: Verified from GMS2=SBSP"
             ]],
-        mk_pf(os_join(pd_work, "summary"), fn_prefix, num)
+        os_join(pd_work, mk_pf("summary", fn_prefix, num))
     )
     num += 1
 
