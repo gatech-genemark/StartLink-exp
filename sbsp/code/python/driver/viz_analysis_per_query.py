@@ -8,6 +8,7 @@ import logging
 import argparse
 import math
 
+import numpy as np
 import pandas as pd
 from typing import *
 
@@ -266,8 +267,8 @@ def kimura_dist_plot(env, df):
 
 
 
-def heat_map_Kimura_accuracy(env, df_all, num_steps=20):
-    # type: (Environment, pd.DataFrame, int) -> None
+def heat_map_Kimura_accuracy(env, df_all, x, y, num_steps=20, balance=False):
+    # type: (Environment, pd.DataFrame, str, str, int) -> None
     import matplotlib.pyplot as plt
 
     ancestors = sorted(list(set(df_all["Ancestor"])))
@@ -279,14 +280,15 @@ def heat_map_Kimura_accuracy(env, df_all, num_steps=20):
         ax = axes.ravel()[axis_idx]
         axis_idx += 1
 
-        min_x = min(df["Min-Kimura"])
-        max_x = max(df["Min-Kimura"]) + 0.000000001
+        min_x = min(df[x])
+        max_x = max(df[x]) + 0.000000001
 
-        min_y = min(df["Max-Kimura"])
-        max_y = max(df["Max-Kimura"]) + 0.000000001
+        min_y = min(df[y])
+        max_y = max(df[y]) + 0.000000001
 
-        min_x = min_y = min(min_x, min_y)
-        max_x = max_y = max(max_x, max_y)
+        if balance:
+            min_x = min_y = min(min_x, min_y)
+            max_x = max_y = max(max_x, max_y)
 
         ss_x = (max_x - min_x) / float(num_steps)
         ss_y = (max_y - min_y) / float(num_steps)
@@ -302,8 +304,8 @@ def heat_map_Kimura_accuracy(env, df_all, num_steps=20):
 
         for index in df.index:
 
-            x_val = df.at[index, "Min-Kimura"]
-            y_val = df.at[index, "Max-Kimura"]
+            x_val = df.at[index, x]
+            y_val = df.at[index, y]
 
             x_pos = int((x_val-min_x) / ss_x)
             y_pos = int((y_val-min_y) / ss_y)
@@ -311,6 +313,7 @@ def heat_map_Kimura_accuracy(env, df_all, num_steps=20):
             gms2_eq_sbsp_and_ncbi[x_pos][y_pos] += 1 if df.at[index, "GMS2=SBSP"] and df.at[index, "NCBI"] else 0
             gms2_eq_sbsp_eq_ncbi[x_pos][y_pos] += 1 if df.at[index, "GMS2=SBSP=NCBI"] else 0
 
+        gms2_eq_sbsp_and_ncbi [gms2_eq_sbsp_and_ncbi < 10] = 0
         accuracy = np.divide(gms2_eq_sbsp_eq_ncbi, gms2_eq_sbsp_and_ncbi)
         # accuracy = np.flip(accuracy, 0)
 
@@ -346,8 +349,8 @@ def heat_map_Kimura_accuracy(env, df_all, num_steps=20):
     # hide tick and tick label of the big axes
     plt.tick_params(labelcolor='none', top='off', bottom='off', left='off', right='off')
     plt.grid(False)
-    plt.xlabel("Min-Kimura")
-    plt.ylabel("Max-Kimura")
+    plt.xlabel(x)
+    plt.ylabel(y)
 
 
     save_figure(FigureOptions(
@@ -357,76 +360,191 @@ def heat_map_Kimura_accuracy(env, df_all, num_steps=20):
     plt.show()
 
 
-
-def one_dim_Kimura_accuracy(env, df_all, num_steps=20):
-    # type: (Environment, pd.DataFrame, int) -> None
-    import matplotlib.pyplot as plt
-
-    ancestors = sorted(list(set(df_all["Ancestor"])))
-    # fig, axes = plt.subplots(2, math.ceil(len(ancestors) / 2), sharex=True, sharey=True)
-
-    min_x = min(df_all["Average-Kimura"])
-    max_x = max(df_all["Average-Kimura"]) + 0.000000001
+def bin_data_one_d(env, df_all, feature, num_steps=20):
+    # type: (Environment, pd.DataFrame, str, int) -> pd.DataFrame
+    min_x = min(df_all[feature])
+    max_x = max(df_all[feature]) + 0.000000001
     ss_x = (max_x - min_x) / float(num_steps)
 
     list_df = list()
-    axis_idx = 0
     for ancestor, df in df_all.groupby("Ancestor", as_index=False):
-        # ax = axes.ravel()[axis_idx]
-        # axis_idx += 1
-
-
-
-
 
         import numpy as np
         gms2_eq_sbsp_and_ncbi = np.zeros(num_steps, dtype=float)
         gms2_eq_sbsp_eq_ncbi = np.zeros(num_steps, dtype=float)
 
-        df_gms2_eq_sbsp_and_ncbi = (df["GMS2=SBSP"]) & (df["NCBI"])
-        df_gms2_eq_sbsp_eq_ncbi = (df["GMS2=SBSP=NCBI"])
-
         for index in df.index:
+            x_val = df.at[index, feature]
 
-            x_val = df.at[index, "Average-Kimura"]
-
-            x_pos = int((x_val-min_x) / ss_x)
+            x_pos = int((x_val - min_x) / ss_x)
 
             gms2_eq_sbsp_and_ncbi[x_pos] += 1 if df.at[index, "GMS2=SBSP"] and df.at[index, "NCBI"] else 0
             gms2_eq_sbsp_eq_ncbi[x_pos] += 1 if df.at[index, "GMS2=SBSP=NCBI"] else 0
 
         accuracy = np.divide(gms2_eq_sbsp_eq_ncbi, gms2_eq_sbsp_and_ncbi)
-        # accuracy = np.flip(accuracy, 0)
-
 
         xticks = list(range(0, num_steps))
 
         l_x = np.arange(min_x, max_x, ss_x)
         xticklabels = [round(l_x[i], 2) for i in xticks]
-        # g = seaborn.heatmap(accuracy.transpose(), vmin=0, vmax=1, xticklabels=xticklabels, yticklabels=yticklabels, ax=ax,
-        #                     cbar=True)
 
-        # g = seaborn.lineplot(xticklabels, accuracy, ax=ax, label=ancestor)
-
-        # cbar=g.cbar
-
-        # g.set_xticks(xticks)
 
         curr_df = pd.DataFrame({
-            "Average-Kimura": xticklabels,
+            feature: xticklabels,
             "Accuracy": accuracy,
             "Number-of-queries": gms2_eq_sbsp_and_ncbi
         })
         curr_df["Ancestor"] = ancestor
         list_df.append(curr_df)
 
-        # g.set_xlabel("Min Kimura")
-        # g.set_ylabel("Max Kimura")
-        # g.set_title(ancestor)
+    return pd.concat(list_df)  # type: pd.DataFrame
 
-    df = pd.concat(list_df)
-    sns.lineplot(df, "Average-Kimura", "Accuracy", hue="Ancestor")
-    sns.lineplot(df, "Average-Kimura", "Number-of-queries", hue="Ancestor")
+
+def one_dim_Kimura_accuracy(env, df_all, num_steps=20):
+    # type: (Environment, pd.DataFrame, int) -> None
+    import matplotlib.pyplot as plt
+    pd_work = env["pd-work"]
+    ancestors = sorted(list(set(df_all["Ancestor"])))
+    # fig, axes = plt.subplots(2, math.ceil(len(ancestors) / 2), sharex=True, sharey=True)
+
+    # min_x = min(df_all["Average-Kimura"])
+    # max_x = max(df_all["Average-Kimura"]) + 0.000000001
+    # ss_x = (max_x - min_x) / float(num_steps)
+    #
+    # list_df = list()
+    # axis_idx = 0
+    # for ancestor, df in df_all.groupby("Ancestor", as_index=False):
+    #     # ax = axes.ravel()[axis_idx]
+    #     # axis_idx += 1
+    #
+    #
+    #
+    #
+    #
+    #     import numpy as np
+    #     gms2_eq_sbsp_and_ncbi = np.zeros(num_steps, dtype=float)
+    #     gms2_eq_sbsp_eq_ncbi = np.zeros(num_steps, dtype=float)
+    #
+    #     df_gms2_eq_sbsp_and_ncbi = (df["GMS2=SBSP"]) & (df["NCBI"])
+    #     df_gms2_eq_sbsp_eq_ncbi = (df["GMS2=SBSP=NCBI"])
+    #
+    #     for index in df.index:
+    #
+    #         x_val = df.at[index, "Average-Kimura"]
+    #
+    #         x_pos = int((x_val-min_x) / ss_x)
+    #
+    #         gms2_eq_sbsp_and_ncbi[x_pos] += 1 if df.at[index, "GMS2=SBSP"] and df.at[index, "NCBI"] else 0
+    #         gms2_eq_sbsp_eq_ncbi[x_pos] += 1 if df.at[index, "GMS2=SBSP=NCBI"] else 0
+    #
+    #     accuracy = np.divide(gms2_eq_sbsp_eq_ncbi, gms2_eq_sbsp_and_ncbi)
+    #     # accuracy = np.flip(accuracy, 0)
+    #
+    #
+    #     xticks = list(range(0, num_steps))
+    #
+    #     l_x = np.arange(min_x, max_x, ss_x)
+    #     xticklabels = [round(l_x[i], 2) for i in xticks]
+    #     # g = seaborn.heatmap(accuracy.transpose(), vmin=0, vmax=1, xticklabels=xticklabels, yticklabels=yticklabels, ax=ax,
+    #     #                     cbar=True)
+    #
+    #     # g = seaborn.lineplot(xticklabels, accuracy, ax=ax, label=ancestor)
+    #
+    #     # cbar=g.cbar
+    #
+    #     # g.set_xticks(xticks)
+    #
+    #     curr_df = pd.DataFrame({
+    #         "Average-Kimura": xticklabels,
+    #         "Accuracy": accuracy,
+    #         "Number-of-queries": gms2_eq_sbsp_and_ncbi
+    #     })
+    #     curr_df["Ancestor"] = ancestor
+    #     list_df.append(curr_df)
+    #
+    #     # g.set_xlabel("Min Kimura")
+    #     # g.set_ylabel("Max Kimura")
+    #     # g.set_title(ancestor)
+    #
+    # df = pd.concat(list_df)     # type: pd.DataFrame
+    df = bin_data_one_d(env, df_all, "Average-Kimura", num_steps)
+    sns.lineplot(df, "Average-Kimura", "Accuracy", hue="Ancestor", figure_options=FigureOptions(
+        save_fig=next_name(pd_work),
+        ), sns_kwargs={"palette": CM.get_map("ancestor")}
+                 )
+    sns.lineplot(df, "Average-Kimura", "Number-of-queries", hue="Ancestor", figure_options=FigureOptions(
+        save_fig=next_name(pd_work),
+        ), sns_kwargs={"palette": CM.get_map("ancestor")}
+                 )
+
+    total_per_ancestor = {
+        ancestor: (df["Ancestor"].isin({ancestor})).sum() for ancestor in ancestors
+    }
+
+    df["Percentage-of-queries"] = 0
+    df["Cumulative-percentage-of-queries"] = 0
+    df.reset_index(inplace=True)
+    for ancestor, df_group in df.groupby("Ancestor", as_index=False):   # type: str, pd.DataFrame
+        df_group.sort_values("Average-Kimura", inplace=True)
+        index = df_group.index
+
+        prev = 0
+        total = df_group["Number-of-queries"].sum()
+        df.loc[index, "Percentage-of-queries"] = 100 * df.loc[index, "Number-of-queries"] / float(total)
+
+        for i in index:
+            df.loc[i, "Cumulative-percentage-of-queries"] = prev + df.loc[i, "Percentage-of-queries"]
+            prev = df.loc[i, "Cumulative-percentage-of-queries"]
+
+    sns.lineplot(df, "Average-Kimura", "Percentage-of-queries", hue="Ancestor",  figure_options=FigureOptions(
+        save_fig=next_name(pd_work),
+    ), sns_kwargs={"palette": CM.get_map("ancestor")})
+
+    sns.lineplot(df, "Average-Kimura", "Cumulative-percentage-of-queries", hue="Ancestor", figure_options=FigureOptions(
+        save_fig=next_name(pd_work),
+    ), sns_kwargs={"palette": CM.get_map("ancestor")})
+
+
+
+    # standard dev
+    df = bin_data_one_d(env, df_all[df_all["Support"] > 2], "Std-Kimura", num_steps)
+    sns.lineplot(df, "Std-Kimura", "Accuracy", hue="Ancestor", figure_options=FigureOptions(
+        save_fig=next_name(pd_work),
+    ), sns_kwargs={"palette": CM.get_map("ancestor")}
+                 )
+    sns.lineplot(df, "Std-Kimura", "Number-of-queries", hue="Ancestor", figure_options=FigureOptions(
+        save_fig=next_name(pd_work),
+    ), sns_kwargs={"palette": CM.get_map("ancestor")}
+                 )
+
+    total_per_ancestor = {
+        ancestor: (df["Ancestor"].isin({ancestor})).sum() for ancestor in ancestors
+    }
+
+    df["Percentage-of-queries"] = 0
+    df["Cumulative-percentage-of-queries"] = 0
+    df.reset_index(inplace=True)
+    for ancestor, df_group in df.groupby("Ancestor", as_index=False):  # type: str, pd.DataFrame
+        df_group.sort_values("Std-Kimura", inplace=True)
+        index = df_group.index
+
+        prev = 0
+        total = df_group["Number-of-queries"].sum()
+        df.loc[index, "Percentage-of-queries"] = 100 * df.loc[index, "Number-of-queries"] / float(total)
+
+        for i in index:
+            df.loc[i, "Cumulative-percentage-of-queries"] = prev + df.loc[i, "Percentage-of-queries"]
+            prev = df.loc[i, "Cumulative-percentage-of-queries"]
+    sns.lineplot(df, "Std-Kimura", "Percentage-of-queries", hue="Ancestor", figure_options=FigureOptions(
+        save_fig=next_name(pd_work),
+    ), sns_kwargs={"palette": CM.get_map("ancestor")})
+
+    sns.lineplot(df, "Std-Kimura", "Cumulative-percentage-of-queries", hue="Ancestor", figure_options=FigureOptions(
+        save_fig=next_name(pd_work),
+    ), sns_kwargs={"palette": CM.get_map("ancestor")})
+
+
+
 
 
     # im = plt.gca().get_children()[0]
@@ -461,7 +579,8 @@ def analyze_kimura_distances(env, df):
 
     df = df[df["Kimura-to-query"] != "[]"].copy()
     df["Kimura-to-query"] = df["Kimura-to-query"].apply(ast.literal_eval)
-    df["Average-Kimura"] = df["Kimura-to-query"].apply(most_frequent)
+    df["Average-Kimura"] = df["Kimura-to-query"].apply(np.mean)
+    df["Std-Kimura"] = df["Kimura-to-query"].apply(np.std)
 
 
     sns.lmplot(
@@ -485,12 +604,12 @@ def analyze_kimura_distances(env, df):
     df["Min-Kimura"] = df["Kimura-to-query"].apply(min)
     df["Max-Kimura"] = df["Kimura-to-query"].apply(max)
 
-    # sns.scatterplot(df, "Min-Kimura", "Max-Kimura", hue="Ancestor")
-    # contour_kimura_per_ancestor(env, df)
+    contour_kimura_per_ancestor(env, df)
     one_dim_Kimura_accuracy(env, df)
 
     kimura_dist_plot(env, df)
-    heat_map_Kimura_accuracy(env, df)
+    heat_map_Kimura_accuracy(env, df, "Min-Kimura", "Max-Kimura", balance=True)
+    heat_map_Kimura_accuracy(env, df, "Average-Kimura", "Std-Kimura", balance=False)
 
 
 
@@ -768,11 +887,11 @@ def viz_analysis_per_query(env, df, **kwargs):
     # df.drop(df.index[df["Support"] < 5], inplace=True)
 
 
-    #
-    # df_summary_per_gcfid = get_summary_per_gcfid(df)
-    # viz_summary_per_gcfid(env, df_summary_per_gcfid)
-    #
-    # analyze_upstream_distances(env, df[~df["Upstream-distance"].isnull()].copy())
+
+    df_summary_per_gcfid = get_summary_per_gcfid(df)
+    viz_summary_per_gcfid(env, df_summary_per_gcfid)
+
+    analyze_upstream_distances(env, df[~df["Upstream-distance"].isnull()].copy())
     analyze_kimura_distances(env, df[~df["Kimura-to-query"].isnull()].copy())
     analyze_support(env, df)
 

@@ -29,7 +29,11 @@ def add_identity(axes, *line_args, **line_kwargs):
 def save_figure(figure_options, fig=None):
     # type: (FigureOptions, plt.Figure) -> None
     if figure_options is not None and figure_options.save_fig is not None:
-        plt.savefig(figure_options.save_fig, bbox_index="tight")
+        if fig:
+            fig.tight_layout()
+            plt.savefig(figure_options.save_fig) #, bbox_index="tight")
+        else:
+            plt.savefig(figure_options.save_fig , bbox_index="tight")
 
 
 class FigureOptions:
