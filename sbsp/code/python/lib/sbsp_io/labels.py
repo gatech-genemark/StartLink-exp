@@ -67,7 +67,7 @@ def read_labels_from_file(filename, shift=-1, name=None, **kwargs):
                 if label.is_partial() or label.is_frameshifted():
                     continue
 
-                if tools is not None and m.group(3) not in tools:
+                if tools is not None and m.group(2) not in tools:
                     continue
 
                 labels.add(label)
