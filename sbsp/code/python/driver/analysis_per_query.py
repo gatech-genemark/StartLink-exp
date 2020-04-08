@@ -95,6 +95,9 @@ def distance_to_upstream(df, index, source):
     if df.at[index, "{}-upstream_left".format(source)] == -1:
         return None
 
+    if df.at[index, "{}-strand".format(source)] != df.at[index, "{}-upstream_strand".format(source)]:
+        return None
+
     if df.at[index, "{}-strand".format(source)] == "+":
         d = df.at[index, "{}-left".format(source)] - df.at[index, "{}-upstream_right".format(source)]
     else:
