@@ -41,6 +41,7 @@ class FigureOptions:
     def __init__(self, title=None, xlabel=None, ylabel=None, xlim=None, ylim=None, save_fig=None, **kwargs):
         # type: (str, str, str, Tuple(int, int), Tuple(int, int), str, Dict[str, Any]) -> None
         self.balanced = get_value(kwargs, "balanced", False)
+        self.legend_title = get_value(kwargs, "legend_title", None)
 
         self.title = title
         self.xlabel = xlabel
@@ -74,6 +75,9 @@ class FigureOptions:
 
             axis.set_xlim(min_xy, max_xy)
             axis.set_ylim(min_xy, max_xy)
+
+        if figure_options.legend_title:
+            axis.legend().texts[0].set_text(figure_options.legend_title)
 
 
 
