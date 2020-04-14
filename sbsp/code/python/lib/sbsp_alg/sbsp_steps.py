@@ -1308,6 +1308,10 @@ def compute_position_of_upstream_in_lorf_nt(series, s):
     if series["{}-upstream_left".format(s)] == -1 or series["{}-upstream_right".format(s)] == -1:
         return None
 
+    # only consider on the same strand
+    if series["{}-upstream_strand".format(s)] != series["{}-strand".format(s)]:
+        return None
+
     s_strand = series["{}-strand".format(s)]
 
     # Compute distance to upstream label (+ means no overlap, - means overlap
@@ -1422,11 +1426,11 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
     start_position_in_msa = step_a_check_if_at_lorf(candidate_positions)
 
     if start_position_in_msa is None:
-        # Step U: Upstream 1,4 rule
+        # Step B: Upstream 1,4 rule
         start_position_in_msa = select_by_upstream_1_4_rule(msa_t, sbsp_options, pos_of_upstream_in_msa)
 
         if start_position_in_msa is None:
-            # Step B: find candidate with strong 5' end score
+            # Step C: find candidate with strong 5' end score
             start_position_in_msa = step_b_find_first_candidate_with_strong_5prime_score(
                 msa_t, candidate_positions, sbsp_options, pos_of_upstream_in_msa=pos_of_upstream_in_msa
             )
@@ -1435,20 +1439,21 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
                 # Step C:
                 #start_position_in_msa = step_c_find_rightmost_by_standard_aa_score(
                 #    msa_t, candidate_positions, sbsp_options, pos_of_upstream_in_msa=pos_of_upstream_in_msa
-                #)
-                copy_sbsp_options = copy.deepcopy(sbsp_options)
-                copy_sbsp_options["search-neighbor"] = 4
-                copy_sbsp_options["search-limit-gap-skips"] = 2
-
-                start_position_in_msa = step_b_find_first_candidate_with_strong_5prime_score(
-                    msa_t, candidate_positions, copy_sbsp_options, pos_of_upstream_in_msa=pos_of_upstream_in_msa
-                )
-                if start_position_in_msa is not None:
-                    predicted_at_step = "C"
+                # #)
+                # copy_sbsp_options = copy.deepcopy(sbsp_options)
+                # copy_sbsp_options["search-neighbor"] = 4
+                # copy_sbsp_options["search-limit-gap-skips"] = 2
+                #
+                # start_position_in_msa = step_b_find_first_candidate_with_strong_5prime_score(
+                #     msa_t, candidate_positions, copy_sbsp_options, pos_of_upstream_in_msa=pos_of_upstream_in_msa
+                # )
+                # if start_position_in_msa is not None:
+                #     predicted_at_step = "D"
+                pass
             else:
-                predicted_at_step = "B"
+                predicted_at_step = "C"
         else:
-            predicted_at_step = "U"
+            predicted_at_step = "B"
     else:
         predicted_at_step = "A"
 

@@ -121,7 +121,9 @@ def viz_summary_per_gcfid(env, df, title=None):
 
     sns.catplot(df, "Ancestor", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", kind="box", figure_options=FigureOptions(
         save_fig=next_name(pd_work),
-        ylim=[0, 60],
+        ylim=[0, 20],
+        ylabel="1 - Sen(NCBI, GMS2=SBSP)",
+        xlabel="Clade",
         title=title
     ),
                 sns_kwargs={"palette": CM.get_map("ancestor")})
@@ -132,6 +134,7 @@ def viz_summary_per_gcfid(env, df, title=None):
         ylim=[0, None],
         title=title,
     ),
+                    legend_loc="best",
                     sns_kwargs={"palette": CM.get_map("ancestor")})
 
     # per GC
@@ -139,16 +142,20 @@ def viz_summary_per_gcfid(env, df, title=None):
         save_fig=next_name(pd_work),
         ylim=[0, None],
         title=title,
+        ylabel="1 - Sen(NCBI, GMS2=SBSP)",
     ),
+
                sns_kwargs={"palette": CM.get_map("ancestor"), "scatter": False, "lowess": True})
 
     sns.lmplot(df, "Genome GC", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="Ancestor", figure_options=FigureOptions(
         save_fig=next_name(pd_work),
         ylim=[0, None],
         title=title,
+        ylabel="1 - Sen(NCBI, GMS2=SBSP)",
     ),
+               legend_loc="best",
                sns_kwargs={"palette": CM.get_map("ancestor"), "scatter": True, "lowess": True,
-                           "scatter_kws": {"s": 5}
+                           "scatter_kws": {"s": 5}, "aspect": 1.5
                            })
 
     sns.lmplot(df, "Genome GC", "GMS2=SBSP", hue="Ancestor", figure_options=FigureOptions(
@@ -496,9 +503,16 @@ def one_dim_Kimura_accuracy(env, df_all, num_steps=20):
             df.loc[i, "Cumulative-percentage-of-queries"] = prev + df.loc[i, "Percentage-of-queries"]
             prev = df.loc[i, "Cumulative-percentage-of-queries"]
 
+    fig, ax = plt.subplots(figsize=(8, 4))
     sns.lineplot(df, "Average-Kimura", "Percentage-of-queries", hue="Ancestor",  figure_options=FigureOptions(
         save_fig=next_name(pd_work),
-    ), sns_kwargs={"palette": CM.get_map("ancestor")})
+        ylabel="Percentage of queries",
+        xlabel="Average Kimura"
+    ),
+                 ax=ax,
+                 show=True,
+                 legend_loc="best",
+                 sns_kwargs={"palette": CM.get_map("ancestor")})
 
     sns.lineplot(df, "Average-Kimura", "Cumulative-percentage-of-queries", hue="Ancestor", figure_options=FigureOptions(
         save_fig=next_name(pd_work),
@@ -604,7 +618,7 @@ def analyze_kimura_distances(env, df):
     df["Min-Kimura"] = df["Kimura-to-query"].apply(min)
     df["Max-Kimura"] = df["Kimura-to-query"].apply(max)
 
-    contour_kimura_per_ancestor(env, df)
+    # contour_kimura_per_ancestor(env, df)
     one_dim_Kimura_accuracy(env, df)
 
     kimura_dist_plot(env, df)
@@ -683,7 +697,7 @@ def analyze_upstream_distances(env, df):
 
     # compute consistencies with different flexibilities
     for flexibility in {0, 3}:
-        df["RPC(x,{})".format(flexibility)] = df[["Most frequent upstream", "Upstream-distance"]].apply(
+        df["PC(x,{})".format(flexibility)] = df[["Most frequent upstream", "Upstream-distance"]].apply(
             lambda r: compute_consistency(r["Upstream-distance"], r["Most frequent upstream"], flexibility),
             axis=1
         )
@@ -696,18 +710,18 @@ def analyze_upstream_distances(env, df):
     #     if len(df_mf) < 50:
     #         continue
     #
-    #     sns.distplot(df_mf, "RPC(x,0)", figure_options=FigureOptions(
-    #         title="RPC({},{})".format(mf, 0),
+    #     sns.distplot(df_mf, "PC(x,0)", figure_options=FigureOptions(
+    #         title="PC({},{})".format(mf, 0),
     #         save_fig=next_name(pd_work),
     #         xlim=(0,1)
     #     ))
-    #     sns.distplot(df_mf, "RPC(x,3)", figure_options=FigureOptions(
-    #         title="RPC({},{})".format(mf, 3),
+    #     sns.distplot(df_mf, "PC(x,3)", figure_options=FigureOptions(
+    #         title="PC({},{})".format(mf, 3),
     #         save_fig=next_name(pd_work),
     #         xlim=(0, 1)
     #     ))
 
-    # plot distribution of Average RPC
+    # plot distribution of Average PC
     import seaborn
     import matplotlib.pyplot as plt
 
@@ -715,47 +729,117 @@ def analyze_upstream_distances(env, df):
     # NCBI consistency as a func
     df = df[(df["Support"] > 10) & (df["GMS2=SBSP"]) & (df["Most frequent upstream"] < 100) & (df["Most frequent upstream"] > -50)]
 
-    df_tmp = stack_columns_as_rows(df_tmp[["Most frequent upstream", "RPC(x,0)", "RPC(x,3)", "Ancestor"]], ["RPC(x,0)", "RPC(x,3)"], "RPC(x,f)", None, label_col="Flexibility")
-    # seaborn.lmplot("Most frequent upstream", "RPC(x,f)", df_tmp,
+    df_tmp = stack_columns_as_rows(df_tmp[["Most frequent upstream", "PC(x,0)", "PC(x,3)", "Ancestor"]], ["PC(x,0)", "PC(x,3)"], "PC(x,f)", None, label_col="Flexibility")
+    # seaborn.lmplot("Most frequent upstream", "PC(x,f)", df_tmp,
     #                scatter=False, hue="Flexibility", lowess=True)
     # plt.show()
     #
-    # seaborn.lmplot("Most frequent upstream", "RPC(x,f)", df_tmp,
+    # seaborn.lmplot("Most frequent upstream", "PC(x,f)", df_tmp,
     #             hue="Flexibility", lowess=True)
     # plt.show()
     #
-    # seaborn.lmplot("Most frequent upstream", "RPC(x,f)", df_tmp,
+    # seaborn.lmplot("Most frequent upstream", "PC(x,f)", df_tmp,
     #                scatter=False, hue="Flexibility")
     # plt.show()
 
     sns.lmplot(
-        df_tmp, "Most frequent upstream", "RPC(x,f)", hue="Flexibility", sns_kwargs={
+        df_tmp, "Most frequent upstream", "PC(x,f)", hue="Flexibility", sns_kwargs={
             "scatter": False, "lowess": True
         },
-        figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-20,None], ylim=[0,1])
+        figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-7,None], ylim=[0,1])
     )
 
+    sns.distplot(df, "Most frequent upstream", figure_options=FigureOptions(
+        save_fig=next_name(pd_work)
+    ),
+                 sns_kwargs={"kde": True})
+
+
+    import seaborn
+    # seaborn.countplot("Most frequent upstream", data=df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)], hue="Ancestor")
+    (df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)]
+     .groupby("Ancestor")["Most frequent upstream"]
+     .value_counts(normalize=True)
+     .mul(100)
+     .rename('Percentage (by clade)')
+     .reset_index()
+     .pipe((seaborn.catplot, 'data'), x="Most frequent upstream", y='Percentage (by clade)', hue="Ancestor", kind='point', scale=0.5, legend=False,
+           palette=CM.get_map("ancestor"), aspect=1.5
+           ))
+
+    plt.legend(loc="best", title="Clade")
+    figure_options = FigureOptions(
+        save_fig=next_name(pd_work),
+        xlabel="Most frequent distance to upstream gene",
+        ylabel="Percent of components (by clade)"
+    )
+    plt.xlabel(figure_options.xlabel)
+    plt.ylabel(figure_options.ylabel)
+    save_figure(figure_options)
+
+    plt.show()
+
+    (df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)]
+     .groupby("Ancestor")["Most frequent upstream"]
+     .value_counts()
+     .rename('number')
+     .reset_index()
+     .pipe((seaborn.catplot, 'data'), x="Most frequent upstream", y='number', hue="Ancestor",
+           kind='point', scale=0.5, legend=False,
+           palette=CM.get_map("ancestor"), aspect=1.5
+           ))
+
+    plt.legend(loc="best", title="Clade")
+    figure_options = FigureOptions(
+        save_fig=next_name(pd_work),
+        xlabel="Most frequent distance to upstream gene",
+        ylabel="Number of components"
+    )
+    plt.xlabel(figure_options.xlabel)
+    plt.ylabel(figure_options.ylabel)
+    save_figure(figure_options)
+
+    plt.show()
+
+
+    f, ax1 = plt.subplots()
+    ax2 = ax1.twinx()
+    for ancestor, df_group in df.groupby("Ancestor"):
+        seaborn.distplot(df_group["Most frequent upstream"], kde=False, ax=ax1)
+
+        # ax2.set_ylim(0, 3)
+        ax2.yaxis.set_ticks([])
+        seaborn.kdeplot(df_group["Most frequent upstream"], ax=ax2)
+        ax1.set_xlabel('x var')
+        ax1.set_ylabel('Counts')
+    # g = seaborn.FacetGrid(df, hue="Ancestor")
+    # g = g.map(seaborn.distplot, "Most frequent upstream", hist=True)
+    plt.show()
+
+
+    print(df["Most frequent upstream"].value_counts(normalize=True))
+
     sns.lmplot(
-        df, "Most frequent upstream", "RPC(x,0)", hue="Ancestor", sns_kwargs={
+        df, "Most frequent upstream", "PC(x,0)", hue="Ancestor", sns_kwargs={
             "scatter": False, "lowess": True,
             "palette": CM.get_map("ancestor")
         },
-        figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-20, None], ylim=[0,1]),
+        figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-7, None], ylim=[0,1]),
     )
 
     sns.lmplot(
-        df, "Most frequent upstream", "RPC(x,3)", hue="Ancestor", sns_kwargs={
+        df, "Most frequent upstream", "PC(x,3)", hue="Ancestor", sns_kwargs={
             "scatter": False, "lowess": True,
             "palette": CM.get_map("ancestor")
         },
-        figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-20, None], ylim=[0,1])
+        figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-7, None], ylim=[0,1])
     )
 
     # NCBI sensitivity
     # collect:
     # average 5' per ancestor, r,
 
-    ranges = [(-20, -15), (-15, -10), (-10, -5), (-5,0), (0, 10), (10, 30), (30, 50), (50, 70)]
+    ranges = [(-5,0), (0, 10), (10, 30), (30, 50), (50, 70)]
     list_collect = list()
     for r in ranges:
 
@@ -822,17 +906,18 @@ def analyze_upstream_distances(env, df):
         seaborn.lineplot("range_avg", "GMS2=SBSP", data=curr_df,
                      color='r', legend=False,
                      ax=ax2)
-
+        ax.set_ylabel(None)
+        ax2.set_ylabel(None)
 
     plt.xticks(range_avgs, range_label)
     plt.show()
 
     fig, ax = plt.subplots()
     ax2 = ax.twinx()
-    seaborn.lineplot("range_avg", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", data=df_tmp, ax=ax, color="b")
-    seaborn.lineplot("range_avg", "GMS2=SBSP", data=df_tmp,
+    seaborn.lineplot("range_avg", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", data=df_tmp, ax=ax, color="b", ci=None, hue="Ancestor")
+    seaborn.lineplot("range_avg", "GMS2=SBSP", data=df_tmp, ci=None,
                      color='r', legend=False,
-                     ax=ax2)
+                     ax=ax2, hue="Ancestor")
     # plt.xticks(range_avgs, range_label)
     ax.set_ylim([0, None])
     ax2.set_ylim([0, None])
@@ -871,6 +956,30 @@ def analyze_support(env, df):
     pass
 
 
+def viz_summary_per_gcfid_per_step(env, df):
+    # type: (Environment, pd.DataFrame) -> None
+    pd_work = env['pd-work']
+
+    list_df = list()
+    for step in ["A", "B", "C"]:
+        df_summary_per_gcfid = get_summary_per_gcfid(df[df["Predicted-at-step"] == step])
+        df_summary_per_gcfid["SBSP Step"] = step
+        list_df.append(df_summary_per_gcfid)
+
+    df_per_gcfid_per_step = pd.concat(list_df, sort=False)
+
+    sns.catplot(
+        df_per_gcfid_per_step, "Ancestor", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="SBSP Step", kind="box",
+        legend_loc="best",
+        figure_options=FigureOptions(
+            save_fig=next_name(pd_work),
+            xlabel="Clade",
+            ylabel="Err(NCBI,GMS2=SBSP)"
+        )
+    )
+
+
+
 def viz_analysis_per_query(env, df, **kwargs):
     # type: (Environment, pd.DataFrame, Dict[str, Any]) -> None
 
@@ -884,8 +993,10 @@ def viz_analysis_per_query(env, df, **kwargs):
 
     # remove all step C
     df.drop(df.index[df["Predicted-at-step"] == "C"], inplace=True)
+    df.loc[df["Predicted-at-step"] == "B", "Predicted-at-step"] = "C"
+    df.loc[df["Predicted-at-step"] == "U", "Predicted-at-step"] = "B"
     # df.drop(df.index[df["Support"] < 5], inplace=True)
-
+    viz_summary_per_gcfid_per_step(env, df)
 
 
     df_summary_per_gcfid = get_summary_per_gcfid(df)
@@ -893,7 +1004,7 @@ def viz_analysis_per_query(env, df, **kwargs):
 
     analyze_upstream_distances(env, df[~df["Upstream-distance"].isnull()].copy())
     analyze_kimura_distances(env, df[~df["Kimura-to-query"].isnull()].copy())
-    analyze_support(env, df)
+    # analyze_support(env, df)
 
 
 
