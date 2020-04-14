@@ -3,7 +3,7 @@ import pandas as pd
 from typing import *
 from sbsp_general.msa_2 import MSAType, MultipleSeqAlignment, MSASinglePointMarker
 from sbsp_general.general import get_value
-from sbsp_options.msa import MSAOptions
+from sbsp_options.sbsp import SBSPOptions
 from sbsp_alg.msa_2 import get_positions_of_query_candidate_starts_in_msa_with_class
 from sbsp_ml import msa_features_2 as msa_features
 
@@ -16,7 +16,7 @@ def try_and_except(func, *args, **kwargs):
     return func(*args, **kwargs)
 
 def generate_features_for_position(msa_t, position, msa_options, **kwargs):
-    # type: (MSAType, int, MSAOptions, Dict[str, Any]) -> Dict[str, Any]
+    # type: (MSAType, int, SBSPOptions, Dict[str, Any]) -> Dict[str, Any]
 
     primary_defaults_for_features = get_value(kwargs, "primary_defaults_for_features", None)
     secondary_default_for_all = get_value(kwargs, "secondary_default_for_all", None)
@@ -92,7 +92,7 @@ def generate_features_for_position(msa_t, position, msa_options, **kwargs):
 
 
 def generate_features_for_msa(msa_t, msa_options, **kwargs):
-    # type: (MSAType, MSAOptions, Dict[str, Any]) -> pd.DataFrame
+    # type: (MSAType, SBSPOptions, Dict[str, Any]) -> pd.DataFrame
 
     # TODO: Clean up and use MSAType only
 
@@ -123,7 +123,7 @@ def generate_features_for_msa(msa_t, msa_options, **kwargs):
 
 
 def generate_features_for_msa_from_file(pf_msa, msa_options, **kwargs):
-    # type: (str, MSAOptions, Dict[str, Any]) -> pd.DataFrame
+    # type: (str, SBSPOptions, Dict[str, Any]) -> pd.DataFrame
 
     # read msa from file
     msa_t = MSAType.init_from_file(pf_msa)
@@ -135,7 +135,7 @@ def generate_features_for_msa_from_file(pf_msa, msa_options, **kwargs):
 
 
 def generate_features_for_msa_from_df(df_data, msa_options, **kwargs):
-    # type: (pd.DataFrame, MSAOptions, Dict[str, Any]) -> pd.DataFrame
+    # type: (pd.DataFrame, SBSPOptions, Dict[str, Any]) -> pd.DataFrame
 
     df_features = pd.DataFrame()
 

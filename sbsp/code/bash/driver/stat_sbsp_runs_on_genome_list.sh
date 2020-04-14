@@ -8,7 +8,6 @@ fn_q_labels=verified.gff
 fn_q_labels_true=verified.gff
 fn_t_labels=ncbi.gff
 pbs_conf=defaults
-tag=
 steps=""
 email_on_complete=
 
@@ -71,9 +70,8 @@ for pass in 1 2; do
                 --q-labels-true)    fn_q_labels_true=$2; shift;;
                 --q-labels)         fn_q_labels=$2; shift;;
                 --t-labels)         fn_t_labels=$2; shift;;
-                --tag)              tag="$2"; shift;;
                 -v|--verbose)       VERBOSE=$(($VERBOSE + 1));;
-                -e)                 email_on_complete=1;;
+                -e)                 email_on_complete=1; shift;;
                 --*)                error $1;;
                 -*)                 if [ $pass -eq 1 ]; then ARGS="$ARGS $1";
                                     else error $1; fi;;
@@ -93,12 +91,13 @@ done
 ([ -z "$query" ] || [ -z "$target" ] || [ -z "${sbsp_conf}" ]) && usage
 
 pf_q_list=$lists/${query}.list;
-pf_t_list=/scratch/karl/sbsp_data/${target}.dmnd;
+pf_t_list=$lists/${target}.list;
 pf_sbsp_conf=$config/sbsp_${sbsp_conf}.conf
 pf_pbs_conf=$config/pbs_${pbs_conf}.conf
 
 # check that files exist
 [ ! -f "${pf_q_list}" ] && { echo "File doesn't exist: $pf_q_list"; exit 1; };
+[ ! -f "${pf_t_list}" ] && { echo "File doesn't exist: $pf_t_list"; exit 1; };
 [ ! -f "${pf_sbsp_conf}" ] && { echo "File doesn't exist: $pf_sbsp_conf"; exit 1; };
 [ ! -f "${pf_pbs_conf}" ] && { echo "File doesn't exist: $pf_pbs_conf"; exit 1; };
 
@@ -106,18 +105,9 @@ pf_pbs_conf=$config/pbs_${pbs_conf}.conf
 fn_q_labels_no_ext="${fn_q_labels%.*}"
 fn_t_labels_no_ext="${fn_t_labels%.*}"
 
-if [ ! -z "$tag" ]; then
-    tag="${tag}_"
-fi
-
-pd_run=$exp/${tag}q_${query}_t_${target}_sbsp_${sbsp_conf}_ql_${fn_q_labels_no_ext}_tl_${fn_t_labels_no_ext}
-dn_compute=pbs_${tag}q_${query}_t_${target}_sbsp_${sbsp_conf}_ql_${fn_q_labels_no_ext}_tl_${fn_t_labels_no_ext}
+pd_run=$exp/q_${query}_t_${target}_sbsp_${sbsp_conf}_ql_${fn_q_labels_no_ext}_tl_${fn_t_labels_no_ext}
+dn_compute=pbs_q_${query}_t_${target}_sbsp_${sbsp_conf}_ql_${fn_q_labels_no_ext}_tl_${fn_t_labels_no_ext}
 pf_output=${pd_run}/output.csv
-
-if [ -f $pd_run/accuracy/accuracy.csv ]; then
-    echo "Run exists $query"
-    exit
-fi
 
 mkdir -p $pd_run
 
@@ -125,7 +115,7 @@ if verbose $INFO; then
     echo "Working directory: $pd_run"
 fi
 
-$bin/pipeline_msa_py.sh --pf-q-list $pf_q_list --pf-t-db $pf_t_list --fn-q-labels $fn_q_labels --pf-sbsp-options $pf_sbsp_conf --pf-pbs-options $pf_pbs_conf --pf-output $pf_output --pd-work $pd_run --fn-q-labels-true $fn_q_labels_true --dn-compute ${dn_compute} $steps
+$bin/pipeline_msa_py.sh --pf-q-list $pf_q_list --pf-t-list $pf_t_list --fn-q-labels $fn_q_labels --fn-t-labels $fn_t_labels --pf-msa-options $pf_sbsp_conf --pf-pbs-options $pf_pbs_conf --pf-output $pf_output --pd-work $pd_run --fn-q-labels-true $fn_q_labels_true --dn-compute ${dn_compute} $steps
 
 if [ ! -z ${email_on_complete} ]; then
     mail -s "Done" <<< "Job at ${pd_run}"  2> /dev/null

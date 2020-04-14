@@ -150,6 +150,9 @@ pf_gcfid_list=$lists/${gcfid}.list
 $bin/run_pipeline_sbsp_sh.sh  -q $gcfid -t $target_id -s 1 -p 1
 
 
+##### Gathering results
+
+
 
 
 

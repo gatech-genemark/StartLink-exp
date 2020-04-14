@@ -60,7 +60,7 @@ def main(env, args):
             func_args["env"] = func_args["env"].duplicate({"pd-work": args.pd_work})
             logger.critical("{}".format(func_args["env"]["pd-work"]))
 
-    logger.critical("{}\n{}".format(func, func_args))
+    # logger.critical("{}\n{}".format(func, func_args))
     output = {
         "data": func(**func_args)
     }

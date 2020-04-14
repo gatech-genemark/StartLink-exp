@@ -115,6 +115,10 @@ class LabelsComparisonDetailed:
             "a": Labels([x[0] for x in compare_3p_5p["match"].values()]),
             "b": Labels([x[0] for x in compare_3p_5p["match"].values()])
         }
+        comparison["labels"]["match-3p"] = {
+            "a": Labels([x[0] for x in compare_3p["match"].values()]),
+            "b": Labels([x[0] for x in compare_3p["match"].values()])
+        }
         return comparison
 
     @staticmethod
@@ -193,7 +197,15 @@ class LabelsComparisonDetailed:
 
         return self.comparison["all"]["labels"]["match-3p-5p"][source]
 
+    def match_3p_5p(self, source):
+        # type: (str) -> Labels
+        except_if_not_in_set(source, {"a", "b"})
+        return self.comparison["all"]["labels"]["match-3p-5p"][source]
 
+    def match_3p(self, source):
+        # type: (str) -> Labels
+        except_if_not_in_set(source, {"a", "b"})
+        return self.comparison["all"]["labels"]["match-3p"][source]
 
 
 

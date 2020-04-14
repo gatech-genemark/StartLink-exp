@@ -15,10 +15,10 @@ import pathmagic
 import sbsp_log  # runs init in sbsp_log and configures logger
 
 import sbsp_argparse.parallelization
-import sbsp_argparse.msa
+import sbsp_argparse.sbsp
 
 from sbsp_general import Environment
-from sbsp_options.msa import MSAOptions
+from sbsp_options.sbsp import SBSPOptions
 from sbsp_options.pbs import PBSOptions
 from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
 
@@ -26,12 +26,12 @@ from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
-from sbsp_pipeline.pipeline_msa import PipelineMSA
+from sbsp_pipeline.pipeline_msa import PipelineSBSP
 
 parser = argparse.ArgumentParser("Description of driver.")
 
 parser.add_argument('--pf-q-list', required=True, help="File containing names of query genomes")
-parser.add_argument('--pf-t-list', required=True, help="File containing names of target genomes")
+parser.add_argument('--pf-t-db', required=True, help="(Diamond) Blast database")
 parser.add_argument('--pf-output', required=True, help="Output file containing query-target information used by SBSP")
 
 parser.add_argument('--fn-q-labels', default="ncbi.gff", required=False, type=Union[str],
@@ -39,7 +39,7 @@ parser.add_argument('--fn-q-labels', default="ncbi.gff", required=False, type=Un
 parser.add_argument('--fn-t-labels', default="ncbi.gff", required=False, type=Union[str],
                     help="Name of target file(s) containing gene labels")
 
-parser.add_argument("--fn-q-labels-true", default=None, required=False, type=Union[str],
+parser.add_argument("--fn-q-labels-true", default="ncbi.gff", required=False, type=Union[str],
                     help="Name of true labels file. If set, accuracy is computed after MSA.")
 
 parser.add_argument('--steps', nargs="+", required=False,
@@ -52,7 +52,7 @@ parser.add_argument('--downstream-length-nt', required=False, default=None, type
                     help="The maximum number of downstream nucleotides to use in MSA")
 
 sbsp_argparse.parallelization.add_pbs_options(parser)
-sbsp_argparse.msa.add_msa_options(parser)
+sbsp_argparse.sbsp.add_sbsp_options(parser)
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -79,25 +79,15 @@ logger = logging.getLogger("logger")  # type: logging.Logger
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
 
-    msa_options = MSAOptions.init_from_dict(env, vars(args))
+    sbsp_options = SBSPOptions.init_from_dict(env, vars(args))
     pbs_options = PBSOptions.init_from_dict(env, vars(args))
 
-    pipeline_options = PipelineSBSPOptions(env,
-                                           pf_q_list=args.pf_q_list,
-                                           pf_t_list=args.pf_t_list,
-                                           pf_output=args.pf_output,
-                                           msa_options=msa_options,
-                                           fn_q_labels=args.fn_q_labels,
-                                           fn_t_labels=args.fn_t_labels,
-                                           fn_q_labels_true=args.fn_q_labels_true,
-                                           upstream_length_nt=args.upstream_length_nt,
-                                           downstream_length_nt=args.downstream_length_nt,
-                                           pbs_options=pbs_options,
-                                           steps=args.steps
-                                           )
+    pipeline_options = PipelineSBSPOptions(
+        env, **vars(args), sbsp_options=sbsp_options, pbs_options=pbs_options,
+    )
 
-    p_msa = PipelineMSA(env, pipeline_options)
-    p_msa.run()
+    p_sbsp = PipelineSBSP(env, pipeline_options)
+    p_sbsp.run()
 
 
 if __name__ == "__main__":

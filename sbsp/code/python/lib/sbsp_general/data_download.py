@@ -48,7 +48,8 @@ def download_assembly_summary_entry(entry, pd_output, **kwargs):
     output = {
             "assembly_accession": gcf,
             "asm_name": acc,
-            "name": entry["name"]
+            "name": entry["name"],
+            "parent_id": entry["parent_id"]
             }
 
     ftplink = entry["ftp_path"]
@@ -133,6 +134,8 @@ def download_assembly_summary_entry(entry, pd_output, **kwargs):
                         pd_gcfid
                     )
                 )
+            elif force_download == "no_download":
+                return output
             else:       # FIXME: it's getting out of control. Create different lists: updated, all valid, etc...
                 raise ValueError("nope")
         else:
@@ -162,6 +165,59 @@ def download_assembly_summary_entry(entry, pd_output, **kwargs):
 
     return output
 
+def compute_gc_from_file(pf_sequence):
+    # type: (str) -> float
+    return 0.0
+
+    from sbsp_io.sequences import read_fasta_into_hash
+    sequences = read_fasta_into_hash(pf_sequence)
+
+
+    counts = {"A": 0, "C": 0, "G": 0, "T": 0}
+
+    for seq in sequences.values():
+        for s in seq:
+            if s.upper() in {"A", "C", "G", "T"}:
+                counts[s] += 1
+
+    total = sum(counts.values())
+    count_gc = counts["G"] + counts["C"]
+
+    if total == 0:
+        return 0.0
+
+    return round(100 * count_gc / float(total), 2)
+
+def count_cds(pf_labels):
+    # type: (str) -> int
+
+    return int(run_shell_cmd("grep -c CDS {}".format(pf_labels), do_not_log=True))
+
+def get_annotation_date(pf_labels):
+    return run_shell_cmd("grep -m 1 \"annotation-date\" {}".format(pf_labels) +
+                         r" | awk '{print $2}'", do_not_log=True).strip()
+
+
+def get_genome_specific_attributes(pd_data, info):
+    # type: (str, Dict[str, Any]) -> Dict[str, Any]
+    gcfid = "{}_{}".format(info["assembly_accession"], info["asm_name"])
+    logger.debug("Genome specific: {}".format(gcfid))
+
+    pd_gcfid = os.path.join(pd_data, gcfid)
+    pf_sequences = os.path.join(pd_gcfid, "sequence.fasta")
+    pf_labels = os.path.join(pd_gcfid, "ncbi.gff")
+
+    gc = compute_gc_from_file(pf_sequences)
+    try:
+        num_genes = count_cds(pf_labels)
+    except Exception:
+        num_genes = 0
+    annotation_date = get_annotation_date(pf_labels)
+
+    return {"gc": gc, "num_genes": num_genes, "annotation_date": annotation_date}
+
+
+
 
 def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs):
     # type: (pd.DataFrame, str, Dict[str, Any]) -> GenomeInfoList
@@ -175,6 +231,7 @@ def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs
     """
 
     pf_output_list = get_value(kwargs, "pf_output_list", None)
+    attributes = get_value(kwargs, "attributes", dict(), default_if_none=True)
 
 
     df_assembly_summary = filter_entries_with_equal_taxid(
@@ -202,7 +259,10 @@ def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs
             "{}_{}".format(d["assembly_accession"], d["asm_name"]),
             11,
             attributes={
-                "name": d["name"]
+                "name": d["name"],
+                "parent_id": d["parent_id"],
+                **get_genome_specific_attributes(pd_output, d),
+                **attributes
             }
         ) for d in success_downloads
     ])
@@ -233,6 +293,7 @@ def filter_assembly_summary_by_ancestor(ancestor_tag, tag_type, taxonomy_tree, d
             # add name to all genomes
             for i in range(len(info_list)):
                 info_list[i]["name"] = genome_node["name_txt"].replace(",", " ")
+                info_list[i]["parent_id"] = genome_node["parent_id"]
             list_rows += info_list
 
     df_filtered = df_filtered.append(list_rows)
@@ -248,4 +309,5 @@ def download_data_by_ancestor(ancestor_tag, tag_type, taxonomy_tree, df_assembly
         ancestor_tag, tag_type, taxonomy_tree, df_assembly_summary
     )
 
-    return download_data_from_assembly_summary(df_assembly_summary_filtered, pd_output, **kwargs)
+    return download_data_from_assembly_summary(df_assembly_summary_filtered, pd_output,
+                                               attributes={"ancestor": ancestor_tag}, **kwargs)

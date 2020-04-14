@@ -1,30 +1,30 @@
 import os
 import timeit
+from shutil import copyfile
 from typing import *
 
-from sbsp_alg.sbsp_steps import sbsp_step_get_orthologs, sbsp_step_compute_features, sbsp_step_filter, sbsp_step_msa, \
-    sbsp_step_accuracy
+from sbsp_alg.sbsp_steps import sbsp_step_accuracy, sbsp_steps
 from sbsp_general import Environment
 from sbsp_io.general import read_rows_to_list
-from sbsp_options.msa import MSAOptions
 from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
 
 
-class PipelineMSA:
+class PipelineSBSP:
+
     class PipelineState:
         def __init__(self, list_pf_data):
             self.use_pbs = True  # FIXME: allow non-pbs option
             self.list_pf_data = list_pf_data
 
-            self._keep_only_exists()
+            self._only_keep_files_that_exist()
 
-        def _keep_only_exists(self):
+        def _only_keep_files_that_exist(self):
             # type: () -> ()
             self.list_pf_data = [curr for curr in self.list_pf_data if os.path.exists(curr)]
 
         @classmethod
         def from_file(cls, pf_list_pf_data):
-            # type: (str) -> PipelineMSA.PipelineState
+            # type: (str) -> PipelineSBSP.PipelineState
 
             list_pf_data = read_rows_to_list(pf_list_pf_data)
             return cls(list_pf_data)
@@ -40,25 +40,16 @@ class PipelineMSA:
 
         elapsed_times = dict()
 
-        curr_time = timeit.default_timer()
-        state = self._run_get_orthologs()
-        elapsed_times["1-orthologs"] = timeit.default_timer() - curr_time
+        # Copy Information file to local directory
+        copyfile(self.pipeline_options["pf-q-list"], os.path.join(self.env["pd-work"], "query.list"))
 
         curr_time = timeit.default_timer()
-        state = self._run_compute_features(state)
-        elapsed_times["2-features"] = timeit.default_timer() - curr_time
+        state = self._run_helper()
+        elapsed_times["1-compute-steps"] = timeit.default_timer() - curr_time
 
         curr_time = timeit.default_timer()
-        state = self._run_filter(state)
-        elapsed_times["3-filter"] = timeit.default_timer() - curr_time
-
-        curr_time = timeit.default_timer()
-        state = self._run_msa(state)
-        elapsed_times["4-msa"] = timeit.default_timer() - curr_time
-
-        curr_time = timeit.default_timer()
-        state = self._accuracy(state)
-        elapsed_times["5-accuracy"] = timeit.default_timer() - curr_time
+        self._accuracy(state)
+        elapsed_times["2-accuracy"] = timeit.default_timer() - curr_time
 
         time_string = "\n".join([
                 "{},{}".format(key, value) for key, value in elapsed_times.items()
@@ -69,42 +60,6 @@ class PipelineMSA:
             f.write(time_string)
             f.close()
 
-    def _run_get_orthologs(self):
-        # type: () -> PipelineState
-        curr_env = self.env.duplicate({
-            "pd-work": os.path.join(self.env["pd-work"], "orthologs")
-        })
-        result = sbsp_step_get_orthologs(curr_env, self.pipeline_options)
-
-        return PipelineMSA.PipelineState(result)
-
-    def _run_compute_features(self, state):
-        # type: (PipelineState) -> PipelineState
-        curr_env = self.env.duplicate({
-            "pd-work": os.path.join(self.env["pd-work"], "features")
-        })
-        result = sbsp_step_compute_features(curr_env, self.pipeline_options, state.list_pf_data)
-
-        return PipelineMSA.PipelineState(result)
-
-    def _run_filter(self, state):
-        # type: (PipelineState) -> PipelineState
-        curr_env = self.env.duplicate({
-            "pd-work": os.path.join(self.env["pd-work"], "filter")
-        })
-        result = sbsp_step_filter(curr_env, self.pipeline_options, state.list_pf_data)
-
-        return PipelineMSA.PipelineState(result)
-
-    def _run_msa(self, state):
-        # type: (PipelineState) -> PipelineState
-        curr_env = self.env.duplicate({
-            "pd-work": os.path.join(self.env["pd-work"], "msa")
-        })
-        result = sbsp_step_msa(curr_env, self.pipeline_options, state.list_pf_data)
-
-        return PipelineMSA.PipelineState(result)
-
     def _accuracy(self, state):
         # type: (PipelineState) -> PipelineState
         curr_env = self.env.duplicate({
@@ -112,4 +67,13 @@ class PipelineMSA:
         })
         result = sbsp_step_accuracy(curr_env, self.pipeline_options, state.list_pf_data)
 
-        return PipelineMSA.PipelineState(result)
+        return PipelineSBSP.PipelineState(result)
+
+    def _run_helper(self, ):
+        # type: () -> PipelineState
+        curr_env = self.env.duplicate({
+            "pd-work": os.path.join(self.env["pd-work"], "steps")
+        })
+        result = sbsp_steps(curr_env, self.pipeline_options)
+
+        return PipelineSBSP.PipelineState(result)

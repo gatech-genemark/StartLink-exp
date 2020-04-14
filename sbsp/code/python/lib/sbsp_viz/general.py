@@ -26,10 +26,23 @@ def add_identity(axes, *line_args, **line_kwargs):
     axes.callbacks.connect('ylim_changed', callback)
     return axes
 
+def save_figure(figure_options, fig=None):
+    # type: (FigureOptions, plt.Figure) -> None
+    if figure_options is not None and figure_options.save_fig is not None:
+        if fig:
+            fig.tight_layout()
+            plt.savefig(figure_options.save_fig) #, bbox_index="tight")
+        else:
+            plt.savefig(figure_options.save_fig , bbox_index="tight")
+
 
 class FigureOptions:
 
-    def __init__(self, title=None, xlabel=None, ylabel=None, xlim=None, ylim=None, save_fig=None):
+    def __init__(self, title=None, xlabel=None, ylabel=None, xlim=None, ylim=None, save_fig=None, **kwargs):
+        # type: (str, str, str, Tuple(int, int), Tuple(int, int), str, Dict[str, Any]) -> None
+        self.balanced = get_value(kwargs, "balanced", False)
+        self.legend_title = get_value(kwargs, "legend_title", None)
+
         self.title = title
         self.xlabel = xlabel
         self.ylabel = ylabel
@@ -55,6 +68,16 @@ class FigureOptions:
             axis.set_xlim(*figure_options.xlim)
         if figure_options.ylim:
             axis.set_ylim(*figure_options.ylim)
+
+        if figure_options.balanced:
+            min_xy = min(axis.get_xlim()[0], axis.get_ylim()[0])
+            max_xy = max(axis.get_xlim()[1], axis.get_ylim()[1])
+
+            axis.set_xlim(min_xy, max_xy)
+            axis.set_ylim(min_xy, max_xy)
+
+        if figure_options.legend_title:
+            axis.legend().texts[0].set_text(figure_options.legend_title)
 
 
 
@@ -197,9 +220,9 @@ def plot_scatter_matrix(df_data, column_names, color_by, figure_options=None, **
     else:
         ax = sns.pairplot(df_features, plot_kws={"s": 10})
 
-    for lh in ax._legend.legendHandles:
-        lh.set_alpha(1)
-        lh._sizes = [50]
+    # for lh in ax._legend.legendHandles:
+    #     lh.set_alpha(1)
+    #     lh._sizes = [50]
 
         # sm = scatter_matrix(df_features, diagonal="kde", figsize=(10, 10))
     # # Change label rotation

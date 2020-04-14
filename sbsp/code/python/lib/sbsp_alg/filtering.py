@@ -4,12 +4,12 @@ import pandas as pd
 from sbsp_general import Environment
 from sbsp_general.general import get_value
 from sbsp_io.general import write_string_to_file
-from sbsp_options.msa import MSAOptions
+from sbsp_options.sbsp import SBSPOptions
 
 
 def filter_orthologs(env, pf_data, pf_output, **kwargs):
     # type: (Environment, str, str, Dict[str, Any]) -> str
-    msa_options = get_value(kwargs, "msa_options", MSAOptions(env))  # type: MSAOptions
+    msa_options = get_value(kwargs, "msa_options", SBSPOptions(env))  # type: SBSPOptions
     pf_filter_stats = get_value(kwargs, "pf_filter_stats", None)
     filter_non_group_only = get_value(kwargs, "filter_non_group_only", True)
 

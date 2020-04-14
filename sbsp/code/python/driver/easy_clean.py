@@ -1,22 +1,21 @@
 # Karl Gemayel
 # Georgia Institute of Technology
 #
-# Created:
+# Created: 3/19/20
 
 import logging
 import argparse
 import pandas as pd
 from typing import *
 
-# noinspection PyUnresolvedReferences
-import pathmagic                        # add path to custom library
+# noinspection All
+import pathmagic
 
-# Custom library imports
-import sbsp_general
+# noinspection PyUnresolvedReferences
+import sbsp_log  # runs init in sbsp_log and configures logger
+
+# Custom imports
 from sbsp_general import Environment
-from sbsp_argparse.sbsp import add_sbsp_options
-from sbsp_options.sbsp import SBSPOptions
-import sbsp_alg.feature_generation
 
 # ------------------------------ #
 #           Parse CMD            #
@@ -24,10 +23,8 @@ import sbsp_alg.feature_generation
 
 parser = argparse.ArgumentParser("Description of driver.")
 
-parser.add_argument('--pf-data', required=True, help="File containing path to MSA file(s), under column pf-msa-output")
-parser.add_argument('--pf-features', required=True, help="Output file with features")
-
-add_sbsp_options(parser)
+parser.add_argument('--pf-input', required=True)
+parser.add_argument('--pf-output', required=True)
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -48,19 +45,14 @@ my_env = Environment(pd_data=parsed_args.pd_data,
 
 # Setup logger
 logging.basicConfig(level=parsed_args.loglevel)
-logger = logging.getLogger("logger")                    # type: logging.Logger
+logger = logging.getLogger("logger")  # type: logging.Logger
 
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
-
-    msa_options = SBSPOptions.init_from_dict(env, vars(args))
-
-    df_data = pd.read_csv(args.pf_data, header=0)
-    df_features = sbsp_alg.feature_generation.generate_features_for_msa_from_df(df_data, msa_options,
-                                                                                max_number_downstream=3)
-
-    df_features.to_csv(args.pf_features, index=False)
+    df = pd.read_csv(args.pf_input, header=0)
+    df.drop(["q-lorf_nt", "t-lorf_nt"], inplace=True)
+    df.to_csv(args.pf_output, index=False)
 
 
 if __name__ == "__main__":

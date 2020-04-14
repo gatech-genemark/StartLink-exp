@@ -129,14 +129,14 @@ def pipeline_step_compute_accuracy(env, df, pipeline_options):
         labels = read_labels_from_file(pf_q_labels_true, shift=0)
 
         df_add_is_true_start(df, labels, "q-", "is-true",
-                                                    coordinates_suffix="-msa")
+                                                    coordinates_suffix="-sbsp")
         df_add_distance_between_predicted_and_true(
             df, labels, "q-", "distance-to-true",
-            coordinates_suffix="-msa")
+            coordinates_suffix="-sbsp")
 
 
     # get labels
-    genome_to_pf_labels = df_print_labels(env, df, "q", suffix_coordinates="msa",
+    genome_to_pf_labels = df_print_labels(env, df, "q", suffix_coordinates="sbsp",
                                            suffix_fname="")
 
     # print accuracies

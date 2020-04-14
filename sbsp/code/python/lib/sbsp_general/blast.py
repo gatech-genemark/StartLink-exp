@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os
+from subprocess import CalledProcessError
 from typing import *
 
 import numpy as np
@@ -15,10 +16,11 @@ def gen_cmd_run_blastp(pf_q_sequences, pf_blast_db, pf_blast_out, use_diamond, *
     # type: (str, str, str, bool, **str) -> str
 
     max_evalue = sbsp_general.general.get_value(kwargs, "max_evalue", None)
+    block_size = sbsp_general.general.get_value(kwargs, "block_size", 2, default_if_none=True)
 
     if use_diamond:
-        cmd = "diamond blastp -d {} -q {} -o {} --outfmt 5 --quiet -k 0 --subject-cover 80 --query-cover 80 ".format(
-            pf_blast_db, pf_q_sequences, pf_blast_out
+        cmd = "diamond blastp -b {} -d {} -q {} -o {} --outfmt 5 --quiet -k 0 --subject-cover 80 --query-cover 80 ".format(
+            block_size, pf_blast_db, pf_q_sequences, pf_blast_out
         )
 
         if max_evalue is not None:
@@ -50,8 +52,10 @@ def run_blast_alignment(pf_q_sequences, pf_blast_db, pf_blast_out, use_diamond, 
     # type: (str, str, str, bool, **str) -> None
 
     cmd = gen_cmd_run_blastp(pf_q_sequences, pf_blast_db, pf_blast_out, use_diamond, **kwargs)
-    print(cmd)
-    sbsp_general.general.run_shell_cmd(cmd)
+    try:
+        sbsp_general.general.run_shell_cmd(cmd)
+    except CalledProcessError:
+        raise ValueError("Couldn't run blast")
 
 
 def create_blast_database(pf_input, pf_blast_db, seq_type="nucl", use_diamond=True):
@@ -67,6 +71,10 @@ def run_blast(env, pf_q_list, pf_t_list, pf_blast_output, **kwargs):
     fn_t_labels = sbsp_general.general.get_value(kwargs, "fn_t_labels", "ncbi.gff")
     fn_q_proteins = sbsp_general.general.get_value(kwargs, "fn_q_proteins", "q_proteins.faa")
     fn_t_proteins = sbsp_general.general.get_value(kwargs, "fn_t_proteins", "t_proteins.faa")
+
+    fn_q_nucl = "q.fnt"
+    fn_t_nucl = "t.fnt"
+
     fn_blast_db = sbsp_general.general.get_value(kwargs, "fn_blast_db", "db")
     clean = sbsp_general.general.get_value(kwargs, "clean", False)
     max_evalue = sbsp_general.general.get_value(kwargs, "max_evalue", None)

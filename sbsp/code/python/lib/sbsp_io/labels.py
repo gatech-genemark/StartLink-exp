@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+from sbsp_general.general import get_value
 
 sys.path.append(os.path.dirname(__file__) + "/..")       # add custom library directory to path
 
@@ -30,9 +31,13 @@ def create_attribute_dict(attribute_string, delimiter=";"):
 
     return attributes
 
-def read_labels_from_file(filename, shift=-1, name=None):
-    # type: (str,  int, Union[str, None]) -> sbsp_general.labels.Labels
+def read_labels_from_file(filename, shift=-1, name=None, **kwargs):
+    # type: (str,  int, Union[str, None], Dict[str, Any]) -> sbsp_general.labels.Labels
     # FIXME: only supports gff
+
+    ignore_frameshifted = get_value(kwargs, "ignore_frameshifted", False)
+    ignore_partial = get_value(kwargs, "ignore_partial", False)
+    tools = get_value(kwargs, "tools", None)
 
     labels = sbsp_general.labels.Labels(name=name)
 
@@ -58,6 +63,12 @@ def read_labels_from_file(filename, shift=-1, name=None):
                     },
                     attributes=attributes
                 )
+
+                if label.is_partial() or label.is_frameshifted():
+                    continue
+
+                if tools is not None and m.group(2) not in tools:
+                    continue
 
                 labels.add(label)
     return labels

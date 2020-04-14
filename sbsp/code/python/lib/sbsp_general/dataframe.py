@@ -11,7 +11,7 @@ from sbsp_alg.phylogeny import k2p_distance, global_alignment_aa_with_gap
 from sbsp_alg.gene_distances import *
 from sbsp_general import Environment
 from sbsp_general.general import get_value, except_if_not_in_set
-from sbsp_options.msa import MSAOptions
+from sbsp_options.sbsp import SBSPOptions
 from typing import *
 # from memory_profiler import profile
 
@@ -138,6 +138,8 @@ def df_add_labeled_sequences(env, df, **kwargs):
     if source != "both":
         sources = [source]
 
+    df["keep"] = True
+
     # add to dataframe
     for index, row in df.iterrows():
 
@@ -154,7 +156,10 @@ def df_add_labeled_sequences(env, df, **kwargs):
             )
 
             if key not in sequences_per_genome[s].keys():
-                raise ValueError("Couldn't find sequence of key ({})".format(key))
+                df.at[index, "keep"] = False
+                logger.warning("Couldn't find sequence of key ({})".format(key))
+                continue
+                #raise ValueError("Couldn't find sequence of key ({})".format(key))
 
             # for types of sequence
             for sequence_type in ["prot", "nucl"]:           # FIXME: change prot nucl to aa/nt
@@ -167,6 +172,9 @@ def df_add_labeled_sequences(env, df, **kwargs):
 
                     df.at[index, "{}-{}-position-of-5prime-in-msa-fragment-no-gaps".format(s, sequence_type)] = \
                         sequences_per_genome[s][key]["{}-pos-5prime-in-frag".format(sequence_type)]
+
+    df = df[df["keep"] == True]
+    df.drop("keep", axis=1, inplace=True)
 
     return df
 
@@ -411,7 +419,7 @@ def df_compute_kimura(env, df, **kwargs):
 
 def df_filter(env, df, **kwargs):
 
-    msa_options = get_value(kwargs, "msa_options", MSAOptions(env))     # type: (MSAOptions)
+    msa_options = get_value(kwargs, "msa_options", SBSPOptions(env))     # type: (SBSPOptions)
     pf_filter_stats = get_value(kwargs, "pf_filter_stats", None)
     filter_non_group_only = get_value(kwargs, "filter_non_group_only", True)
 
@@ -451,10 +459,12 @@ def df_filter(env, df, **kwargs):
 
 
 
-def df_get_label_from_row(df, row_number, source, suffix_coordinates=None):
+def df_get_label_from_row(df, row_number, source, suffix_coordinates=None, **kwargs):
     # type: (pd.DataFrame, int, str, str) -> sbsp_general.labels.Label
 
     except_if_not_in_set(source, ["q", "t"])
+
+    extra_attributes = get_value(kwargs, "attributes", None)
 
     suffix = ""
     if suffix_coordinates is not None:
@@ -463,6 +473,9 @@ def df_get_label_from_row(df, row_number, source, suffix_coordinates=None):
     attributes = dict()
     if "predicted-at-step" in df:
         attributes["predicted-at-step"] = df.at[row_number, "predicted-at-step"]
+
+    if extra_attributes is not None:
+        attributes.update(extra_attributes)
 
     return sbsp_general.labels.Label.from_fields(
         {
@@ -498,9 +511,13 @@ def df_get_labels_per_genome(df, source, **kwargs):
 
     labels_per_genome = dict()
 
-    for index, row in df.iterrows():
+    for q_key, df_group in df.groupby("q-key", as_index=False):
 
-        label = df_get_label_from_row(df, index, source, suffix_coordinates)
+        index = df_group.index[0]
+
+        label = df_get_label_from_row(df, index, source, suffix_coordinates, attributes={
+            "num_support": len(df_group)
+        })
         genome = df.at[index, "{}-{}".format(source, "genome")]
 
         curr_key = sbsp_general.labels.create_gene_key_from_label(label)

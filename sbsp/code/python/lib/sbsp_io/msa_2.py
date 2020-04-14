@@ -71,7 +71,7 @@ def add_gene_labels_from_file(env, df, **kwargs):
 def get_reference_position_in_msa(msa_t, df, **kwargs):
     # type: (MSAType, pd.DataFrame, Dict[str, Any]) -> Union[int, None]
 
-    suffix_msa_coordinates = get_value(kwargs, "suffix_msa_coordinates", "msa")
+    suffix_msa_coordinates = get_value(kwargs, "suffix_msa_coordinates", "sbsp")
     suffix_ref_coordinates = get_value(kwargs, "suffix_ref_coordinates", "ref")
     msa_nt = get_value(kwargs, "msa_nt", False)
     fn_q_labels_true = get_value(kwargs, "fn_q_labels_true", "verified.gff")

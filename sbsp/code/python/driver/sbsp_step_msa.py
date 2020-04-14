@@ -20,7 +20,7 @@ from sbsp_general import Environment
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
-from sbsp_options.msa import MSAOptions
+from sbsp_options.sbsp import SBSPOptions
 
 parser = argparse.ArgumentParser("Runs the SBSP MSA step.")
 
@@ -65,7 +65,7 @@ logger = logging.getLogger("logger")  # type: logging.Logger
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
-    msa_options = MSAOptions.init_from_dict(env, vars(args))
+    msa_options = SBSPOptions.init_from_dict(env, vars(args))
 
     run_sbsp_msa(env, args.pf_data, args.pf_output,
                  msa_options=msa_options,

@@ -1,33 +1,37 @@
 # Karl Gemayel
 # Georgia Institute of Technology
 #
-# Created: 12/16/19
+# Created: 3/10/20
 
 import logging
 import argparse
 from typing import *
 
 # noinspection All
+from Bio.Seq import Seq
+
 import pathmagic
 
 # noinspection PyUnresolvedReferences
 import sbsp_log  # runs init in sbsp_log and configures logger
 
 # Custom imports
-from sbsp_alg.filtering import filter_orthologs
 from sbsp_general import Environment
 
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
-from sbsp_options.sbsp import SBSPOptions
+from sbsp_general.labels import Label, Coordinates
+from sbsp_io.sequences import read_fasta_into_hash
 
 parser = argparse.ArgumentParser("Description of driver.")
 
-parser.add_argument('--pf-data', required=True, help="CSV Data file")
-parser.add_argument('--pf-output', required=True, help="Output file containing features")
+parser.add_argument('--pf-sequence', required=True)
+parser.add_argument('--accession', type=str, required=True)
+parser.add_argument('--left', type=int, required=True)
+parser.add_argument('--right', type=int, required=True)
+parser.add_argument('--strand', type=str, required=True)
 
-parser.add_argument('--pf-msa-options', required=True, help="Configuration file containing MSA options")
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -51,13 +55,41 @@ logging.basicConfig(level=parsed_args.loglevel)
 logger = logging.getLogger("logger")  # type: logging.Logger
 
 
+def get_fragment(sequences, label):
+    # type: (Dict[str, Seq], Label) -> Seq
+
+    if label.seqname() not in sequences:
+        raise ValueError("Could not locate sequence with accession: {}".format(label.seqname()))
+
+    seq = sequences[label.seqname()]
+
+    if label.left() < 0 or label.right() >= len(seq):
+        raise ValueError("Coordinates out of bound: [{}, {}] not in [0, {}]".format(
+            label.left(), label.right(), len(seq)-1
+        ))
+
+    frag = seq[label.left():label.right()+1]
+
+    if label.strand() == "-":
+        frag = frag.reverse_complement()
+
+    return frag
+
+
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
-    msa_options = SBSPOptions.init_from_dict(env, vars(args))
 
-    filter_orthologs(env, args.pf_data, args.pf_output,
-                     msa_options=msa_options)
+    sequences = read_fasta_into_hash(args.pf_sequence)
+    label = Label(
+        Coordinates(args.left-1, args.right-1, args.strand),
+        args.accession
+    )
 
+    try:
+        frag = get_fragment(sequences, label)
+        print(frag)
+    except ValueError as e:
+        print(e)
 
 if __name__ == "__main__":
     main(my_env, parsed_args)

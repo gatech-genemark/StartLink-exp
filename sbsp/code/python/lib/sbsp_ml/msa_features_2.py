@@ -8,7 +8,7 @@ import copy
 
 import sbsp_alg.msa
 from sbsp_general.msa_2 import MSAType, MultipleSeqAlignment
-from sbsp_options.msa import MSAOptions
+from sbsp_options.sbsp import SBSPOptions
 from sbsp_general.general import get_value
 from sbsp_io.general import read_rows_to_list
 import Bio.SubsMat.MatrixInfo
@@ -33,7 +33,7 @@ class ScoringMatrix:
 
     @staticmethod
     def extend_blosum(matrix, stop_to_aa=-4, stop_to_stop=1, gap_and_aa=-4, gap_and_gap=-1):
-        # type: (Dict[(str, str), float], int, int) -> None
+        # type: (Dict[(str, str), float], int, int, int, int) -> None
         """
         Extends blosum by making it symmetric (why the hell isn't it!!), and adding mapping to
         stop codons (i.e. *)
@@ -79,7 +79,7 @@ class ScoringMatrix:
 
 
 def compute_upstream_score(msa_t, position, msa_options, **kwargs):
-    # type: (MSAType, int, MSAOptions, Dict[str, Any]) -> float
+    # type: (MSAType, int, SBSPOptions, Dict[str, Any]) -> float
 
     require_full_length = get_value(kwargs, "require_full_length", False)
     ignore_gaps_in_query = get_value(kwargs, "ignore_gaps_in_query", False)
@@ -112,7 +112,7 @@ def compute_upstream_score(msa_t, position, msa_options, **kwargs):
 
 
 def compute_downstream_score(msa_t, position, msa_options, **kwargs):
-    # type: (MSAType, int, MSAOptions, Dict[str, Any]) -> float
+    # type: (MSAType, int, SBSPOptions, Dict[str, Any]) -> float
 
     require_full_length = get_value(kwargs, "require_full_length", False)
     ignore_gaps_in_query = get_value(kwargs, "ignore_gaps_in_query", False)
@@ -145,12 +145,12 @@ def compute_downstream_score(msa_t, position, msa_options, **kwargs):
 def compute_simple_saas(msa_t, i):
     # type: (MSAType, int) -> float
 
-    num_vli = sum(1 for j in range(msa_t.number_of_sequences()) if msa_t[j][i] in {"v", "l", "i"})
+    num_vli = sum(1 for j in range(msa_t.number_of_sequences()) if msa_t[j][i] in {"v", "l", "i", "-"})
 
     return float(num_vli) / msa_t.number_of_sequences()
 
 def compute_5prime_score(msa_t, position, msa_options, **kwargs):
-    # type: (MSAType, int, MSAOptions, Dict[str, Any]) -> float
+    # type: (MSAType, int, SBSPOptions, Dict[str, Any]) -> float
 
     num_upper = sbsp_alg.msa.count_num_upper(msa_t.list_alignment_sequences, position, msa_options)
     start_identity = num_upper / float(msa_t.number_of_sequences())

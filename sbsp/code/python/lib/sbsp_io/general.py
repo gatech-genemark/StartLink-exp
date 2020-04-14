@@ -34,6 +34,14 @@ def mkdir_p(path):
             raise
 
 
+def remove_p(*path):
+    # type: (List[str]) -> None
+    for p in path:
+        if os.path.isfile(p):
+            os.remove(p)
+
+
+
 def split_file_with_header(pf_in, split_tag, num_splits, delimiter=",", pd_work=None):
     # type: (str, str, int, str) -> list
     """

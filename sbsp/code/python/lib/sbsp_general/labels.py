@@ -123,6 +123,10 @@ class Label:
 
         return self._attributes[attribute] if attribute in self._attributes else None
 
+    def set_attribute_value(self, attribute, value):
+        # type: (str, Any) -> None
+        self._attributes[attribute] = value
+
     def is_partial(self):
         # type: () -> bool
 
@@ -345,10 +349,17 @@ class Labels:
             raise NotImplemented()
 
         if coordinate == "left":
-            return Labels(sorted(self._labels, key=lambda l: (l.seqname(), l.coordinates().left)))
+            return Labels(sorted(self._labels, key=lambda l: (l.seqname(), l.coordinates().left)), name=self.name)
 
         else:
-            return Labels(sorted(self._labels, key=lambda l: (l.seqname(), l.coordinates().right)))
+            return Labels(sorted(self._labels, key=lambda l: (l.seqname(), l.coordinates().right)), name=self.name)
+
+    def sort_by_attribute(self, attribute, in_place=False):
+        # type: (str, bool) -> Labels
+        if in_place:
+            raise NotImplementedError()
+
+        return Labels(sorted(self._labels, key=lambda l: l.get_attribute_value(attribute)), name=self.name)
 
     @staticmethod
     def _split_by_overlap_helper(labels, labels_reference, strand):

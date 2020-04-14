@@ -39,7 +39,7 @@ parser.add_argument('--pf-output-list', required=True, help="Path to list file c
 
 parser.add_argument('--dry-run', default=False, action="store_true")
 
-parser.add_argument('--force-download', type=str, choices=["any", "annotation_changed"], default=None)
+parser.add_argument('--force-download', type=str, choices=["any", "annotation_changed", "no_download"], default=None)
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
