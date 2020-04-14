@@ -43,11 +43,11 @@ def get_positions_of_query_candidate_starts_in_msa_with_class(msa_t, **kwargs):
     def get_class(reference_position, current_position):
         # type: (int, int) -> str
         if current_position < reference_position:
-            return "upstream"
+            return "Non-coding"
         if current_position == reference_position:
-            return "reference"
+            return "True Start"
         if current_position > reference_position:
-            return "downstream"
+            return "Coding"
 
     for pos in range(msa_t.alignment_length()):
 
@@ -57,15 +57,15 @@ def get_positions_of_query_candidate_starts_in_msa_with_class(msa_t, **kwargs):
 
             # early stopping for downstream
             if max_number_downstream is not None:
-                if  curr_class == "downstream" and num_downstream >= max_number_downstream:
+                if  curr_class == "Coding" and num_downstream >= max_number_downstream:
                     break
 
             list_positions.append(pos)
             list_class.append(curr_class)
 
-            if curr_class == "downstream":
+            if curr_class == "Coding":
                 num_downstream += 1
-            if curr_class == "upstream":
+            if curr_class == "Non-coding":
                 num_upstream += 1
 
     # filter upstream if set
