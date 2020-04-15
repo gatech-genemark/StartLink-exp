@@ -33,7 +33,7 @@ from sbsp_io.sequences import read_fasta_into_hash, write_fasta_hash_to_file
 parser = argparse.ArgumentParser("Description of driver.")
 
 parser.add_argument('--pf-genome-list', required=True, help="List of genome names")
-parser.add_argument('--upstream-length-nt', required=True, help="Length of upstream region. "
+parser.add_argument('--upstream-length-nt', required=True, type=int, help="Length of upstream region. "
                                                                 "Stop codons will be removed")
 
 parser.add_argument('--add-candidates-in-upstream-length', type=int, default=99)
@@ -41,6 +41,7 @@ parser.add_argument('--add-candidates-in-downstream-length', type=int, default=9
 parser.add_argument('--num-starts-upstream', type=int, default=0)
 parser.add_argument('--num-starts-downstream', type=int, default=0)
 
+parser.add_argument('--pf-output', required=True, help="CSV output file")
 parser.add_argument('--pd-output', required=True, help="Directory in which sequence.fasta and ncbi.gff will be created")
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
@@ -281,6 +282,7 @@ def main(env, args):
     sequences = dict()          # type: Dict[str, str]
     labels = Labels()
 
+    list_entries = list()
     for genome_info in gil:
         list_sequence_label_pair = get_single_candidate_genes(
             env,
@@ -305,11 +307,24 @@ def main(env, args):
             sequences[lab.seqname()] = seq
             labels.add(lab)
 
+            list_entries.append({
+                "accession": lab.seqname(),
+                "left": lab.left() + 1,
+                "right": lab.right() + 1,
+                "strand": lab.strand(),
+                "sequence": str(seq),
+                "num-upstream": args.num_starts_upstream,
+                "num-downstream": args.num_starts_downstream,
+
+            })
     # print labels and sequences to file
     mkdir_p(args.pd_output)
 
     write_fasta_hash_to_file(sequences, os.path.join(args.pd_output, "sequence.fasta"))
     write_labels_to_file(labels, os.path.join(args.pd_output, "ncbi.gff"))
+
+    df = pd.DataFrame(list_entries)
+    df.to_csv(args.pf_output, index=False)
 
 
 if __name__ == "__main__":
