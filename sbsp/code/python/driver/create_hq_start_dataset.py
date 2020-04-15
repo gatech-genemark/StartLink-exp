@@ -32,8 +32,10 @@ parser.add_argument('--pf-genome-list', required=True, help="List of genome name
 parser.add_argument('--num-of-starts-upstream', type=int, required=True, help="Number of starts to add upstream of true")
 parser.add_argument('--num-of-starts-downstream', type=int, required=True, help="Number of starts to add downstream of true")
 
-parser.add_argument('--pf-sequences-output', required=True)
-parser.add_argument('--pf-labels-output', required=True)
+# parser.add_argument('--pf-sequences-output', required=True)
+# parser.add_argument('--pf-labels-output', required=True)
+
+parser.add_argument('--pf-output', required=True, help="CSV output file")
 
 parser.add_argument('--mean-inter-start-distance-aa', type=int, required=False, default=5, help="Distance between starts")
 
@@ -110,7 +112,7 @@ def add_starts(frag, pos_true):
 
     for n in range(parsed_args.num_of_starts_downstream):
         try:
-            new_pos = random.randint(pos_true_aa+1, int(len(frag)/3 - 2)) * 3
+            new_pos = random.randint(pos_true_aa+1, min(int(len(frag)/3 - 2), pos_true_aa+1 + 50)) * 3
         except ValueError:
             continue
 
@@ -291,11 +293,28 @@ def main(env, args):
         [d["label"] for d in info]
     )
 
-    from sbsp_io.labels import write_labels_to_file
-    write_labels_to_file(labels, args.pf_labels_output)
+    # from sbsp_io.labels import write_labels_to_file
+    # write_labels_to_file(labels, args.pf_labels_output)
+    #
+    # from sbsp_io.sequences import write_fasta_hash_to_file
+    # write_fasta_hash_to_file(accession_to_seq, args.pf_sequences_output)
 
-    from sbsp_io.sequences import write_fasta_hash_to_file
-    write_fasta_hash_to_file(accession_to_seq, args.pf_sequences_output)
+    # create dataframe
+    list_entries = [
+        {
+            "accession": i["label"].seqname(),
+            "left": i["label"].left() + 1,
+            "right": i["label"].right() + 1,
+            "strand": i["label"].strand(),
+            "sequence": str(i["sequence"]),
+            "num-upstream": args.num_of_starts_upstream,
+            "num-downstream": args.num_of_starts_downstream,
+
+        } for i in info
+    ]
+
+    df = pd.DataFrame(list_entries)
+    df.to_csv(args.pf_output, index=False)
 
 
 if __name__ == "__main__":
