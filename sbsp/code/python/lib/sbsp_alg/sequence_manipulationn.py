@@ -104,5 +104,5 @@ def add_candidate_starts(sequence, label, **kwargs):
 
         update_sequence_with_codons(list_seq, list_positions)
 
-    return str(list_seq)
+    return "".join(list_seq)
 
