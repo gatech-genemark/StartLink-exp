@@ -128,6 +128,17 @@ def add_starts(frag, pos_true):
     return "".join(frag_list)
 
 
+def remove_starts_in_region(frag, begin, end):
+    # type: (str, int, int) -> str
+    frag_list = list(frag)
+
+    for n in range(begin, end, 3):
+        if is_valid_start(frag[n:n+3], "+"):
+            frag_list[n] = "C"
+
+    return "".join(frag_list)
+
+
 def get_entry_for_label_if_single_candidate(sequences, label, tag, **kwargs):
     # type: (Dict[str, Seq], Label, int, Dict[str, Any]) -> Union[Tuple[str, Label], None]
     """Constructs a sequence/label pair for a gene if it has a single candidate start. Otherwise, returns None
@@ -223,6 +234,8 @@ def get_entry_for_label_if_single_candidate(sequences, label, tag, **kwargs):
 
         if len(frag) == 0:
             return None
+
+        frag = remove_starts_in_region(frag, 0, upstream_length_nt)
 
         new_label = Label(
                 Coordinates(upstream_length_nt, len(frag) - 1, "+"),

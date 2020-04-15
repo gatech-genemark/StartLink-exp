@@ -52,7 +52,7 @@ def get_possible_positions_for_candidate_starts_in_coding(sequence, label, downs
 
         while curr_pos <= max_pos:
 
-            codon = sequence[left:left+3]
+            codon = sequence[curr_pos:curr_pos+3]
 
             # synonymous Valine
             if codon in {"GTC", "GTT", "GTA"}:
@@ -92,11 +92,16 @@ def add_candidate_starts(sequence, label, **kwargs):
 
         if num_starts_upstream < len(list_positions):
             list_positions = random.sample(list_positions, num_starts_upstream)
+        elif num_starts_upstream > len(list_positions):
+            needed = num_starts_upstream - len(list_positions)
+            list_positions.append += random.sample(
+                [x for x in range(0, upstream_length_nt, 3)], needed
+            )
 
         update_sequence_with_codons(list_seq, list_positions)
 
     if num_starts_downstream > 0:
-        list_positions = get_possible_positions_for_candidate_starts_in_non_coding(sequence, label,
+        list_positions = get_possible_positions_for_candidate_starts_in_coding(sequence, label,
                                                                                    downstream_length_nt)
 
         if num_starts_downstream < len(list_positions):
