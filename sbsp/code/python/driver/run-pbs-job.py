@@ -4,6 +4,7 @@
 # Created:
 
 import logging
+import random
 import argparse
 from typing import *
 
@@ -54,6 +55,18 @@ def main(env, args):
     pbs_package = PBSJobPackage.load(args.pf_job_input)
     func = pbs_package["func"]
     func_args = pbs_package["func_kwargs"]
+
+    if "sbsp_options" in func_args:
+
+        rs = func_args["sbsp_options"].safe_get("random-seed")
+        if rs is None:
+            random.seed(100)
+        else:
+            random.seed(int(rs))
+            logger.critical("Random-seed: {}".format(rs))
+
+    else:
+        random.seed(100)
 
     if "env" in func_args:
         if args.pd_work is not None:

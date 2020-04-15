@@ -1,5 +1,8 @@
 import os
 import copy
+
+import time
+import numpy as np
 from typing import *
 
 from sbsp_general import Environment
@@ -37,6 +40,8 @@ class PBS:
         :param data_format:
         :param kwargs:
         """
+
+        self._rng = np.random.RandomState(int(time.time()))
 
         self._dry_run = get_value(kwargs, "dry_run", False)
         self._env = env
@@ -361,7 +366,7 @@ class PBS:
             return cmd
 
         # generate a random filename for the dummy job
-        fn_dummy = ''.join(random.choice(string.ascii_lowercase) for _ in range(10))
+        fn_dummy = ''.join(self._rng.choice(list(string.ascii_lowercase)) for _ in range(10))
         pf_dummy = os.path.join(pd_work, fn_dummy)
 
         # create an dummy pbs job that waits for the array to finish

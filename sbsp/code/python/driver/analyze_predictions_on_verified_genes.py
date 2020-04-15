@@ -163,9 +163,10 @@ def get_stats_sn_sp_by_step_group(labels_ref, labels_pred, stats, tag):
     # type: (Labels, Labels, Dict[str, Any], str) -> None
 
 
-    step_groups = [("A", "B", "C", "U"), ("A", "B", "U"), ("A", "B"), ("A")]
+    #step_groups = [("A", "B", "C", "U"), ("A", "B", "U"), ("A", "B"), ("A")]
+    step_groups = [("A", "B", "C"), ("A", "B"), ("A")]
 
-    step_to_list_labels = {s: list() for s in {"A", "B", "U", "C"}}
+    step_to_list_labels = {s: list() for s in {"A", "B", "C"}}
     for l in labels_pred:
         step_to_list_labels[l.get_attribute_value("predicted-at-step")].append(l)
     curr_index = 0
@@ -214,7 +215,7 @@ def analyze_predictions_on_verified_genes(env, gi, pd_sbsp, **kwargs):
     add_support_to_labels(labels_sbsp, df_sbsp_details)
 
 
-    labels_sbsp = Labels([l for l in labels_sbsp if l.get_attribute_value('predicted-at-step') != "C"], name="SBSP")
+    #labels_sbsp = Labels([l for l in labels_sbsp if l.get_attribute_value('predicted-at-step') != "C"], name="SBSP")
 
 
     labels_sbsp_eq_gms2 = LabelsComparisonDetailed(labels_sbsp, labels_gms2).match_3p_5p("a")

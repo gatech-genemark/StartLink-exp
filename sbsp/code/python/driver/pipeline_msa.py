@@ -3,6 +3,7 @@
 #
 # Created: April 26, 2019
 
+import random
 import logging
 import argparse
 
@@ -78,6 +79,7 @@ logger = logging.getLogger("logger")  # type: logging.Logger
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
+    random.seed(1)
 
     sbsp_options = SBSPOptions.init_from_dict(env, vars(args))
     pbs_options = PBSOptions.init_from_dict(env, vars(args))
