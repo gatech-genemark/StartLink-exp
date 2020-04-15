@@ -312,7 +312,7 @@ def main(env, args):
                 "left": lab.left() + 1,
                 "right": lab.right() + 1,
                 "strand": lab.strand(),
-                "sequence": str(seq),
+                "sequence": seq,
                 "num-upstream": args.num_starts_upstream,
                 "num-downstream": args.num_starts_downstream,
 
