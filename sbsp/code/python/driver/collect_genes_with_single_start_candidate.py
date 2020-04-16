@@ -22,7 +22,7 @@ from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_general import Environment
 from sbsp_general.general import get_value
 from sbsp_general.labels import Label, Coordinates, Labels
-from sbsp_io.general import mkdir_p
+from sbsp_io.general import mkdir_p, remove_p
 from sbsp_io.labels import read_labels_from_file, write_labels_to_file
 from sbsp_io.sequences import read_fasta_into_hash, write_fasta_hash_to_file
 
@@ -49,6 +49,7 @@ parser.add_argument('--pd-data', required=False, default=None, help="Path to dat
 parser.add_argument('--pd-results', required=False, default=None, help="Path to results directory")
 parser.add_argument("-l", "--log", dest="loglevel", choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                     help="Set the logging level", default='WARNING')
+parser.add_argument("-L", "pf-log", default=None, required=False, help="The log file")
 
 
 parsed_args = parser.parse_args()
@@ -63,7 +64,7 @@ my_env = Environment(pd_data=parsed_args.pd_data,
                      pd_results=parsed_args.pd_results)
 
 # Setup logger
-logging.basicConfig(level=parsed_args.loglevel)
+logging.basicConfig(level=parsed_args.loglevel, filename=parsed_args.pf_log)
 logger = logging.getLogger("logger")  # type: logging.Logger
 
 
@@ -287,16 +288,27 @@ def get_single_candidate_genes(env, genome_info, **kwargs):
     return result
 
 
+def append_data_frame_to_csv(df, pf_output):
+    # type: (pd.DataFrame, str) -> None
+    if df is not None and len(df) > 0:
+        if not os.path.isfile(pf_output):
+            df.to_csv(pf_output, index=False)
+        else:
+            df.to_csv(pf_output, mode="a", index=False, header=False)
+
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
 
     gil = GenomeInfoList.init_from_file(args.pf_genome_list)
 
-    sequences = dict()          # type: Dict[str, str]
-    labels = Labels()
+    # sequences = dict()          # type: Dict[str, str]
+    # labels = Labels()
 
-    list_entries = list()
-    for genome_info in gil:
+    remove_p(args.pf_output)            # start fresh
+    num_genomes = len(gil)
+
+    for counter, genome_info in enumerate(gil):
+        logger.info("{}/{}: {}".format(counter, num_genomes, genome_info.name))
         list_sequence_label_pair = get_single_candidate_genes(
             env,
             genome_info,
@@ -310,15 +322,17 @@ def main(env, args):
 
         )
 
+        list_entries = list()
+
         for sl_pair in list_sequence_label_pair:
             seq, lab = sl_pair
 
             # sanity check: seqname is unique
-            if lab.seqname() in sequences.keys():
-                raise RuntimeError("All sequences should have separate FASTA tags")
+            # if lab.seqname() in sequences.keys():
+            #     raise RuntimeError("All sequences should have separate FASTA tags")
 
-            sequences[lab.seqname()] = seq
-            labels.add(lab)
+            # sequences[lab.seqname()] = seq
+            # labels.add(lab)
 
             list_entries.append({
                 "accession": lab.seqname(),
@@ -330,14 +344,16 @@ def main(env, args):
                 "num-downstream": args.num_starts_downstream,
 
             })
+
+        df = pd.DataFrame(list_entries)
+        append_data_frame_to_csv(df, args.pf_output)
     # print labels and sequences to file
-    mkdir_p(args.pd_output)
+    # mkdir_p(args.pd_output)
 
-    write_fasta_hash_to_file(sequences, os.path.join(args.pd_output, "sequence.fasta"))
-    write_labels_to_file(labels, os.path.join(args.pd_output, "ncbi.gff"))
+    # write_fasta_hash_to_file(sequences, os.path.join(args.pd_output, "sequence.fasta"))
+    # write_labels_to_file(labels, os.path.join(args.pd_output, "ncbi.gff"))
 
-    df = pd.DataFrame(list_entries)
-    df.to_csv(args.pf_output, index=False)
+
 
 
 if __name__ == "__main__":
