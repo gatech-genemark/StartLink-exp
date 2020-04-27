@@ -49,7 +49,7 @@ parser.add_argument('--pd-data', required=False, default=None, help="Path to dat
 parser.add_argument('--pd-results', required=False, default=None, help="Path to results directory")
 parser.add_argument("-l", "--log", dest="loglevel", choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                     help="Set the logging level", default='WARNING')
-parser.add_argument("-L", "pf-log", default=None, required=False, help="The log file")
+parser.add_argument("-L", "--pf-log", default=None, required=False, help="The log file")
 
 
 parsed_args = parser.parse_args()
