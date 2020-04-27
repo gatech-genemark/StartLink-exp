@@ -138,7 +138,7 @@ function run_sbsp_on_genome_list_entry() {
         tag_option="--tag $tag"
     fi
 
-    $bin/run_pipeline_sbsp_sh.sh  -q tmp_$gcfid -t genbank_${ancestor_valid}  -s ${sbsp_conf} -p ${pbs_conf} --q-labels ncbi.gff --q-labels-true ${fn_q_labels_true} ${tag_option} $steps
+    $bin/run_pipeline_sbsp_sh.sh  -q tmp_$gcfid -t genbank_${ancestor_valid}  -s ${sbsp_conf} -p ${pbs_conf} --q-labels ${fn_q_labels} --q-labels-true ${fn_q_labels_true} ${tag_option} $steps
     rm $pf_list
 }
 
