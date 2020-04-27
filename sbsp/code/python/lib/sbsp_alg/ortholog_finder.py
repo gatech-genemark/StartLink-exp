@@ -629,7 +629,7 @@ def extract_labeled_sequences_for_genome(env, gi, **kwargs):
     # type: (Environment, GenomeInfo, Dict[str, Any]) -> Dict[str, Seq]
 
     pf_sequences = get_pf_sequences_for_genome(env, gi)
-    pf_labels = get_pf_labels_for_genome(env, gi)
+    pf_labels = get_pf_labels_for_genome(env, gi, **kwargs)
 
     try:
         sequences = read_fasta_into_hash(pf_sequences)

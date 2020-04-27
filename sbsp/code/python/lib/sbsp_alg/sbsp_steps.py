@@ -2054,8 +2054,10 @@ def sbsp_steps(env, pipeline_options):
 
     mkdir_p(env["pd-work"])
     pf_aa = os.path.join(env["pd-work"], "query.faa")
+    fn_labels = pipeline_options["fn-q-labels"]
     extract_labeled_sequences_for_genomes(env, q_gil, pf_aa,
-                                          ignore_frameshifted=True, reverse_complement=True, ignore_partial=True)
+                                          ignore_frameshifted=True, reverse_complement=True, ignore_partial=True,
+                                          fn_labels=fn_labels)
     q_sequences = read_fasta_into_hash(pf_aa, stop_at_first_space=False)
 
     if pipeline_options.use_pbs():
