@@ -78,12 +78,13 @@ def get_block_positions_with_region_label(msa_t, **kwargs):
                 curr -= 1
         return None
 
-    # get close and far downstreams
-    output["dc"] = get_first_nongap(pos_annotated + 1, msa_t.alignment_length(), "downstream")
-    output["df"] = get_first_nongap(pos_annotated + 1, msa_t.alignment_length(), "downstream", skip_nongap=20)
 
-    output["uc"] = get_first_nongap(pos_annotated - 1, -1, "upstream")
-    output["uf"] = get_first_nongap(pos_annotated - 1, -1, "upstream", skip_nongap=20)
+    # get close and far downstreams
+    output["Dc"] = get_first_nongap(pos_annotated + 1, msa_t.alignment_length(), "downstream")
+    output["Df"] = get_first_nongap(pos_annotated + 1, msa_t.alignment_length(), "downstream", skip_nongap=20)
+
+    output["Uc"] = get_first_nongap(pos_annotated - 1, -1, "upstream")
+    output["Uf"] = get_first_nongap(pos_annotated - 1, -1, "upstream", skip_nongap=20)
 
     return output
 
@@ -99,10 +100,16 @@ def generate_block_features_for_starts_for_msa(msa_t, sbsp_options, **kwargs):
     for name, pos in name_to_pos.items():
         if pos is None:
             continue
-        if name in {"dc", "df"}:
-            cons = compute_conservation_in_region(msa_t, pos, pos+10, scorer, direction="downstream", **common)
+        if name in {"Dc", "Df"}:
+            try:
+                cons = compute_conservation_in_region(msa_t, pos, pos+10, scorer, direction="downstream", **common)
+            except ValueError:
+                continue
         else:
-            cons = compute_conservation_in_region(msa_t, pos-11, pos, scorer, direction="upstream", **common)
+            try:
+                cons = compute_conservation_in_region(msa_t, pos-11, pos, scorer, direction="upstream", **common)
+            except ValueError:
+                continue
 
         output.append({"region": name, "score": cons, "type": "block"})
 
@@ -139,8 +146,9 @@ def get_5prime_positions_with_region_label(msa_t, **kwargs):
     l_downstream = get_first_x_5primes(pos_annotated +1, msa_t.alignment_length(), "downstream", skip_nongap=5)
     l_upstream = get_first_x_5primes(pos_annotated -1 , -1, "upstream", skip_nongap=5)
 
-    output += [{"region": "downstream", "pos": x} for x in l_downstream]
-    output += [{"region": "upstream", "pos": x} for x in l_upstream]
+    output += [{"region": "Downstream", "pos": x} for x in l_downstream]
+    output += [{"region": "Upstream", "pos": x} for x in l_upstream]
+    output += [{"region": "Annotated", "pos": pos_annotated}]
 
     return output
 
@@ -164,6 +172,8 @@ def generate_features_for_starts_for_single_pf_msa(series, sbsp_options, **kwarg
     # type: (pd.Series, SBSPOptions, Dict[str, Any]) -> List[Dict[str, Any]]
 
     msa_t = MSAType.init_from_file(series["pf-msa-output"])
+    if msa_t.get_mark_position("ref") is None:
+        return None
 
     # block features
     list_blk = generate_block_features_for_starts_for_msa(msa_t, sbsp_options, **kwargs)
@@ -180,8 +190,11 @@ def generate_features_for_starts_from_msa(df, sbsp_options, pf_output, **kwargs)
 
     list_df = list()           # type: List[pd.DataFrame]
 
-    for series in df.groupby("pf-msa-output", as_index=False).agg("first"):
+    for _, df_group in df.groupby("pf-msa-output", as_index=False):
+        series = df_group.iloc[0]
         list_entries = generate_features_for_starts_for_single_pf_msa(series, sbsp_options, **kwargs)
+        if list_entries is None:
+            continue
 
         df_tmp = pd.DataFrame(list_entries)
         df_tmp["Genome"] = series["q-genome"]
