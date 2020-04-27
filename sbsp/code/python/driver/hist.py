@@ -35,6 +35,7 @@ parser.add_argument('--filter-by-equal', required=False, nargs=2, help="E.g. q-i
 parser.add_argument('--group-by', required=False, type=str)
 parser.add_argument('--title-name', required=False, help="Title name to be added to title")
 
+parser.add_argument('--xlim', nargs="+", type=float)
 parser.add_argument('--bins', type=int, required=False, default=20, help="Number of bins")
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
@@ -65,6 +66,7 @@ def plot_histograms_for_columns(env, df_data, column_names, **kwargs):
     group_by = get_value(kwargs, "group_by", None)
 
     title_name = get_value(kwargs, "title_name", "", default_if_none=True)
+    xlim = get_value(kwargs, "xlim", None)
 
     for c in column_names:
         plot_hist_by_group(
@@ -76,7 +78,8 @@ def plot_histograms_for_columns(env, df_data, column_names, **kwargs):
                 save_fig=os.path.join(
                     env["pd-work"],
                     "hist{}.pdf".format(c.replace(" ", "_").replace("(", "").replace(")", ""))
-                )
+                ),
+                xlim=xlim
             ),
             bins=get_value(kwargs, "bins", 10)
         )
@@ -119,7 +122,8 @@ def main(env, args):
                                            filter_by_equal=args.filter_by_equal,
                                            group_by=args.group_by,
                                            title_name=args.title_name,
-                                           bins=args.bins)
+                                           bins=args.bins,
+                                           xlim=args.xlim)
 
 
 if __name__ == "__main__":
