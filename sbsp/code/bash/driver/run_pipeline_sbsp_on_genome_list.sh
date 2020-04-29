@@ -142,6 +142,10 @@ function run_sbsp_on_genome_list_entry() {
     rm $pf_list
 }
 
+function num_jobs_running() {
+    num_jobs=$(qstat -u karl | grep -c " H ")
+    echo "${num_jobs}"
+}
 
 function run_sbsp_on_genome_list() {
     local pf_genome_list="$1"
@@ -149,12 +153,28 @@ function run_sbsp_on_genome_list() {
     
     local total=$(wc -l $pf_genome_list | awk '{print $1-1}')
     local current=1
+    local counter=0
     awk -F "," '{if (NR > 1) print }' $pf_genome_list | while read -r line; do
         local gcfid=$(parse_entry_for_gcfid "$line")
         echo -e "Progress: $current/$total. GCFID=$gcfid"
         
         run_sbsp_on_genome_list_entry "$line" &
-        sleep 5
+
+        num_jobs=$(num_jobs_running)
+        echo "Number of jobs running: $num_jobs"
+        while [ ${num_jobs} -gt 10 ]; do
+            sleep 1800
+            num_jobs=$(num_jobs_running)
+        done
+        sleep 10
+
+        # if [[ $counter -gt 5 ]]; then
+        #     sleep 3600
+        #     counter=0
+        # else
+        #     sleep 10
+        # fi
+        counter=$((counter + 1))
         current=$((current + 1))
     done
 }
