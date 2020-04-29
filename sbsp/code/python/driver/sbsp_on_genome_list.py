@@ -3,7 +3,10 @@
 #
 # Created: 3/17/20
 import logging
+import random
+import time
 import argparse
+import pandas as pd
 from copy import copy, deepcopy
 from typing import *
 
@@ -34,6 +37,7 @@ parser = argparse.ArgumentParser("Description of driver.")
 parser.add_argument('--pf-q-list', required=True, help="File of query genomes")
 parser.add_argument('--simultaneous-genomes', type=int, default=1, help="Number of genomes to run on simultaneously.")
 parser.add_argument('--dn-run', default="sbsp", help="Name of directory with SBSP run")
+parser.add_argument('--pf-db-index', required=True, help="Path to file containing database information for each ancestor clade")
 
 parser.add_argument('--fn-q-labels', default="ncbi.gff", required=False, type=Union[str],
                     help="Name of query file(s) containing gene labels")
@@ -73,7 +77,17 @@ logger = logging.getLogger("logger")  # type: logging.Logger
 
 def sbsp_on_gi(gi, pipeline_options):
     # type: (GenomeInfo, PipelineSBSPOptions) -> None
+    random.seed(1)
+    logger.debug("Running for {}".format(gi.name))
     PipelineSBSP(pipeline_options.env, pipeline_options).run()
+    logger.debug("Done for {}".format(gi.name))
+
+def get_clade_to_pf_db(pf_db_index):
+    # type: (str) -> Dict[str, str]
+    df = pd.read_csv(pf_db_index)
+    return {
+        r["Clade"]: r["pf-db"] for _, r in df.iterrows()
+    }
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
@@ -82,21 +96,32 @@ def main(env, args):
     sbsp_options = SBSPOptions.init_from_dict(env, vars(args))
     pbs_options = PBSOptions.init_from_dict(env, vars(args))
 
-    pipeline_options = PipelineSBSPOptions(
-        env, **vars(args), sbsp_options=sbsp_options, pbs_options=pbs_options,
-    )
+    # read database index file
+    clade_to_pf_db = get_clade_to_pf_db(args.pf_db_index)
 
-
+    
     import multiprocessing as mp
     pool = mp.Pool(processes=args.simultaneous_genomes)
 
     # create job vector for parallel processing
     job_vector = list()
     for gi in gil:
-        po = deepcopy(pipeline_options)
+        pd_work = os_join(env["pd-work"], gi.name, args.dn_run)
+        curr_env = env.duplicate({"pd-work": pd_work})
+
+        pf_output = os_join(pd_work, "output.csv")
+
+        try:
+            pf_t_db = clade_to_pf_db[gi.attributes["ancestor"]]
+        except KeyError:
+            raise ValueError("Unknown clade {}".format(gi.attributes["ancestor"]))
+        
+        po = PipelineSBSPOptions(
+            curr_env, **vars(args), pf_t_db=pf_t_db, pf_output=pf_output, sbsp_options=sbsp_options, pbs_options=pbs_options,
+        )
 
         # create working dir
-        pd_work = os_join(po.env["pd-work"], gi.name, args.dn_run)
+        
         pf_list = os_join(pd_work, "query.list")
         mkdir_p(pd_work)
 
@@ -104,10 +129,13 @@ def main(env, args):
         GenomeInfoList([gi]).to_file(pf_list)
 
         # update custom options to local gi
-        po.env = po.env.duplicate({"pd-work": pd_work})
+        
         po['pf-q-list'] = pf_list
 
-        pool.apply_async(sbsp_on_gi, args=[gi, po])
+        job_vector.append(pool.apply_async(sbsp_on_gi, args=[gi, po]))
+
+        time.sleep(1)  # sleeping ensures that random seeds have time to default to new values
+
 
 
     num_jobs = len(job_vector)

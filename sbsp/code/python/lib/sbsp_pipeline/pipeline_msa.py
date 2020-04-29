@@ -41,7 +41,7 @@ class PipelineSBSP:
         elapsed_times = dict()
 
         # Copy Information file to local directory
-        copyfile(self.pipeline_options["pf-q-list"], os.path.join(self.env["pd-work"], "query.list"))
+        #copyfile(self.pipeline_options["pf-q-list"], os.path.join(self.env["pd-work"], "query.list"))
 
         curr_time = timeit.default_timer()
         state = self._run_helper()
