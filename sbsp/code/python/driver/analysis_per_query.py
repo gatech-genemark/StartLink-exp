@@ -139,6 +139,7 @@ def analyze_query(key, key_to_label_sbsp, key_to_label_gms2, key_to_label_ncbi, 
     r["GMS2=SBSP"] = r["SBSP"] and r["GMS2"] and labels_match_5p_3p(l_sbsp, l_gms2)
     r["GMS2=NCBI"] = r["GMS2"] and r["NCBI"] and labels_match_5p_3p(l_gms2, l_ncbi)
     r["Prodigal=NCBI"] = r["Prodigal"] and r["NCBI"] and labels_match_5p_3p(l_prodigal, l_ncbi)
+    r["SBSP=NCBI"] = r["SBSP"] and r["NCBI"] and labels_match_5p_3p(l_sbsp, l_ncbi)
 
 
     r["GMS2=SBSP=NCBI"] = r["GMS2=SBSP"] and r["NCBI"] and labels_match_5p_3p(l_sbsp, l_ncbi)
