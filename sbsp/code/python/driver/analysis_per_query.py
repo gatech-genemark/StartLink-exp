@@ -13,6 +13,7 @@ from typing import *
 from Bio.Seq import Seq
 
 # noinspection PyUnresolvedReferences
+import pathmagic
 import sbsp_log  # runs init in sbsp_log and configures logger
 
 # Custom imports
