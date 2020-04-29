@@ -1,0 +1,4 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+ \PYG{n+nv}{\PYGZdl{}bin}/analysis\PYGZus{}on\PYGZus{}genome\PYGZus{}fragments\PYGZus{}py.sh \PYGZhy{}\PYGZhy{}pf\PYGZhy{}genome\PYGZhy{}list \PYG{n+nv}{\PYGZdl{}lists}/verified.list \PYG{l+s+se}{\PYGZbs{}}
+\PYGZhy{}\PYGZhy{}tools gms2 prodigal
+\end{Verbatim}

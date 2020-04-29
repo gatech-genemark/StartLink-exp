@@ -1,12 +1,10 @@
 # Karl Gemayel
 # Georgia Institute of Technology
 #
-# Created: April 26, 2019
-
-import random
+# Created: 3/17/20
 import logging
 import argparse
-
+from copy import copy, deepcopy
 from typing import *
 
 # noinspection All
@@ -15,25 +13,27 @@ import pathmagic
 # noinspection PyUnresolvedReferences
 import sbsp_log  # runs init in sbsp_log and configures logger
 
+# Custom imports
+from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
+from sbsp_general import Environment
 import sbsp_argparse.parallelization
 import sbsp_argparse.sbsp
-
-from sbsp_general import Environment
-from sbsp_options.sbsp import SBSPOptions
-from sbsp_options.pbs import PBSOptions
-from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
-
 
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
+from sbsp_general.general import os_join
+from sbsp_io.general import mkdir_p
+from sbsp_options.pbs import PBSOptions
+from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
+from sbsp_options.sbsp import SBSPOptions
 from sbsp_pipeline.pipeline_msa import PipelineSBSP
 
 parser = argparse.ArgumentParser("Description of driver.")
 
-parser.add_argument('--pf-q-list', required=True, help="File containing names of query genomes")
-parser.add_argument('--pf-t-db', required=True, help="(Diamond) Blast database")
-parser.add_argument('--pf-output', required=True, help="Output file containing query-target information used by SBSP")
+parser.add_argument('--pf-q-list', required=True, help="File of query genomes")
+parser.add_argument('--simultaneous-genomes', type=int, default=1, help="Number of genomes to run on simultaneously.")
+parser.add_argument('--dn-run', default="sbsp", help="Name of directory with SBSP run")
 
 parser.add_argument('--fn-q-labels', default="ncbi.gff", required=False, type=Union[str],
                     help="Name of query file(s) containing gene labels")
@@ -47,11 +47,6 @@ parser.add_argument('--steps', nargs="+", required=False,
                     choices=["find-orthologs", "compute-features", "filter", "build-msa", "accuracy"],
                     default=None)
 
-parser.add_argument('--upstream-length-nt', required=False, default=None, type=Union[int],
-                    help="The maximum number of upstream nucleotides (from annotation) to use in MSA")
-parser.add_argument('--downstream-length-nt', required=False, default=None, type=Union[int],
-                    help="The maximum number of downstream nucleotides to use in MSA")
-
 sbsp_argparse.parallelization.add_pbs_options(parser)
 sbsp_argparse.sbsp.add_sbsp_options(parser)
 
@@ -60,7 +55,6 @@ parser.add_argument('--pd-data', required=False, default=None, help="Path to dat
 parser.add_argument('--pd-results', required=False, default=None, help="Path to results directory")
 parser.add_argument("-l", "--log", dest="loglevel", choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                     help="Set the logging level", default='WARNING')
-parser.add_argument("-L", "pf-log", default=None, required=False, help="The log file")
 
 parsed_args = parser.parse_args()
 
@@ -74,14 +68,17 @@ my_env = Environment(pd_data=parsed_args.pd_data,
                      pd_results=parsed_args.pd_results)
 
 # Setup logger
-logging.basicConfig(level=parsed_args.loglevel, filename=parsed_args.pf_log)
+logging.basicConfig(level=parsed_args.loglevel)
 logger = logging.getLogger("logger")  # type: logging.Logger
 
+def sbsp_on_gi(gi, pipeline_options):
+    # type: (GenomeInfo, PipelineSBSPOptions) -> None
+    PipelineSBSP(pipeline_options.env, pipeline_options).run()
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
-    random.seed(1)
 
+    gil = GenomeInfoList.init_from_file(args.pf_q_list)
     sbsp_options = SBSPOptions.init_from_dict(env, vars(args))
     pbs_options = PBSOptions.init_from_dict(env, vars(args))
 
@@ -89,8 +86,38 @@ def main(env, args):
         env, **vars(args), sbsp_options=sbsp_options, pbs_options=pbs_options,
     )
 
-    p_sbsp = PipelineSBSP(env, pipeline_options)
-    p_sbsp.run()
+
+    import multiprocessing as mp
+    pool = mp.Pool(processes=args.simultaneous_genomes)
+
+    # create job vector for parallel processing
+    job_vector = list()
+    for gi in gil:
+        po = deepcopy(pipeline_options)
+
+        # create working dir
+        pd_work = os_join(po.env["pd-work"], gi.name, args.dn_run)
+        pf_list = os_join(pd_work, "query.list")
+        mkdir_p(pd_work)
+
+        # write genome to local list file
+        GenomeInfoList([gi]).to_file(pf_list)
+
+        # update custom options to local gi
+        po.env = po.env.duplicate({"pd-work": pd_work})
+        po['pf-q-list'] = pf_list
+
+        pool.apply_async(sbsp_on_gi, args=[gi, po])
+
+
+    num_jobs = len(job_vector)
+    done = 0
+
+    # run jobs
+    for p in job_vector:
+        p.get()
+        logger.info(f"Done {done}/{num_jobs}")
+
 
 
 if __name__ == "__main__":

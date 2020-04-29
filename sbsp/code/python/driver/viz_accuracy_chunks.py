@@ -15,16 +15,16 @@ import sbsp_log  # runs init in sbsp_log and configures logger
 
 # Custom imports
 from sbsp_general import Environment
-import sbsp_viz.sns as sns
+from sbsp_general.shelf import next_name
 from sbsp_viz.colormap import ColorMap as CM
+import sbsp_viz.sns as sns
 
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
-from sbsp_general.shelf import next_name
 from sbsp_viz.general import FigureOptions
 
-parser = argparse.ArgumentParser("Plot the 5' end different between NCBI and GMS2 as GC increases.")
+parser = argparse.ArgumentParser("Description of driver.")
 
 parser.add_argument('--pf-data', required=True)
 
@@ -52,35 +52,45 @@ logger = logging.getLogger("logger")  # type: logging.Logger
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
-
     df = pd.read_csv(args.pf_data)
-    df["Err(GMS2,NCBI)"] = 100 - 100 * df["Identical"] / df["Found"]
-    df = df[df["Err(GMS2,NCBI)"] < 30].copy()
-    df.loc[df["Group"] == "D2", "Group"] = "D"
+    df["chunk-size"] /= 1000
 
-    sns.lmplot(df, "GC", "Err(GMS2,NCBI)", hue="Type", figure_options=FigureOptions(
-        xlabel="Genome GC",
-        save_fig=next_name(env["pd-work"]),
-        ylim=[0, None],
-    ),
-               legend_loc="best",
-               sns_kwargs={"scatter_kws": {"s": 5, "alpha": 0.3}, "lowess": True, "scatter": True,
-                           "aspect": 1.5, "palette":CM.get_map("arc-bac"),}
-               )
-    import seaborn
-    seaborn.regplot("GC", "Err(GMS2,NCBI)", data=df)
     import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+
+
+
+    sns.lineplot(df[df["Tool"] == "SBSP"], "chunk-size", "percentage-common-3prime-and-5prime-from-common-3prime",
+                 hue="Genome",
+                 sns_kwargs={"palette": CM.get_map("verified"), "linestyle": "dashed"},
+                 ax=ax,
+                 legend=False,
+                 figure_options=FigureOptions(
+                     xlabel="Chunk size (mb)",
+                     ylabel="Sensitivity",
+                     ylim=[69, 101],
+                     save_fig=next_name(env["pd-work"])
+                 ))
+
+    for l in ax.lines:
+        l.set_linestyle("--")
+
+    sns.lineplot(df[df["Tool"] == "GMS2"], "chunk-size", "percentage-common-3prime-and-5prime-from-common-3prime",
+                 hue="Genome",
+                 sns_kwargs={"palette": CM.get_map("verified")},
+                 legend_loc="best",
+                 ax=ax)
+
+    fo = FigureOptions(
+                     xlabel="Chunk size (mb)",
+                     ylabel="Sensitivity",
+                     ylim=[69,101],
+                     save_fig=next_name(env["pd-work"])
+                 )
+    FigureOptions.set_properties_for_axis(ax, fo)
+    plt.savefig(fo.save_fig)
     plt.show()
-    return
-    sns.lmplot(df, "GC", "Err(GMS2,NCBI)", hue="Group", figure_options=FigureOptions(
-        xlabel="Genome GC",
-        save_fig=next_name(env["pd-work"]),
-        ylim=[0, None],
-    ),
-               legend_loc="best",
-               sns_kwargs={"scatter_kws": {"s": 5, "alpha": 0.3}, "lowess": True, "scatter": True,
-                           "aspect": 1.5}
-               )
 
 
 if __name__ == "__main__":
