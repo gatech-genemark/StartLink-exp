@@ -1,0 +1,9 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{\PYGZsh{} List of genomes with verified genes}
+\PYG{n+nv}{pf\PYGZus{}list\PYGZus{}verified}\PYG{o}{=}\PYG{n+nv}{\PYGZdl{}lists}/verified.list
+\PYG{n+nv}{pf\PYGZus{}sbsp\PYGZus{}conf}\PYG{o}{=}\PYG{n+nv}{\PYGZdl{}config}/sbsp\PYGZus{}defaults.conf
+
+\PYG{n+nv}{toggle\PYGZus{}pbs}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}\PYGZhy{}\PYGZhy{}pf\PYGZhy{}conf\PYGZhy{}pbs }\PYG{n+nv}{\PYGZdl{}config}\PYG{l+s+s2}{/pbs\PYGZus{}defaults.conf\PYGZdq{}}  \PYG{c+c1}{\PYGZsh{} if PBS installed, set this option to empty: \PYGZdq{}\PYGZdq{}}
+
+\PYG{n+nv}{\PYGZdl{}bin}/run\PYGZus{}sbsp\PYGZus{}from\PYGZus{}genome\PYGZus{}list\PYGZus{}py.sh \PYGZhy{}\PYGZhy{}pf\PYGZhy{}genome\PYGZhy{}list \PYG{l+s+si}{\PYGZdl{}\PYGZob{}}\PYG{n+nv}{pf\PYGZus{}list\PYGZus{}verified}\PYG{l+s+si}{\PYGZcb{}} \PYGZhy{}\PYGZhy{}pf\PYGZhy{}conf\PYGZhy{}sbsp \PYG{l+s+si}{\PYGZdl{}\PYGZob{}}\PYG{n+nv}{pf\PYGZus{}sbsp\PYGZus{}conf}\PYG{l+s+si}{\PYGZcb{}} \PYG{l+s+si}{\PYGZdl{}\PYGZob{}}\PYG{n+nv}{toggle\PYGZus{}pbs}\PYG{l+s+si}{\PYGZcb{}}
+\end{Verbatim}

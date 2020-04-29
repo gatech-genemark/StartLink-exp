@@ -15,18 +15,32 @@ def _init_mapping_ancestors():
     return {x[0]: x[1] for x in zip(ancestors, palette)}
 
 
+def _init_mapping_verified():
+    colors = ["windows blue", "amber", "faded green", "dusty purple", "magenta"]
+    ancestors = ["E. coli", "H. salinarum", "N. pharaonis", "M. tuberculosis", "R. denitrificans"]
+    palette = seaborn.xkcd_palette(colors)
+    return {x[0]: x[1] for x in zip(ancestors, palette)}
+
+
 def _init_mapping_independence_conditions():
     colors = ["windows blue", "amber", "faded green"]
     conditions = ["Random", "Independent", "Fully dependent"]
     palette = seaborn.xkcd_palette(colors)
     return {x[0]: x[1] for x in zip(conditions, palette)}
 
+def _init_mapping_archea_bacteria():
+    colors = ["magenta", "windows blue"]
+    name = ["Archaea", "Bacteria"]
+    palette = seaborn.xkcd_palette(colors)
+    return {x[0]: x[1] for x in zip(name, palette)}
 
 class ColorMap:
 
     _mappings = {
         "ancestor": _init_mapping_ancestors(),
-        "independence-conditions": _init_mapping_independence_conditions()
+        "independence-conditions": _init_mapping_independence_conditions(),
+        "arc-bac": _init_mapping_archea_bacteria(),
+        "verified": _init_mapping_verified(),
     }
 
     @staticmethod

@@ -33,7 +33,7 @@ from plotnine import *
 # ------------------------------ #
 from sbsp_viz.general import FigureOptions, save_figure
 
-parser = argparse.ArgumentParser("Description of driver.")
+parser = argparse.ArgumentParser("Visualize the stats at genome level.")
 
 parser.add_argument('--pf-data', required=True, help="Input data generated from analysis_per_query.py")
 
@@ -93,6 +93,11 @@ def get_summary_for_gcfid(df):
         df_subset = df[df[y]]
         result["{} % {}".format(x, y)] = round(100 * df_subset[x].sum() / float(df_subset[y].sum()))
 
+    result["Sen(SBSP,NCBI)"] = 100 * df["SBSP=NCBI"].sum() / float(((df["SBSP"]) & (df["NCBI"])).sum())
+    result["Cov(SBSP,NCBI)"] = 100 * df["SBSP"].sum() / float(df.iloc[0]["Total SBSP"])
+
+    result["Sen(GMS2=SBSP,NCBI)"] = 100 * df["GMS2=SBSP=NCBI"].sum() / float(df["GMS2=SBSP"].sum())
+    result["Cov(GMS2=SBSP,NCBI)"] = 100 * df["GMS2=SBSP"].sum() / float(df.iloc[0]["Total GMS2=SBSP"])
     return result
 
 
@@ -277,15 +282,10 @@ def kimura_dist_plot(env, df):
 
 
 
-def heat_map_Kimura_accuracy(env, df_all, x, y, num_steps=20, balance=False,
-                             xlabel=None, ylabel=None):
+def heat_map_Kimura_accuracy(env, df_all, x, y, num_steps=20, balance=False):
     # type: (Environment, pd.DataFrame, str, str, int) -> None
     import matplotlib.pyplot as plt
 
-    if xlabel is None:
-        xlabel = x
-    if ylabel is None:
-        ylabel = y
     ancestors = sorted(list(set(df_all["Ancestor"])))
     fig, axes = plt.subplots(2, math.ceil(len(ancestors) / 2), sharex=True, sharey=True)
     cbar_ax = fig.add_axes([.91, .3, .03, .4])
@@ -381,8 +381,8 @@ def heat_map_Kimura_accuracy(env, df_all, x, y, num_steps=20, balance=False,
     # hide tick and tick label of the big axes
     plt.tick_params(top=False, bottom=False, left=False, right=False, which="both",
                     labelbottom=False, labeltop=False, labelleft=False, labelright=False)
-    plt.xlabel(xlabel, labelpad=20)
-    plt.ylabel(ylabel, labelpad=30)
+    plt.xlabel(x, labelpad=20)
+    plt.ylabel(y, labelpad=30)
 
     # ax3 = plt.subplot2grid((num_rows, num_cols), (0, num_cols - 1), rowspan=num_rows,
     #                        )
@@ -650,8 +650,7 @@ def analyze_kimura_distances(env, df):
     one_dim_Kimura_accuracy(env, df)
 
     kimura_dist_plot(env, df)
-    heat_map_Kimura_accuracy(env, df, "Min-Kimura", "Max-Kimura", balance=True, xlabel="Minimum Kimura",
-                             ylabel="Maximum Kimura")
+    heat_map_Kimura_accuracy(env, df, "Min-Kimura", "Max-Kimura", balance=True)
     heat_map_Kimura_accuracy(env, df, "Average-Kimura", "Std-Kimura", balance=False)
 
 
@@ -993,6 +992,11 @@ def viz_summary_per_gcfid_per_step(env, df):
     pd_work = env['pd-work']
 
     list_df = list()
+
+    for gcfid, df_group in df.groupby("GCFID", as_index=False):
+        df.loc[df_group.index, "Total SBSP"] = df.loc[df_group.index, "SBSP"].sum()
+        df.loc[df_group.index, "Total GMS2=SBSP"] = df.loc[df_group.index, "GMS2=SBSP"].sum()
+
     for step in ["A", "B", "C"]:
         df_summary_per_gcfid = get_summary_per_gcfid(df[df["Predicted-at-step"] == step])
         df_summary_per_gcfid["SBSP Step"] = step
@@ -1000,15 +1004,115 @@ def viz_summary_per_gcfid_per_step(env, df):
 
     df_per_gcfid_per_step = pd.concat(list_df, sort=False)
 
-    sns.catplot(
-        df_per_gcfid_per_step, "Ancestor", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="SBSP Step", kind="box",
-        legend_loc="best",
-        figure_options=FigureOptions(
-            save_fig=next_name(pd_work),
-            xlabel="Clade",
-            ylabel="Err(NCBI,GMS2=SBSP)"
+    import matplotlib.pyplot as plt
+    # fig, ax = plt.subplots()
+    #
+    # sns.lineplot(df_per_gcfid_per_step, "SBSP Step", "SBSP", hue="GCFID", ax=ax,
+    #              sns_kwargs={"palette": CM.get_map("verified")},
+    #              legend=False
+    #              )
+    # for l in ax.lines:
+    #     l.set_linestyle("--")
+    #
+    # ax2 = ax.twinx()
+    # sns.lineplot(df_per_gcfid_per_step, "SBSP Step", "Sen(SBSP,NCBI)", hue="GCFID", ax=ax2,
+    #              sns_kwargs={"palette": CM.get_map("verified")},)
+    #
+    # fo = FigureOptions(
+    #     xlabel="SBSP Step",
+    #     ylabel="Percentage",
+    #     # ylim=[0, 105],
+    #     save_fig=next_name(env["pd-work"])
+    # )
+    # FigureOptions.set_properties_for_axis(ax, fo)
+    # plt.subplots_adjust(bottom=0.2)
+    # handles, labels = ax.get_legend_handles_labels()
+    # ax.legend(handles=handles[1:], labels=labels[1:],
+    #           loc="lower center", ncol=4, bbox_to_anchor=(0.5, -0.25))
+    #
+    # plt.savefig(fo.save_fig)
+    # plt.show()
+
+
+    fig, axes = plt.subplots(3, 2, sharex="all", sharey="row")
+    ax = axes[:, 0]
+
+    sns.lineplot(df_per_gcfid_per_step, "SBSP Step", "Sen(SBSP,NCBI)", hue="GCFID", ax=ax[0],
+                 sns_kwargs={"palette": CM.get_map("verified")}, legend=False,
+                 figure_options=FigureOptions(
+            ylabel="Sensitivity",
+            ylim=[70,105],
+
+        ))
+
+    sns.lineplot(df_per_gcfid_per_step, "SBSP Step", "Cov(SBSP,NCBI)", hue="GCFID", ax=ax[1],
+                 sns_kwargs={"palette": CM.get_map("verified")},
+                 legend=False, figure_options=FigureOptions(
+            ylabel="Percent of Genes",
+            ylim=[0, None]
         )
-    )
+                 )
+
+
+    sns.lineplot(df_per_gcfid_per_step, "SBSP Step", "SBSP", hue="GCFID", ax=ax[2],
+                 sns_kwargs={"palette": CM.get_map("verified")},
+                 legend=False, figure_options=FigureOptions(
+            ylabel="Number of Genes",
+            ylim=[0, None]
+        )
+                 )
+
+    fig.align_ylabels(ax)
+
+    # plt.savefig(next_name(env["pd-work"]))
+    # plt.show()
+
+    # fig, ax = plt.subplots(3, 1, sharex="all")
+    ax = axes[:, 1]
+    sns.lineplot(df_per_gcfid_per_step, "SBSP Step", "Sen(GMS2=SBSP,NCBI)", hue="GCFID", ax=ax[0],
+                 sns_kwargs={"palette": CM.get_map("verified")}, legend=False,
+                 figure_options=FigureOptions(
+                     ylabel="Sensitivity",
+                     ylim=[70, 105],
+
+                 ))
+
+    sns.lineplot(df_per_gcfid_per_step, "SBSP Step", "Cov(GMS2=SBSP,NCBI)", hue="GCFID", ax=ax[1],
+                 sns_kwargs={"palette": CM.get_map("verified")},
+                 legend=False, figure_options=FigureOptions(
+            ylabel="Percent of Genes",
+            ylim=[0, None]
+        )
+                 )
+
+    sns.lineplot(df_per_gcfid_per_step, "SBSP Step", "GMS2=SBSP", hue="GCFID", ax=ax[2],
+                 sns_kwargs={"palette": CM.get_map("verified")},
+                figure_options=FigureOptions(
+            ylabel="Number of Genes",
+            ylim=[0, None]
+        )
+                 )
+
+    ax[2].get_legend().remove()
+
+    fig.align_ylabels(ax)
+
+    for ax in axes.ravel():
+        ax.set_xlabel("Step")
+
+    axes[0][0].set_title("SBSP")
+    axes[0][1].set_title("GMS2=SBSP")
+
+    fig.subplots_adjust(bottom=0.17)
+
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(handles=handles[1:], labels=labels[1:], loc="lower center", ncol=4)#, bbox_to_anchor=(0.5, -0.25))
+    plt.savefig(next_name(env["pd-work"]))
+    plt.show()
+
+    # three plots
+    import sys
+    sys.exit()
 
 
 
@@ -1052,11 +1156,19 @@ def read_analysis_per_query_to_df(pf_data):
 
     return df
 
+def fix_names(r):
+    # type: (pd.Series) -> str
+    return "{}. {}".format(
+        r["GCFID"][0], r["GCFID"].split("_")[1]
+    )
+
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
 
     df = read_analysis_per_query_to_df(args.pf_data)
+    df["GCFID"] = df.apply(fix_names, axis=1)
+
     viz_analysis_per_query(env, df)
 
 

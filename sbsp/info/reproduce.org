@@ -1,0 +1,123 @@
+#+TITLE: Reproducing SBSP
+#+SUBTITLE: The commands used to set up, reproduce, and graph results from the SBSP paper
+#+AUTHOR: Karl Gemayel
+#+Date: Mon 27 Apr 2020 10:37:05 EDT
+#+OPTIONS: toc:2 H:3 num:3
+
+#+LATEX_HEADER_EXTRA:  \usepackage{mdframed}
+#+LATEX_HEADER_EXTRA: \BeforeBeginEnvironment{minted}{\begin{mdframed}}
+#+LATEX_HEADER_EXTRA: \AfterEndEnvironment{minted}{\end{mdframed}}
+
+* Downloading and installing
+** Code
+Downloading the code is fairly straightforward using =git=.
+
+** Data
+We provide the databases for /Enterobacterales/, /Actinobacteria/, /Archaea/, and /FCB group/, and the sequence and label files for the genomes with verified starts: /E. coli/, /H. salinarum/, /N. pharaonis/, /M. tuberculosis/. We also provide the steps to create a data base with for any ancestor using data that can be downloaded from NCBI's website.
+
+* Code and data structure
+After installing SBSP, you will have the following structure
+
+#+begin_src dot :file dir.pdf :cmdline -Tpdf
+   digraph{
+     sbsp -> data;
+     sbsp -> runs;
+     sbsp -> lists;
+     sbsp -> code;
+     sbsp -> bin
+   
+     code -> python;
+     code -> bash;
+   
+   
+     data -> Genome1;
+     data -> Genome2;
+     data -> "...";
+     data -> GenomeN;
+
+     Genome1 -> "sequence.fasta";
+     Genome1 -> "ncbi.gff";
+     Genome1 -> "verified.gff";
+
+     python -> lib;
+     python -> driver;
+     }
+#+end_src
+
+#+RESULTS:
+[[file:dir.pdf]]
+
+** Bin
+The python scripts can be located at 
+** Data
+The data directory contains all genomic raw information: mainly the sequence and labels files. If constructing databases from scratch, this directory will also include all genomes downloaded from NCBI.
+** Runs
+For this analysis, all runs executed by SBSP, GMS2, and Prodigal will be put in subdirectories for each genome. 
+#+begin_src dot :file dir_runs.pdf :cmdline -Tpdf
+  digraph {
+    gms21 [label="gms2"]
+    sbsp1 [label="sbsp"]
+    prodigal1 [label="prodigal"]
+
+    gms22 [label="gms2"]
+    sbsp2 [label="sbsp"]
+    prodigal2 [label="prodigal"]
+
+  
+  runs -> Genome1;
+    runs -> Genome2;
+    runs -> "...";
+    runs -> GenomeN;
+
+    Genome1 -> gms21;
+    Genome1 -> sbsp1;
+    Genome1 -> prodigal1;
+    Genome2 -> gms22;
+    Genome2 -> sbsp2;
+    Genome2 -> prodigal2;
+
+  }
+#+end_src
+
+#+RESULTS:
+[[file:dir_runs.pdf]]
+
+
+* Running on verified genomes
+
+SBSP takes as input:
+- Query proteins: FASTA file
+- Target protein database: Diamond database
+
+It outputs:
+- GFF file containing labels
+- Multiple sequence alignment files for all queries
+- details.csv: output file containing details of predictions
+
+
+
+#+BEGIN_SRC bash
+  # List of genomes with verified genes
+  pf_list_verified=$lists/verified.list
+  pf_sbsp_conf=$config/sbsp_defaults.conf
+
+  toggle_pbs="--pf-conf-pbs $config/pbs_defaults.conf"  # if PBS installed, set this option to empty: ""
+
+  $bin/run_sbsp_from_genome_list_py.sh --pf-genome-list ${pf_list_verified} --pf-conf-sbsp ${pf_sbsp_conf} ${toggle_pbs} 
+
+
+  awk -F "," '{if (NR > 1) print}' | while read -r line; do
+
+  done
+
+#+END_SRC 
+
+* GMS2 on metagenomes
+** Run GMS2 on genome fragments
+#+begin_src bash :session
+$bin/run_tools_on_genome_fragments_py.sh --pf-genome-list $lists/verified.list --tools gms2 prodigal
+#+end_src
+* Collecting Data
+
+* Tables and Graphs
+** 

@@ -60,6 +60,7 @@ parser.add_argument('--pd-data', required=False, default=None, help="Path to dat
 parser.add_argument('--pd-results', required=False, default=None, help="Path to results directory")
 parser.add_argument("-l", "--log", dest="loglevel", choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                     help="Set the logging level", default='WARNING')
+parser.add_argument("-L", "pf-log", default=None, required=False, help="The log file")
 
 parsed_args = parser.parse_args()
 
@@ -73,7 +74,7 @@ my_env = Environment(pd_data=parsed_args.pd_data,
                      pd_results=parsed_args.pd_results)
 
 # Setup logger
-logging.basicConfig(level=parsed_args.loglevel)
+logging.basicConfig(level=parsed_args.loglevel, filename=parsed_args.pf_log)
 logger = logging.getLogger("logger")  # type: logging.Logger
 
 
