@@ -144,7 +144,9 @@ def main(env, args):
     # run jobs
     for p in job_vector:
         p.get()
+        done += 1
         logger.info(f"Done {done}/{num_jobs}")
+
 
 
 
