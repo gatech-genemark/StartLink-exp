@@ -79,8 +79,8 @@ def main(env, args):
 
     mkdir_p(func_args["env"]["pd-work"])
     func_args["env"]["pd-work"] = run_shell_cmd(
-        "mktemp --tmpdir={}".format(func_args["env"]["pd-work"])
-    )
+        "mktemp --tmpdir={} -d".format(func_args["env"]["pd-work"])
+    ).strip()
 
     # logger.critical("{}\n{}".format(func, func_args))
     output = {

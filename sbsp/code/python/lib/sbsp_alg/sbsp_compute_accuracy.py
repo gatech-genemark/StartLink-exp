@@ -157,7 +157,7 @@ def pipeline_step_compute_accuracy(env, df, pipeline_options):
                                        tag=genome,
                                        split_on_attributes=["predicted-at-step"])
 
-        LabelsComparisonDetailedViz(lcd).run(env["pd-work"])
+        # LabelsComparisonDetailedViz(lcd).run(env["pd-work"])
 
     accuracy = LabelsComparison.stringify_genome_accuracies(genome_to_comparison, ",")
     import sbsp_io.general

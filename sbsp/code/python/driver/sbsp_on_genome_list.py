@@ -192,6 +192,7 @@ def main(env, args):
     active_threads = list()
     thread_id = 0
     for gi in gil:
+        logger.info("Scheduling: {}".format(gi.name))
         pd_work = os_join(env["pd-work"], gi.name, args.dn_run)
         curr_env = env.duplicate({"pd-work": pd_work})
 
@@ -220,12 +221,16 @@ def main(env, args):
         po['pf-q-list'] = pf_list
 
         thread = TransferThread(env, thread_id, gi, po, lock)
+        thread.start()
         thread_id += 1
 
         active_threads.append(thread)
 
         # wait until number of active threads is low
-        wait_for_any(active_threads)
+        if len(active_threads) >= args.simultaneous_genomes:
+            wait_for_any(active_threads)
+
+        time.sleep(5)
 
     wait_for_all(active_threads)
 

@@ -420,7 +420,7 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
 
     distance_min = sbsp_options.safe_get("distance-min")
     distance_max = sbsp_options.safe_get("distance-max")
-    rng = get_value(kwargs, "rng", random)
+    rng = get_value(kwargs, "rng", None)
     max_targets = 50
 
     filter_orthologs_with_equal_kimura_to_query = sbsp_options.safe_get("filter-orthologs-with-equal-kimura")
@@ -1655,7 +1655,9 @@ def thread_safe_find_start_and_save_to_csv(env, r, sbsp_options, msa_number, pf_
 def process_find_start_for_multiple_query_blast_record(lock, process_number, env, records, sbsp_options, pf_output, **kwargs):
     # type: (Lock, int, Environment, List[Record], SBSPOptions, str, Dict[str, Any]) -> None
 
-    local_rng = np.random.RandomState(sbsp_options.safe_get("random-seed"))
+    # local_rng = np.random.RandomState(sbsp_options.safe_get("random-seed"))
+    local_rng = random.Random(sbsp_options.safe_get("random-seed"))
+    logger.info("Using regular random")
 
     msa_number = 0
     for r in records:
