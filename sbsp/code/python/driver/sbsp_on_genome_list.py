@@ -4,6 +4,7 @@
 # Created: 3/17/20
 import logging
 import random
+import threading
 import time
 import argparse
 import pandas as pd
@@ -89,6 +90,51 @@ def get_clade_to_pf_db(pf_db_index):
         r["Clade"]: r["pf-db"] for _, r in df.iterrows()
     }
 
+class TransferThread (threading.Thread):
+    def __init__(self, env, thread_id, gi, po, lock):
+        # type: (Environment, Any, GenomeInfo, PipelineSBSPOptions, threading.Lock) -> None
+        threading.Thread.__init__(self)
+        self.env = env
+        self.thread_id = thread_id
+        self.gi = gi
+        self.po = po
+        self.lock = lock
+
+
+    def run(self):
+        sbsp_on_gi(self.gi, self.po)
+
+
+def wait_for_all(active_threads):
+    # type: (List[threading.Thread]) -> List[threading.Thread]
+
+    done_threads = list()
+    while True:
+        if len(active_threads) == 0:
+            break
+        for i, t in enumerate(active_threads):
+            if not t.is_alive():
+                del active_threads[i]
+                done_threads.append(t)
+
+        time.sleep(30)
+
+    return done_threads
+
+def wait_for_any(active_threads):
+    # type: (List[threading.Thread]) -> Union[threading.Thread, None]
+
+    while True:
+        if len(active_threads) == 0:
+            return None
+        for i, t in enumerate(active_threads):
+            if not t.is_alive():
+                del active_threads[i]
+                return t
+
+        time.sleep(30)
+
+
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
 
@@ -105,6 +151,46 @@ def main(env, args):
 
     # create job vector for parallel processing
     job_vector = list()
+    # for gi in gil:
+    #     pd_work = os_join(env["pd-work"], gi.name, args.dn_run)
+    #     curr_env = env.duplicate({"pd-work": pd_work})
+    #
+    #     pf_output = os_join(pd_work, "output.csv")
+    #
+    #     try:
+    #         pf_t_db = clade_to_pf_db[gi.attributes["ancestor"]]
+    #     except KeyError:
+    #         raise ValueError("Unknown clade {}".format(gi.attributes["ancestor"]))
+    #
+    #     po = PipelineSBSPOptions(
+    #         curr_env, **vars(args), pf_t_db=pf_t_db, pf_output=pf_output, sbsp_options=sbsp_options, pbs_options=pbs_options,
+    #     )
+    #
+    #     # create working dir
+    #
+    #     pf_list = os_join(pd_work, "query.list")
+    #     mkdir_p(pd_work)
+    #
+    #     # write genome to local list file
+    #     GenomeInfoList([gi]).to_file(pf_list)
+    #
+    #     # update custom options to local gi
+    #
+    #     po['pf-q-list'] = pf_list
+    #
+    #     job_vector.append(pool.apply_async(sbsp_on_gi, args=[gi, po]))
+    #
+    #     time.sleep(1)  # sleeping ensures that random seeds have time to default to new values
+    # run jobs
+    # for p in job_vector:
+    #     p.get()
+    #     done += 1
+    #     logger.info(f"Done {done}/{num_jobs}")
+
+
+    lock = threading.Lock()
+    active_threads = list()
+    thread_id = 0
     for gi in gil:
         pd_work = os_join(env["pd-work"], gi.name, args.dn_run)
         curr_env = env.duplicate({"pd-work": pd_work})
@@ -115,13 +201,14 @@ def main(env, args):
             pf_t_db = clade_to_pf_db[gi.attributes["ancestor"]]
         except KeyError:
             raise ValueError("Unknown clade {}".format(gi.attributes["ancestor"]))
-        
+
         po = PipelineSBSPOptions(
-            curr_env, **vars(args), pf_t_db=pf_t_db, pf_output=pf_output, sbsp_options=sbsp_options, pbs_options=pbs_options,
+            curr_env, **vars(args), pf_t_db=pf_t_db, pf_output=pf_output, sbsp_options=sbsp_options,
+            pbs_options=pbs_options,
         )
 
         # create working dir
-        
+
         pf_list = os_join(pd_work, "query.list")
         mkdir_p(pd_work)
 
@@ -129,23 +216,22 @@ def main(env, args):
         GenomeInfoList([gi]).to_file(pf_list)
 
         # update custom options to local gi
-        
+
         po['pf-q-list'] = pf_list
 
-        job_vector.append(pool.apply_async(sbsp_on_gi, args=[gi, po]))
+        thread = TransferThread(env, thread_id, gi, po, lock)
+        thread_id += 1
 
-        time.sleep(1)  # sleeping ensures that random seeds have time to default to new values
+        active_threads.append(thread)
 
+        # wait until number of active threads is low
+        wait_for_any(active_threads)
 
+    wait_for_all(active_threads)
 
     num_jobs = len(job_vector)
     done = 0
 
-    # run jobs
-    for p in job_vector:
-        p.get()
-        done += 1
-        logger.info(f"Done {done}/{num_jobs}")
 
 
 
