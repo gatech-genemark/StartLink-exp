@@ -78,7 +78,7 @@ def split_genome_info_list(data, num_splits, pd_work, **kwargs):
 
     genome_info_list = get_value(data, "gil", required=True)
 
-    pf_output_template = data["pf_output_template"]
+    pf_output_template = get_value(data, "pf_output_template", "")
 
     if num_splits > len(genome_info_list):
         num_splits = len(genome_info_list)

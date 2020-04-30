@@ -99,8 +99,8 @@ class Environment:
             "pd-data": pd_data,
             "pd-bin": pd_bin,
             "pd-config": pd_config,
-            "pd-work-results": pd_work_results
-
+            "pd-work-results": pd_work_results,
+            "pd-bin-external": os.path.join(pd_base, "bin_external")
         }
 
         import copy
