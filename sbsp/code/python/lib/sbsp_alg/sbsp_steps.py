@@ -1,11 +1,13 @@
 import copy
 import os
 import logging
+import random
 import time
 import timeit
 from multiprocessing import Process, Manager, Lock
 from random import shuffle
 from typing import *
+import numpy as np
 
 from Bio.Align import MultipleSeqAlignment
 from Bio.Align.Applications import ClustalwCommandline, ClustalOmegaCommandline
@@ -418,6 +420,7 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
 
     distance_min = sbsp_options.safe_get("distance-min")
     distance_max = sbsp_options.safe_get("distance-max")
+    rng = get_value(kwargs, "rng", random)
     max_targets = 50
 
     filter_orthologs_with_equal_kimura_to_query = sbsp_options.safe_get("filter-orthologs-with-equal-kimura")
@@ -435,7 +438,7 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
     # shuffled_alignments = [a for a in r.alignments]
     before = len(r.alignments)
     shuffled_alignments = quick_filter_alignments(r.alignments, query_info, **kwargs)
-    shuffle(shuffled_alignments)
+    shuffle(shuffled_alignments, random=rng.random)
     logger.debug("Quick filter: {} -> {}".format(before, len(shuffled_alignments)))
 
     if not fsf and len(shuffled_alignments) == 0:
@@ -449,7 +452,7 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
 
     for alignment in shuffled_alignments:
         if len(list_entries) > max_targets:
-            logger.debug("Reached limit on number of targets: {} from {}".format(max_targets, len(r.alignments)))
+            logger.debug("Reached limit on number of targets: {} from {}".format(max_targets, len(shuffled_alignments)))
             break
 
         target_info = unpack_fasta_header(alignment.title)
@@ -1589,6 +1592,7 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
     stats = get_value(kwargs, "stats", init=dict)
     fn_tmp_prefix = get_value(kwargs, "msa_output_start", None)
     num_processors = get_value(kwargs, "num_processors", None)
+    rng = get_value(kwargs, "rng", None)
 
     pd_msa_final = get_value(kwargs, "pd_msa_final", None)
 
@@ -1651,9 +1655,13 @@ def thread_safe_find_start_and_save_to_csv(env, r, sbsp_options, msa_number, pf_
 def process_find_start_for_multiple_query_blast_record(lock, process_number, env, records, sbsp_options, pf_output, **kwargs):
     # type: (Lock, int, Environment, List[Record], SBSPOptions, str, Dict[str, Any]) -> None
 
+    local_rng = np.random.RandomState(sbsp_options.safe_get("random-seed"))
+
     msa_number = 0
     for r in records:
-        df_result = find_start_for_query_blast_record(env, r, sbsp_options, msa_number="{}_{}".format(process_number, msa_number), **kwargs)
+        df_result = find_start_for_query_blast_record(
+            env, r, sbsp_options, msa_number="{}_{}".format(process_number, msa_number), rng=local_rng, **kwargs
+        )
 
         lock.acquire()
         try:
