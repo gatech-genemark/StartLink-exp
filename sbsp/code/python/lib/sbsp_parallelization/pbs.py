@@ -233,13 +233,17 @@ class PBS:
         :return:
         """
 
-        pbs_text = PBS._generate_pbs_header_array(num_jobs, jobname, self._pbs_options)
+        # create unique compute directory
+        pd_compute = run_shell_cmd("mktemp --tmpdir={}".format(self._pbs_options["pd-root-compute"]))
+
+        pbs_text = PBS._generate_pbs_header_array(num_jobs, jobname, self._pbs_options, pd_compute=pd_compute)
 
         pbs_text += "\n{}\n".format(
             PBS._generate_call_command(self._env,
                                        pf_input_package_template,
                                        pf_output_package_template,
-                                       self._pbs_options
+                                       self._pbs_options,
+                                       pd_compute=pd_compute
             )
         )
 
@@ -248,7 +252,7 @@ class PBS:
         write_string_to_file(pbs_text, pf_pbs)
 
     @staticmethod
-    def _generate_pbs_header_array(num_jobs, job_name, pbs_options):
+    def _generate_pbs_header_array(num_jobs, job_name, pbs_options, pd_compute):
         """
 
         :param num_jobs:
@@ -262,7 +266,7 @@ class PBS:
         ppn = pbs_options["num-processors"]
         walltime = pbs_options["walltime"]
 
-        pd_compute = os.path.abspath(os.path.join(pbs_options["pd-root-compute"], pbs_options["dn-compute"]))
+        # pd_compute = os.path.abspath(os.path.join(pbs_options["pd-root-compute"], pbs_options["dn-compute"]))
 
         pd_job_template = os.path.join(pd_compute, "job_${PBS_ARRAYID}")
 
@@ -308,10 +312,10 @@ class PBS:
         return pbs_text
 
     @staticmethod
-    def _generate_call_command(env, pf_job_input, pf_job_output, pbs_options):
+    def _generate_call_command(env, pf_job_input, pf_job_output, pbs_options, pd_compute):
 
 
-        pd_compute = os.path.abspath(os.path.join(pbs_options["pd-root-compute"], pbs_options["dn-compute"]))
+        # pd_compute = os.path.abspath(os.path.join(pbs_options["pd-root-compute"], pbs_options["dn-compute"]))
         pd_job_template = os.path.join(pd_compute, "job_${PBS_ARRAYID}")
 
         cmd = "{} --pf-job-input {} --pf-job-output {} --pd-work {}".format(
