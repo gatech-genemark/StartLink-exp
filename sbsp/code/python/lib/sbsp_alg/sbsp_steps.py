@@ -2098,6 +2098,8 @@ def sbsp_steps(env, pipeline_options):
     else:
         raise NotImplementedError("Only PBS version supported.s")
 
+    logger.info("Done sbsp steps")
+
     return output
 
 
@@ -2115,10 +2117,12 @@ def sbsp_step_accuracy(env, pipeline_options, list_pf_previous):
     if len(list_pf_previous) == 0:
         raise ValueError("Cannot compute accuracy: {}".format(pipeline_options["pf-q-list"]))
 
+    
     df = pd.concat([pd.read_csv(f, header=0) for f in list_pf_previous], ignore_index=True)
 
+    logger.info("Computing Accuracy")
     df = pipeline_step_compute_accuracy(env, df, pipeline_options)
-
+    logger.info("Done computing Accuracy")
     df.to_csv(pipeline_options["pf-output"])
 
 
@@ -2127,6 +2131,7 @@ def sbsp_step_accuracy(env, pipeline_options, list_pf_previous):
     # add_true_starts_to_msa_output(env, df, msa_nt=True, fn_q_labels_true=pipeline_options["fn-q-labels-true"])
     separate_msa_outputs_by_stats(env, df, pipeline_options["dn-msa-output"])
 
+    logger.info("All done dear")
     return list()
 
 
