@@ -65,3 +65,26 @@ def next_name(pd_work, **kwargs):
     if "counter" not in next_name.__dict__: next_name.counter = -1
     next_name.counter += 1
     return os_join(pd_work, "{}.{}".format(next_name.counter, ext))
+
+
+def compute_gc_from_file(pf_sequence):
+    # type: (str) -> float
+
+    from sbsp_io.sequences import read_fasta_into_hash
+    sequences = read_fasta_into_hash(pf_sequence)
+
+
+    counts = {"A": 0, "C": 0, "G": 0, "T": 0}
+
+    for seq in sequences.values():
+        for s in seq:
+            if s.upper() in {"A", "C", "G", "T"}:
+                counts[s] += 1
+
+    total = sum(counts.values())
+    count_gc = counts["G"] + counts["C"]
+
+    if total == 0:
+        return 0.0
+
+    return count_gc / float(total)
