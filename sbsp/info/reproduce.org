@@ -7,6 +7,7 @@
 #+LATEX_HEADER_EXTRA:  \usepackage{mdframed}
 #+LATEX_HEADER_EXTRA: \BeforeBeginEnvironment{minted}{\begin{mdframed}}
 #+LATEX_HEADER_EXTRA: \AfterEndEnvironment{minted}{\end{mdframed}}
+#+LATEX_HEADER: \usepackage[margin=0.5in]{geometry}
 
 * Downloading and installing
 ** Code
@@ -30,14 +31,14 @@ After installing SBSP, you will have the following structure
      code -> bash;
    
    
-     data -> Genome1;
-     data -> Genome2;
+     data -> G1;
+     data -> G2;
      data -> "...";
-     data -> GenomeN;
+     data -> GN;
 
-     Genome1 -> "sequence.fasta";
-     Genome1 -> "ncbi.gff";
-     Genome1 -> "verified.gff";
+     G1 -> "sequence.fasta";
+     G1 -> "ncbi.gff";
+     G1 -> "verified.gff";
 
      python -> lib;
      python -> driver;
@@ -64,17 +65,17 @@ For this analysis, all runs executed by SBSP, GMS2, and Prodigal will be put in 
     prodigal2 [label="prodigal"]
 
   
-  runs -> Genome1;
-    runs -> Genome2;
+  runs -> G1;
+    runs -> G2;
     runs -> "...";
-    runs -> GenomeN;
+    runs -> GN;
 
-    Genome1 -> gms21;
-    Genome1 -> sbsp1;
-    Genome1 -> prodigal1;
-    Genome2 -> gms22;
-    Genome2 -> sbsp2;
-    Genome2 -> prodigal2;
+    G1 -> gms21;
+    G1 -> sbsp1;
+    G1 -> prodigal1;
+    G2 -> gms22;
+    G2 -> sbsp2;
+    G2 -> prodigal2;
 
   }
 #+end_src
@@ -98,18 +99,15 @@ It outputs:
 
 #+BEGIN_SRC bash
   # List of genomes with verified genes
-  pf_list_verified=$lists/verified.list
-  pf_sbsp_conf=$config/sbsp_defaults.conf
+  pf_list_verified=$lists/verified.list  # verified genomes
+  pf_db_index=$db/index.csv  # database location files
+  pf_sbsp_conf=$config/sbsp_defaults.conf # sbsp config file
 
-  toggle_pbs="--pf-conf-pbs $config/pbs_defaults.conf"  # if PBS installed, set this option to empty: ""
+  toggle_pbs="--pf-conf-pbs $config/pbs_defaults.conf"  # if PBS not installed, set this option to empty: ""
+  sg=8   # number of genomes to run simutaneously (low number recommended)
+  opt_verif="--fn-q-labels verified.gff --fn-q-labels-true verified.gff"
 
-  $bin/run_sbsp_from_genome_list_py.sh --pf-genome-list ${pf_list_verified} --pf-conf-sbsp ${pf_sbsp_conf} ${toggle_pbs} 
-
-
-  awk -F "," '{if (NR > 1) print}' | while read -r line; do
-
-  done
-
+  $bin/sbsp_on_genome_list_py.sh --pf-q-list $pf_list_verified --simultaneous-genomes $sg --pd-work $pd_run --pf-sbsp-options $pf_sbsp_options  --pf-db-index $pf_db_index $opt_verif $toggle_pbs
 #+END_SRC 
 
 * GMS2 on metagenomes
@@ -121,3 +119,44 @@ $bin/run_tools_on_genome_fragments_py.sh --pf-genome-list $lists/verified.list -
 
 * Tables and Graphs
 ** 
+
+* Experiments
+
+** Difference in 5' predictions on Representative Genomes
+*** Data download
+    #+begin_src bash
+      pf_rep_bac=$lists/refseq_representative_bacteria.list
+      pf_rep_arc=$lists/refseq_representative_archaea.list
+      pf_assembly_bac=$metadata/assembly_summary.txt
+      $bin/download_from_ncbi_py.sh --pf-assembly-summary $pf_assembly_bac --pf-data $data --pf-output-list
+
+      # link ncbi as "tool" (for easy comparison wwith other tools)
+      cat $pf_rep_bac $pf_rep_arc | grep -v gcfid | cut -f1 -d, | while read -r line; do
+        mkdir -p $runs/$line; mkdir -p $runs/$line/ncbi;
+        ln -s $data/$line/ncbi.gff $runs/$line/ncbi/ncbi.gff ;
+      done
+    #+end_src
+
+*** Run GMS2 and Prodigal
+    #+begin_src bash
+
+      # Run on GMS2
+      $bin/run_tool_on_genome_list_py.sh --tool gms2 --pf-genome-list $pf_rep_bac --type bacteria --dn-run gms2
+      $bin/run_tool_on_genome_list_py.sh --tool gms2 --pf-genome-list $pf_rep_arc --type archaea --dn-run gms2
+
+      # Run on Prodigal
+      $bin/run_tool_on_genome_list_py.sh --tool prodigal --pf-genome-list $pf_rep_bac --type bacteria --dn-run prodigal
+      $bin/run_tool_on_genome_list_py.sh --tool prodigal --pf-genome-list $pf_rep_arc --type archaea --dn-run prodigal
+    #+end_src
+
+*** Collect statistics
+We can now collect the statistics and create the figures to compare GMS2, Prodigal, and NCBI.
+     #+begin_src bash
+
+       $bin/compare_tools_5prime_py.sh --pf-genome-lists $pf_rep_bac $pf_rep_arc --list-names Bacteria Archaea --dn-tools gms2 prodigal ncbi --tool-names GMS2 Prodigal NCBI
+     #+end_src
+
+**** 
+
+**** Prodigal vs NCBI
+**** GMS2 vs Prodigal
