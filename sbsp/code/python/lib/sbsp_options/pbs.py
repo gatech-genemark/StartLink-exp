@@ -8,6 +8,15 @@ from sbsp_options.options import Options
 class PBSOptions(Options):
     """Options for PBS scheduler"""
 
+    def __init__(self, env, pf_options_custom, **kwargs):
+        # type: (Environment, str, str, str, SBSPOptions, str, Dict[str, Any]) -> None
+        super(PBSOptions, self).__init__(env, pf_options_custom, **kwargs)
+
+        if self._options["pd-head"] is None:
+            self._options["pd-head"] = env["pd-work"]
+        if self._options["pd-root-compute"] is None:
+            self._options["pd-root-compute"] = self._options["pd-head"]
+
     def path_to_default_options_file(self, env):
         # type: (Environment) -> str
         return os.path.join(env["pd-config"], "pbs_defaults.conf")

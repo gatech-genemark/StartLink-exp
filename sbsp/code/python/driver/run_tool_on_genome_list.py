@@ -55,6 +55,40 @@ my_env = Environment(pd_data=parsed_args.pd_data,
 logging.basicConfig(level=parsed_args.loglevel)
 logger = logging.getLogger("logger")  # type: logging.Logger
 
+def create_pbs_file(env, cmd_run, pf_pbs, **kwargs):
+        
+        job_name = get_value(kwargs, "job_name", "JOB")
+        num_nodes = get_value(kwargs, "num_nodes", 1)
+        ppn = get_value(kwargs, "ppn", 1)
+        node_property = get_value(kwargs, "node_property", "")
+        walltime = get_value(kwargs, "walltime", "07:00:00")
+
+        pd_work = env["pd-work"]
+
+        pbs_text = ""
+
+        pbs_text += "#PBS -N " + str(job_name) + "\n"
+        pbs_text += "#PBS -o " + "{}/{}".format(pd_work, "error") + "\n"
+        pbs_text += "#PBS -j oe" + "\n"
+        pbs_text += "#PBS -l nodes=" + str(num_nodes) + ":ppn=" + str(ppn) + "{}\n".format(node_property)
+        pbs_text += "#PBS -l walltime=" + str(walltime) + "\n"
+
+        pbs_text += "#PBS -W umask=002" + "\n"
+
+        pbs_text += "export PATH=\"/home/karl/anaconda/envs/sbsp/bin:$PATH\"\n"
+
+        pbs_text += "PBS_O_WORKDIR=" + pd_work + "\n"
+        pbs_text += "cd $PBS_O_WORKDIR \n"
+
+        pbs_text += "echo The working directory is `echo $PBS_O_WORKDIR`" + "\n"
+        pbs_text += "echo This job runs on the following nodes:" + "\n"
+        pbs_text += "echo `cat $PBS_NODEFILE`" + "\n"
+
+        pbs_text += "\n{}\n".format(cmd_run)
+
+        from sbsp_io.general import write_string_to_file
+        write_string_to_file(pbs_text, pf_pbs)
+
 
 def run_gms2(env, gi, **kwargs):
     # type: (Environment, GenomeInfo, Dict[str, Any]) -> None
@@ -67,12 +101,14 @@ def run_gms2(env, gi, **kwargs):
     pf_sequence = os_join(pd_data, gi.name, "sequence.fasta")
 
     # FIXME: put in genetic code
-    run_shell_cmd(
-        "cd {}; {} --gcode 11 --format gff --out gms2.gff --seq {}  --v --genome-type {} "
-        "--fgio-dist-thresh 25".format(
-            pd_work, pe_tool, pf_sequence, genome_type
+    cmd_run = "{} --gcode 11 --format gff --out gms2.gff --seq {}  --v --genome-type {} --fgio-dist-thresh 25".format(
+            pe_tool, pf_sequence, genome_type
         )
-    )
+
+    pf_pbs = os_join(pd_work, "run.pbs")
+    create_pbs_file(env, cmd_run, pf_pbs, job_name=gi.name, **kwargs)
+
+    run_shell_cmd("qsub {} &".format(pf_pbs))
 
 
 def run_prodigal(env, gi, **kwargs):
@@ -84,16 +120,19 @@ def run_prodigal(env, gi, **kwargs):
     pf_sequence = os_join(pd_data, gi.name, "sequence.fasta")
 
     # FIXME: put in genetic code
-    run_shell_cmd(
-        "cd {}; {}  -i {}  -g 11  -o prodigal.gff  -f gff  -t prodigal.parameters  -q \n".format(
-            pd_work, pe_tool, pf_sequence
+    cmd_run ="{}  -i {}  -g 11  -o prodigal.gff  -f gff  -t prodigal.parameters  -q \n".format(
+            pe_tool, pf_sequence
         )
-    )
+    pf_pbs = os_join(pd_work, "run.pbs")
+    create_pbs_file(env, cmd_run, pf_pbs, job_name=gi.name, **kwargs)
+
+    run_shell_cmd("qsub {} &".format(pf_pbs))
 
 
 def run_tool_on_gil(env, gil, tool, **kwargs):
     # type: (Environment, GenomeInfoList, str, Dict[str, Any]) -> None
 
+    logger.info("Running tool {} on {} genomes".format(tool, len(gil)))
     dn_run = get_value(kwargs, "dn_run", tool, default_if_none=True)
     func = {
         "gms2": run_gms2,
@@ -112,22 +151,8 @@ def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
 
     gil = GenomeInfoList.init_from_file(args.pf_genome_list)
-    pbs_options = PBSOptions.init_from_dict(env, vars(args))
-
-    pbs = PBS(env, pbs_options,
-              splitter=split_genome_info_list,
-              merger=merge_identity
-              )
-
-    output = pbs.run(
-        data={"gil": gil},
-        func=run_tool_on_gil,
-        func_kwargs={
-            "env": env,
-            "tool": args.tool,
-            "dn_run": args.dn_run,
-        }
-    )
+    
+    run_tool_on_gil(env, gil, args.tool, dn_run=args.dn_run, genome_type=args.type)
 
 
 if __name__ == "__main__":

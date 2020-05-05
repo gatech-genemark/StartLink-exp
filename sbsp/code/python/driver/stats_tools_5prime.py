@@ -6,6 +6,7 @@ import logging
 import argparse
 import pandas as pd
 from typing import *
+from tqdm import tqdm
 
 # noinspection All
 import pathmagic
@@ -16,6 +17,12 @@ import sbsp_log  # runs init in sbsp_log and configures logger
 # Custom imports
 from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_general import Environment
+from sbsp_options.pbs import PBSOptions
+from sbsp_parallelization.pbs import PBS
+from sbsp_pbs_data.mergers import merge_identity
+from sbsp_pbs_data.splitters import split_genome_info_list
+import sbsp_argparse.parallelization
+from sbsp_general.general import get_value
 
 # ------------------------------ #
 #           Parse CMD            #
@@ -32,6 +39,7 @@ parser.add_argument('--list-names', required=True, nargs="+")
 parser.add_argument('--dn-tools', required=True, nargs="+")
 parser.add_argument('--tool-names', required=False, nargs="+")
 parser.add_argument('--pf-output', required=True)
+sbsp_argparse.parallelization.add_pbs_options(parser)
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -60,7 +68,7 @@ def read_labels_for_multiple_tools(env, gi, list_dn_tools, list_tool_names):
     common_options = {"shift": 0, "ignore_frameshifted": True, "ignore_partial": True, "ignore_hypothetical": True}
 
     labels = dict()
-    for name, dn_tool in zip(list_dn_tools, list_tool_names):
+    for name, dn_tool in zip(list_tool_names, list_dn_tools):
         pf_labels = os_join(env["pd-runs"], gi.name, dn_tool, f"{dn_tool}.gff")
         labels[name] =  read_labels_from_file(pf_labels, name="SBSP", **common_options)
 
@@ -115,7 +123,7 @@ def _all_together_analysis(indexed_labels):
             common_3p = set(index.keys())
             tag = f"{name}"
         else:
-            common_3p.intersection(index.keys())
+            common_3p = common_3p.intersection(index.keys())
             tag += f"={name}"
 
     def all_equal(items):
@@ -165,24 +173,47 @@ def stats_for_gi(env, gi, list_dn_tools, list_tool_names):
     return result
 
 
-def stats_for_gil(env, gil, list_dn_tools, list_tool_names):
+def stats_for_gil(env, gil, list_dn_tools, list_tool_names, **kwargs):
     # type: (Environment, GenomeInfoList, List[str], List[str]) -> pd.DataFrame
 
     list_entries = list()
-    for gi in gil:
+    for gi in tqdm(gil):
+        # logger.info(f"Genome {i} from {len(gil)}\r")
         entry = stats_for_gi(env, gi, list_dn_tools, list_tool_names)
         list_entries.append(entry)
 
     return pd.DataFrame(list_entries)
 
 
-def stats_tools_5prime(env, list_gil, list_names, list_dn_tools, list_tool_names, pf_output):
-    # type: (Environment, List[GenomeInfoList], List[str], List[str], List[str], str) -> None
+def stats_tools_5prime(env, list_gil, list_names, list_dn_tools, list_tool_names, pf_output, **kwargs):
+    # type: (Environment, List[GenomeInfoList], List[str], List[str], List[str], str, Dict[str, Any]) -> None
 
+    
+    pbs_options = get_value(kwargs, "pbs_options", None)
     # for each gil
     list_df = list()
     for name, gil in zip(list_names, list_gil):
-        df_tmp = stats_for_gil(env, gil, list_dn_tools, list_tool_names)
+        logger.info(f"Analyzing list: {name}")
+        if pbs_options is not None:
+            pbs = PBS(env, pbs_options,
+              splitter=split_genome_info_list,
+              merger=merge_identity
+              )
+
+            output = pbs.run(
+                data={"gil": gil},
+                func=stats_for_gil,
+                func_kwargs={
+                    "env": env,
+                    "list_dn_tools": list_dn_tools,
+                    "list_tool_names": list_tool_names,
+                }
+            )
+
+            df_tmp = pd.concat(output, sort=False)
+        else:
+            df_tmp = stats_for_gil(env, gil, list_dn_tools, list_tool_names)
+
 
         df_tmp["Genome"] = name
         list_df.append(df_tmp)
@@ -208,7 +239,11 @@ def main(env, args):
     if len(list_dn_tools) != len(list_tool_names):
         raise Warning(f"Tools and dirs must have the same length {len(list_dn_tools)} != {len(list_tool_names)}")
 
-    stats_tools_5prime(env, list_gil, list_names, list_dn_tools, list_tool_names, args.pf_output)
+    pbs_options = PBSOptions.init_from_dict(env, vars(args))
+
+    
+
+    stats_tools_5prime(env, list_gil, list_names, list_dn_tools, list_tool_names, args.pf_output, pbs_options=pbs_options)
 
 
 
