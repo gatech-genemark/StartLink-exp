@@ -28,6 +28,8 @@ parser = argparse.ArgumentParser("Description of driver.")
 
 parser.add_argument('--pf-data', required=True)
 
+parser.add_argument('--with-mgm', required=False,  default=False, action="store_true")
+
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
 parser.add_argument('--pd-results', required=False, default=None, help="Path to results directory")
@@ -69,7 +71,7 @@ def main(env, args):
                  figure_options=FigureOptions(
                      xlabel="Chunk size (mb)",
                      ylabel="Sensitivity",
-                     ylim=[69, 101],
+                     ylim=[74, 101],
                      save_fig=next_name(env["pd-work"])
                  ))
 
@@ -80,12 +82,32 @@ def main(env, args):
                  hue="Genome",
                  sns_kwargs={"palette": CM.get_map("verified")},
                  legend_loc="best",
+                 legend_ncol=2,
                  ax=ax)
+
+
+
+
+    if args.with_mgm:
+        y_max = ax.get_ylim()[1]
+        ax.axvline(50, 0, y_max, color="grey", linestyle="dashed")
+        ax.axhline(74, 5, 49, color="grey", linestyle="dashed")
+        ax.annotate("MGM", (5, 72))
+
+    if "MGM" in set(df["Tool"]):
+        sns.lineplot(df[df["Tool"] == "MGM"], "chunk-size", "percentage-common-3prime-and-5prime-from-common-3prime",
+                     hue="Genome",
+                     sns_kwargs={"palette": CM.get_map("verified"), "linestyle": "-."},
+                     ax=ax,
+                     legend=False)
+
+    for l in ax.lines[len(ax.lines)-5:]:
+        l.set_linestyle(":")
 
     fo = FigureOptions(
                      xlabel="Chunk size (mb)",
                      ylabel="Sensitivity",
-                     ylim=[69,101],
+                     ylim=[74,101],
                      save_fig=next_name(env["pd-work"])
                  )
     FigureOptions.set_properties_for_axis(ax, fo)

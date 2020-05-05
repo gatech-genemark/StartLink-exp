@@ -997,9 +997,14 @@ def viz_summary_per_gcfid_per_step(env, df):
         df.loc[df_group.index, "Total SBSP"] = df.loc[df_group.index, "SBSP"].sum()
         df.loc[df_group.index, "Total GMS2=SBSP"] = df.loc[df_group.index, "GMS2=SBSP"].sum()
 
+    tag = None
     for step in ["A", "B", "C"]:
-        df_summary_per_gcfid = get_summary_per_gcfid(df[df["Predicted-at-step"] == step])
-        df_summary_per_gcfid["SBSP Step"] = step
+        if tag is None:
+            tag = step
+        else:
+            tag += "+" + step
+        df_summary_per_gcfid = get_summary_per_gcfid(df[df["Predicted-at-step"] <= step])
+        df_summary_per_gcfid["SBSP Step"] = tag
         list_df.append(df_summary_per_gcfid)
 
     df_per_gcfid_per_step = pd.concat(list_df, sort=False)
@@ -1041,7 +1046,7 @@ def viz_summary_per_gcfid_per_step(env, df):
                  sns_kwargs={"palette": CM.get_map("verified")}, legend=False,
                  figure_options=FigureOptions(
             ylabel="Sensitivity",
-            ylim=[70,105],
+            ylim=[85,105],
 
         ))
 
@@ -1073,7 +1078,7 @@ def viz_summary_per_gcfid_per_step(env, df):
                  sns_kwargs={"palette": CM.get_map("verified")}, legend=False,
                  figure_options=FigureOptions(
                      ylabel="Sensitivity",
-                     ylim=[70, 105],
+                     ylim=[85, 105],
 
                  ))
 
@@ -1098,7 +1103,7 @@ def viz_summary_per_gcfid_per_step(env, df):
     fig.align_ylabels(ax)
 
     for ax in axes.ravel():
-        ax.set_xlabel("Step")
+        ax.set_xlabel("Steps")
 
     axes[0][0].set_title("SBSP")
     axes[0][1].set_title("GMS2=SBSP")

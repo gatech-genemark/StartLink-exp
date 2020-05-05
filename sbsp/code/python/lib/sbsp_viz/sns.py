@@ -64,6 +64,7 @@ def lineplot(df, x, y, hue=None, figure_options=None, **kwargs):
     show = get_value(kwargs, "show", ax is None)
     legend = get_value(kwargs, "legend", "full")
     legend_loc = get_value(kwargs, "legend_loc", None)
+    legend_ncol = get_value(kwargs, "legend_ncol", 1)
 
     identity = get_value(kwargs, "identity", False)
 
@@ -81,9 +82,9 @@ def lineplot(df, x, y, hue=None, figure_options=None, **kwargs):
     if hue is not None and legend:
         title = get_value(kwargs, "legend_title", None)
         if not legend_loc:
-            plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5), title=title)
+            plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5), title=title, ncol=legend_ncol)
         else:
-            plt.legend(loc=legend_loc)
+            plt.legend(loc=legend_loc, ncol=legend_ncol)
 
     if show:
         save_figure(figure_options, fig)
@@ -158,7 +159,7 @@ def jointplot(df, x, y, hue=None, figure_options=None, **kwargs):
     _, ax = plt.subplots()
     sns_kwargs = get_value(kwargs, "sns_kwargs", dict())
     # g = sns.lmplot(x=x, y=y, hue=hue, data=df, aspect=2, legend=False, ci=None)
-    g = sns.jointplot(x, y, data=df, ax=ax, **sns_kwargs)
+    g = sns.jointplot(x, y, data=df, **sns_kwargs)
 
     if hue is not None:
         plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5))
@@ -168,11 +169,11 @@ def jointplot(df, x, y, hue=None, figure_options=None, **kwargs):
     plt.show()
 
 
-def tsplot(df, x, y, hue=None, figure_options=None):
+def tsplot(df, x, y, hue=None, figure_options=None, **kwargs):
     _, ax = plt.subplots()
-
+    sns_kwargs = get_value(kwargs, "sns_kwargs", dict())
     # g = sns.lmplot(x=x, y=y, hue=hue, data=df, aspect=2, legend=False, ci=None)
-    sns.tsplot(df[y].values, df[x].values)
+    sns.tsplot(df[y].values, df[x].values, **sns_kwargs)
 
     if hue is not None:
         plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5))
