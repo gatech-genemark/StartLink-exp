@@ -7,6 +7,8 @@ from datetime import datetime
 import pandas as pd
 from typing import *
 
+from tqdm import tqdm
+
 from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_container.taxonomy_tree import TaxonomyTree
 from sbsp_general.general import get_value, run_shell_cmd
@@ -241,7 +243,7 @@ def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs
     pd_output = os.path.abspath(pd_output)
     success_downloads = list()
     total = 0
-    for _, gcfid_info in df_assembly_summary.iterrows():
+    for _, gcfid_info in tqdm(df_assembly_summary.iterrows(), "Downloading", total=len(df_assembly_summary)):
         total += 1
         logger.debug("Trying {}".format(gcfid_info["assembly_accession"]))
 
@@ -281,7 +283,7 @@ def filter_assembly_summary_by_ancestor(ancestor_tag, tag_type, taxonomy_tree, d
     list_rows = list()
     df_filtered = pd.DataFrame(columns=df_assembly_summary.columns)
 
-    for genome_node in taxonomy_tree.get_possible_genomes_under_ancestor(ancestor_tag, tag_type):
+    for genome_node in tqdm(taxonomy_tree.get_possible_genomes_under_ancestor(ancestor_tag, tag_type), "Searching for nodes under ancestor"):
 
         # find rows for taxid in assembly summary
         tax_id = genome_node["taxid"]
@@ -296,7 +298,8 @@ def filter_assembly_summary_by_ancestor(ancestor_tag, tag_type, taxonomy_tree, d
                 info_list[i]["parent_id"] = genome_node["parent_id"]
             list_rows += info_list
 
-    df_filtered = df_filtered.append(list_rows)
+    if len(list_rows) > 0:
+        df_filtered = df_filtered.append(list_rows)
 
     return df_filtered
 
