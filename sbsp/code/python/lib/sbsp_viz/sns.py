@@ -92,7 +92,7 @@ def lineplot(df, x, y, hue=None, figure_options=None, **kwargs):
 
 
 
-def catplot(df, x, y, hue=None, kind=None, figure_options=None, **kwargs):
+def catplot(df, x, y, hue=None, kind="box", figure_options=None, **kwargs):
     # type: (pd.DataFrame, str, str, str, Union[str, None], FigureOptions, Dict[str, Any]) -> None
     sns_kwargs = get_value(kwargs, "sns_kwargs", dict())
 

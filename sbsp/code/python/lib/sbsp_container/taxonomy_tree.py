@@ -3,6 +3,8 @@ import logging
 import pandas as pd
 from typing import *
 
+from tqdm import tqdm
+
 from sbsp_general.general import get_value, verify_choice
 from sbsp_io.objects import save_obj, load_obj
 
@@ -91,7 +93,7 @@ class TaxonomyTree:
         # type: (pd.DataFrame) -> Dict[int, str]
 
         taxid_to_name = dict()
-        for index, row in df.iterrows():
+        for index, row in tqdm(df.iterrows(), "Get names", total=len(df)):
             node_id = row.iloc[0]
             name_class = row.iloc[3].strip()
 
@@ -112,18 +114,23 @@ class TaxonomyTree:
         :param file_format:
         :return:
         """
+        logger.info("Building taxonomy tree from dump files.")
 
+        logger.info("Reading nodes and names dump files")
         df_nodes = pd.read_csv(pf_input, header=None, delimiter="|")
         df_names = pd.read_csv(pf_names, header=None, delimiter="|")
 
         # create node for each value
+        logger.info("Create nodes")
         dict_tax_id_node = TaxonomyTree._create_node_per_dataframe_row(df_nodes)
+
+        logger.info("Get names of nodes")
         dict_taxid_names = TaxonomyTree._get_names_per_taxid(df_names)
 
         root_nodes = list()
 
         # add each node to its parent's children
-        for tax_id, node in dict_tax_id_node.items():
+        for tax_id, node in tqdm(dict_tax_id_node.items(), "Building tree"):
 
             parent_id = node.attributes["parent_id"]
 
@@ -152,7 +159,7 @@ class TaxonomyTree:
 
         dict_tax_id_node = dict()
 
-        for index, row in df_nodes.iterrows():
+        for index, row in tqdm(df_nodes.iterrows(), "Create nodes", total=len(df_nodes)):
             node_id = row.iloc[0]
             parent_id = row.iloc[1]
             rank = row.iloc[2]
@@ -354,7 +361,7 @@ class TaxonomyTree:
 
         ancestor_node = self.get_node_with_tag(ancestor_tag, tag_type)
 
-        if ancestor_tag is None:  # empty generator
+        if ancestor_node is None:  # empty generator
             return (_ for _ in ())
 
         for curr_node in TaxonomyTree.get_nodes_under_ancestor(ancestor_node):

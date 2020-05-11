@@ -113,11 +113,15 @@ class LabelsComparisonDetailed:
         comparison["labels"] = dict()
         comparison["labels"]["match-3p-5p"] = {
             "a": Labels([x[0] for x in compare_3p_5p["match"].values()]),
-            "b": Labels([x[0] for x in compare_3p_5p["match"].values()])
+            "b": Labels([x[1] for x in compare_3p_5p["match"].values()])
         }
         comparison["labels"]["match-3p"] = {
             "a": Labels([x[0] for x in compare_3p["match"].values()]),
-            "b": Labels([x[0] for x in compare_3p["match"].values()])
+            "b": Labels([x[1] for x in compare_3p["match"].values()])
+        }
+        comparison["labels"]["match-3p-not-5p"] = {
+            "a": Labels([x for x in compare_3p_5p["unique-a"].values()]),
+            "b": Labels([x for x in compare_3p_5p["unique-b"].values()])
         }
         return comparison
 
@@ -201,6 +205,11 @@ class LabelsComparisonDetailed:
         # type: (str) -> Labels
         except_if_not_in_set(source, {"a", "b"})
         return self.comparison["all"]["labels"]["match-3p-5p"][source]
+
+    def match_3p_not_5p(self, source):
+        # type: (str) -> Labels
+        except_if_not_in_set(source, {"a", "b"})
+        return self.comparison["all"]["labels"]["match-3p-not-5p"][source]
 
     def match_3p(self, source):
         # type: (str) -> Labels
