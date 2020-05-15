@@ -421,7 +421,7 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
     distance_min = sbsp_options.safe_get("distance-min")
     distance_max = sbsp_options.safe_get("distance-max")
     rng = get_value(kwargs, "rng", None)
-    max_targets = 50
+    max_targets = sbsp_options.safe_get("filter-max-number-orthologs")
 
     filter_orthologs_with_equal_kimura_to_query = sbsp_options.safe_get("filter-orthologs-with-equal-kimura")
     set_target_kimuras = set()
@@ -547,6 +547,8 @@ def run_msa_on_sequence_file(pf_fasta, sbsp_options, pf_msa, **kwargs):
     gapext = sbsp_options.safe_get("msa-gapext")
 
     num_processors = get_value(kwargs, "num_processors", None)
+    output_order = get_value(kwargs, "outputorder", "input-order")
+    gapopen  = get_value(kwargs, "gapopen", None)
 
     # clustalw_cline = ClustalwCommandline(
     #     "clustalw2", infile=pf_fasta, outfile=pf_msa,
@@ -556,14 +558,20 @@ def run_msa_on_sequence_file(pf_fasta, sbsp_options, pf_msa, **kwargs):
     # )
 
     logger.debug("Number of processors for MSA: {}".format(num_processors))
+    other_options = dict()
+    if num_processors is not None:
+        other_options["threads"] = num_processors
+    # if gapopen is not None:
+    #     other_options["gapopen"] = gapopen
+
     clustalw_cline = ClustalOmegaCommandline(
         "clustalo", infile=pf_fasta, outfile=pf_msa,
         #gapopen=gapopen,
         #gapext=gapext,
-        outputorder="input-order",
+        outputorder=output_order,
         force=True,
         outfmt="clustal",
-        threads=num_processors
+        **other_options
     )
 
     clustalw_cline()
