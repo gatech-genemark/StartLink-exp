@@ -19,6 +19,13 @@ import sbsp_log  # runs init in sbsp_log and configures logger
 from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_container.gms2_mod import GMS2Mod
 from sbsp_general import Environment
+import sbsp_argparse.parallelization
+from sbsp_parallelization.pbs import PBS
+from sbsp_options.pbs import PBSOptions
+from sbsp_pbs_data.mergers import merge_identity
+from sbsp_pbs_data.splitters import split_genome_info_list
+
+
 
 # ------------------------------ #
 #           Parse CMD            #
@@ -31,6 +38,9 @@ parser = argparse.ArgumentParser("Description of driver.")
 
 parser.add_argument('--pf-genome-list', required=True, help="Genome list")
 parser.add_argument('--pf-output', required=True, help="Output file")
+
+sbsp_argparse.parallelization.add_pbs_options(parser)
+
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -73,11 +83,11 @@ def collect_start_info_from_gi(env, gi):
         **{
             x: mod.items[x] for x in {
                 "GENOME_TYPE", "RBS_MAT", "RBS_MAT", "PROMOTER_MAT", "PROMOTER_WIDTH", "RBS_WIDTH"
-            }
+            } if x in mod.items.keys()
         }
     }
 
-def collect_start_info_from_gil(env, gil):
+def collect_start_info_from_gil(env, gil, pf_output=None):
     # type: (Environment, GenomeInfoList) -> pd.DataFrame
 
     list_entries = list()
@@ -93,8 +103,28 @@ def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
 
     gil = GenomeInfoList.init_from_file(args.pf_genome_list)
+    pbs_options = PBSOptions.init_from_dict(env, vars(args))
 
-    df = collect_start_info_from_gil(env, gil)
+    
+    if pbs_options is not None:
+        pbs = PBS(env, pbs_options,
+          splitter=split_genome_info_list,
+          merger=merge_identity
+          )
+
+        output = pbs.run(
+            data={"gil": gil},
+            func=collect_start_info_from_gil,
+            func_kwargs={
+                "env": env,
+            }
+        )
+
+        df = pd.concat(output, sort=False)
+    else:
+        df = collect_start_info_from_gil(env, gil)
+
+
 
     save_obj(df, args.pf_output)
 
