@@ -167,10 +167,12 @@ def analysis_per_query_for_genome(env, gi, pd_sbsp, **kwargs):
     # type: (Environment, GenomeInfo, str, Dict[str, Any]) -> pd.DataFrame
 
     pd_genome = os_join(env["pd-data"], gi.name)
-    pf_gms2 = os_join(pd_genome, "runs", "gms2", "gms2.gff")
-    pf_prodigal = os_join(pd_genome, "runs", "prodigal", "prodigal.gff")
+    pd_runs = os_join(env["pd-runs"], gi.name)
+    pf_gms2 = os_join(pd_runs, "gms2", "gms2.gff")
+    pf_prodigal = os_join(pd_runs, "prodigal", "prodigal.gff")
     pf_sbsp = os_join(pd_sbsp, "accuracy", "{}.gff".format(gi.name))
-    pf_ncbi = os_join(pd_genome, "ncbi.gff")
+    # pf_ncbi = os_join(pd_runs, "ncbi", "ncbi.gff")
+    pf_ncbi = os_join(pd_genome, "verified.gff")
     pf_sbsp_details = os_join(pd_sbsp, "output.csv")
 
 
@@ -254,7 +256,6 @@ def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
 
     gil = GenomeInfoList.init_from_file(args.pf_genome_list)
-    df = pd.read_csv(args.pf_gcfid_to_pd_sbsp)
 
     analysis_per_query(
         env,
