@@ -26,8 +26,6 @@ from sbsp_io.general import mkdir_p
 from sbsp_viz import sns
 from sbsp_viz.colormap import ColorMap as CM
 
-from plotnine import *
-
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
@@ -704,15 +702,6 @@ def stack_columns_as_rows(df, stack, new_col, labels, label_col="class"):
     return pd.concat(list_df, axis=0, sort=True)
 
 
-def sbsp_geom_density(df, x, y, pd_work, title=""):
-    p = (ggplot(df, aes(x, color=y, fill=y)) +
-         xlab(x) + ylab("Fraction") +
-         geom_density(position="fill", alpha=0.5)) + \
-        theme(subplots_adjust={"top": 0.9}) + \
-        theme(legend_position=(.8, 0.95), legend_direction='horizontal') + ggtitle(title)
-
-    p.save(next_name(pd_work))
-    print(p)
 
 def analyze_upstream_distances(env, df):
     # type: (Environment, pd.DataFrame) -> None
@@ -994,8 +983,9 @@ def analyze_support(env, df):
         sns_kwargs={"palette": CM.get_map("ancestor")},
         figure_options=FigureOptions(
             xlabel="Clade",
-            ylabel="Average number of targets per query, per species"
-        )
+            ylabel="Average number of targets per query, per species",
+            save_fig=next_name(env['pd-work'])
+            )
     )
     pass
 
@@ -1039,15 +1029,15 @@ def viz_analysis_per_query(env, df, **kwargs):
     # df.drop(df.index[df["Predicted-at-step"] == "C"], inplace=True)
     # df.loc[df["Predicted-at-step"] == "B", "Predicted-at-step"] = "C"
     # df.loc[df["Predicted-at-step"] == "U", "Predicted-at-step"] = "B"
-    # df.drop(df.index[df["Support"] < 5], inplace=True)
-    # viz_summary_per_gcfid_per_step(env, df)
-    #
-    #
-    # df_summary_per_gcfid = get_summary_per_gcfid(df)
-    # viz_summary_per_gcfid(env, df_summary_per_gcfid)
-    #
-    # analyze_upstream_distances(env, df[~df["Upstream-distance"].isnull()].copy())
-    # analyze_kimura_distances(env, df[~df["Kimura-to-query"].isnull()].copy())
+   # df.drop(df.index[df["Support"] < 5], inplace=True)
+    viz_summary_per_gcfid_per_step(env, df)
+
+
+    df_summary_per_gcfid = get_summary_per_gcfid(df)
+    viz_summary_per_gcfid(env, df_summary_per_gcfid)
+
+    analyze_upstream_distances(env, df[~df["Upstream-distance"].isnull()].copy())
+    analyze_kimura_distances(env, df[~df["Kimura-to-query"].isnull()].copy())
     analyze_support(env, df)
 
 
