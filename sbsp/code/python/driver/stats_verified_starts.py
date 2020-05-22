@@ -4,6 +4,7 @@
 # Created: 3/17/20
 import logging
 import argparse
+import pandas as pd
 from typing import *
 
 # noinspection All
@@ -13,6 +14,7 @@ import pathmagic
 import sbsp_log  # runs init in sbsp_log and configures logger
 
 # Custom imports
+from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_general import Environment
 
 # ------------------------------ #
@@ -20,6 +22,8 @@ from sbsp_general import Environment
 # ------------------------------ #
 
 parser = argparse.ArgumentParser("Description of driver.")
+
+parser.add_argument('--pf-genome-list', required=True, help="File containing genome information")
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -43,9 +47,29 @@ logging.basicConfig(level=parsed_args.loglevel)
 logger = logging.getLogger("logger")  # type: logging.Logger
 
 
+def stats_verified_starts_for_genome(env, gi, param):
+    # type: (Environment, GenomeInfo, Dict[str, Any]) -> Dict[str, Any]
+
+
+
+def stats_verified_starts(env, gil, **kwargs):
+    # type: (Environment, GenomeInfoList, Dict[str, Any]) -> None
+
+    list_entries = list()
+    for gi in gil:
+        e = stats_verified_starts_for_genome(env, gi, **kwargs)
+        list_entries.append(e)
+
+    df = pd.DataFrame(list_entries)
+
+    # write to tables
+
+
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
-    pass
+
+    gil = GenomeInfoList.init_from_file(args.pf_genome_list)
+    stats_verified_starts(env, gil)
 
 
 if __name__ == "__main__":

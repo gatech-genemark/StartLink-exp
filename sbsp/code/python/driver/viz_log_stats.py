@@ -16,6 +16,8 @@ import sbsp_log  # runs init in sbsp_log and configures logger
 # Custom imports
 from sbsp_general import Environment
 import sbsp_viz.sns as sns
+from sbsp_general.shelf import next_name
+from sbsp_viz.colormap import ColorMap as CM
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
@@ -51,7 +53,13 @@ def viz_per_genome(env, df):
 
     df_grp = df.groupby(["Genome", "Ancestor"], as_index=False).mean()
 
-    sns.catplot(df_grp, "Ancestor", "BLAST")
+    sns.catplot(df_grp, "Ancestor", "BLAST", figure_options=FigureOptions(
+        save_fig=next_name(env["pd-work"]),
+        xlabel="Clade",
+        ylabel="BLASTp Hits"
+    ),
+                sns_kwargs={"palette": CM.get_map("ancestor")}
+    )
 
     # list_grp = list()
     # for _, df_grp in df.groupby("Genome", as_index=False):
@@ -111,8 +119,13 @@ def viz_per_genome(env, df):
 
     sns.lineplot(df_tmp, "x", "y", hue="Ancestor", figure_options=FigureOptions(
         xlabel="Number of BLASTp hits",
-        ylabel="Percent of queries (per genome)"
-    ))
+        ylabel="Cumulative percent of queries (per genome)",
+        save_fig=next_name(env["pd-work"]),
+    ),
+                 legend_loc="best",
+                 legend_title="",
+                 legend_ncol=2,
+                 sns_kwargs={"ci": "sd", "palette": CM.get_map("ancestor")})
 
 
 def compute_more(df):

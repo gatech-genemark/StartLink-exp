@@ -16,7 +16,7 @@ def _init_mapping_ancestors():
 
 
 def _init_mapping_verified():
-    colors = ["windows blue", "amber", "faded green", "dusty purple", "magenta"]
+    colors = ["windows blue", "amber", "faded green", "dusty purple", "pale red"]
     ancestors = ["E. coli", "H. salinarum", "N. pharaonis", "M. tuberculosis", "R. denitrificans"]
     palette = seaborn.xkcd_palette(colors)
     return {x[0]: x[1] for x in zip(ancestors, palette)}

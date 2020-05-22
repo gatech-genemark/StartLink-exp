@@ -85,6 +85,9 @@ def lineplot(df, x, y, hue=None, figure_options=None, **kwargs):
             plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5), title=title, ncol=legend_ncol)
         else:
             plt.legend(loc=legend_loc, ncol=legend_ncol)
+        if title is not None and len(title)  == 0:
+            handles, labels = ax.get_legend_handles_labels()
+            ax.legend(handles=handles[1:], labels=labels[1:], ncol=legend_ncol)
 
     if show:
         save_figure(figure_options, fig)
