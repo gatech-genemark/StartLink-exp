@@ -9,10 +9,10 @@ class MotifModel:
     """Motif model, holding the composition matrix and position (spacer) distribution"""
 
     def __init__(self, motif, spacer=None):
-        # type: (Dict[int, Dict[str, float]], Dict[int, float]) -> None
+        # type: (Dict[str, List[float]], Dict[int, float]) -> None
 
-        self._motif = motif     # type: Dict[int, Dict[str, float]]
-        self._motif_width = max([int(x) for x in self._motif.keys()])
+        self._motif = motif     # type: Dict[str, List[float]]
+        self._motif_width = max([len(motif[x]) for x in self._motif.keys()])
 
         self._spacer = MotifModel._init_spacer(spacer)      # type: Union[None, List[float]]
 
@@ -35,9 +35,9 @@ class MotifModel:
         if component != "spacer":
             for i in range(self._motif_width):
                 if use_log:
-                    score += self._motif[i][fragment[begin + i]]
+                    score += self._motif[fragment[begin + i]][i]
                 else:
-                    score *= self._motif[i][fragment[begin + i]]
+                    score *= self._motif[fragment[begin + i]][i]
 
         if component != "motif":
             if self._spacer is not None:
