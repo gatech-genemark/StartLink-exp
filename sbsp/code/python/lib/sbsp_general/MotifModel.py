@@ -59,7 +59,7 @@ class MotifModel:
 
     def motif_width(self):
         # type: () -> int
-        return len(self._motif.keys())
+        return self._motif_width
 
     @staticmethod
     def _init_spacer(spacer=None):

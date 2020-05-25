@@ -113,6 +113,7 @@ def viz_summary_per_gcfid(env, df, title=None):
             save_fig=next_name(pd_work),
             ylim=[None, 100],
             title=title,
+            ylabel="Percent of GMS2=SBSP from SBSP Predictions"
         ),
         sns_kwargs={"palette": CM.get_map("ancestor")}
     )
@@ -120,36 +121,39 @@ def viz_summary_per_gcfid(env, df, title=None):
     sns.catplot(df, "Ancestor", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", kind="box", figure_options=FigureOptions(
         save_fig=next_name(pd_work),
         ylim=[0, 20],
-        ylabel="1 - Sen(NCBI, GMS2=SBSP)",
+        # ylabel="1 - Sen(NCBI, GMS2=SBSP)",
+        ylabel="Err(NCBI, GMS2=SBSP)",
         xlabel="Clade",
         title=title
     ),
                 sns_kwargs={"palette": CM.get_map("ancestor")})
 
     # per GC
-    sns.scatterplot(df, "Genome GC", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="Ancestor", figure_options=FigureOptions(
-        save_fig=next_name(pd_work),
-        ylim=[0, None],
-        title=title,
-    ),
-                    legend_loc="best",
-                    sns_kwargs={"palette": CM.get_map("ancestor")})
+    # sns.scatterplot(df, "Genome GC", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="Ancestor", figure_options=FigureOptions(
+    #     save_fig=next_name(pd_work),
+    #     ylim=[0, None],
+    #     title=title,
+    # ),
+    #                 legend_loc="best",
+    #                 sns_kwargs={"palette": CM.get_map("ancestor")})
 
     # per GC
+    # sns.lmplot(df, "Genome GC", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="Ancestor", figure_options=FigureOptions(
+    #     save_fig=next_name(pd_work),
+    #     ylim=[0, None],
+    #     title=title,
+    #     ylabel="Err(NCBI, GMS2=SBSP)"
+    # # ylabel="1 - Sen(NCBI, GMS2=SBSP)",
+    # ),
+    #
+    #            sns_kwargs={"palette": CM.get_map("ancestor"), "scatter": False, "lowess": True})
+
     sns.lmplot(df, "Genome GC", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="Ancestor", figure_options=FigureOptions(
         save_fig=next_name(pd_work),
         ylim=[0, None],
         title=title,
-        ylabel="1 - Sen(NCBI, GMS2=SBSP)",
-    ),
-
-               sns_kwargs={"palette": CM.get_map("ancestor"), "scatter": False, "lowess": True})
-
-    sns.lmplot(df, "Genome GC", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="Ancestor", figure_options=FigureOptions(
-        save_fig=next_name(pd_work),
-        ylim=[0, None],
-        title=title,
-        ylabel="1 - Sen(NCBI, GMS2=SBSP)",
+        # ylabel="1 - Sen(NCBI, GMS2=SBSP)",
+        ylabel="Err(NCBI, GMS2=SBSP)"
     ),
                legend_loc="best",
                sns_kwargs={"palette": CM.get_map("ancestor"), "scatter": True, "lowess": True,
@@ -174,38 +178,38 @@ def viz_summary_per_gcfid(env, df, title=None):
                            "scatter_kws": {"s": 5}
                            })
 
-    sns.lmplot(df, "Genome GC", "GMS2=SBSP % GMS2", hue="Ancestor", figure_options=FigureOptions(
-        save_fig=next_name(pd_work),
-        ylim=[50, 100],
-        title=title,
-    ),
-               sns_kwargs={"palette": CM.get_map("ancestor"), "scatter": True, "lowess": True,
-                           "scatter_kws": {"s": 5}
-                           })
+    # sns.lmplot(df, "Genome GC", "GMS2=SBSP % GMS2", hue="Ancestor", figure_options=FigureOptions(
+    #     save_fig=next_name(pd_work),
+    #     ylim=[50, 100],
+    #     title=title,
+    # ),
+    #            sns_kwargs={"palette": CM.get_map("ancestor"), "scatter": True, "lowess": True,
+    #                        "scatter_kws": {"s": 5}
+    #                        })
 
-    sns.scatterplot(df, "NCBI", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="Ancestor", figure_options=FigureOptions(
-        save_fig=next_name(pd_work),
-        ylim=[0, None],
-        title=title,
-    ),
-               sns_kwargs={"palette": CM.get_map("ancestor"),
-                           })
+    # sns.scatterplot(df, "NCBI", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="Ancestor", figure_options=FigureOptions(
+    #     save_fig=next_name(pd_work),
+    #     ylim=[0, None],
+    #     title=title,
+    # ),
+    #            sns_kwargs={"palette": CM.get_map("ancestor"),
+    #                        })
 
-    sns.scatterplot(df, "GMS2=SBSP", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="Ancestor", figure_options=FigureOptions(
-        save_fig=next_name(pd_work),
-        ylim=[0, None],
-        title=title,
-    ),
-                    sns_kwargs={"palette": CM.get_map("ancestor"),
-                                })
+    # sns.scatterplot(df, "GMS2=SBSP", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="Ancestor", figure_options=FigureOptions(
+    #     save_fig=next_name(pd_work),
+    #     ylim=[0, None],
+    #     title=title,
+    # ),
+    #                 sns_kwargs={"palette": CM.get_map("ancestor"),
+    #                             })
 
-    # per GC
-    sns.scatterplot(df, "Genome GC", "(GMS2=SBSP)!=Prodigal % GMS2=SBSP", hue="Ancestor", figure_options=FigureOptions(
-        save_fig=next_name(pd_work),
-        ylim=[0, None],
-        title=title,
-    ),
-                    sns_kwargs={"palette": CM.get_map("ancestor")})
+    # # per GC
+    # sns.scatterplot(df, "Genome GC", "(GMS2=SBSP)!=Prodigal % GMS2=SBSP", hue="Ancestor", figure_options=FigureOptions(
+    #     save_fig=next_name(pd_work),
+    #     ylim=[0, None],
+    #     title=title,
+    # ),
+    #                 sns_kwargs={"palette": CM.get_map("ancestor")})
 
 
 def contour_kimura_per_ancestor(env, df):
@@ -623,13 +627,13 @@ def analyze_kimura_distances(env, df):
     df["Std-Kimura"] = df["Kimura-to-query"].apply(np.std)
 
 
-    sns.lmplot(
-        df, "Genome GC", "Average-Kimura", hue="Ancestor", sns_kwargs={
-            "scatter": False, "lowess": True, "scatter_kws": {"s": 5},
-            "palette": CM.get_map("ancestor")
-        },
-        figure_options=FigureOptions(save_fig=next_name(pd_work))
-    )
+    # sns.lmplot(
+    #     df, "Genome GC", "Average-Kimura", hue="Ancestor", sns_kwargs={
+    #         "scatter": False, "lowess": True, "scatter_kws": {"s": 5},
+    #         "palette": CM.get_map("ancestor")
+    #     },
+    #     figure_options=FigureOptions(save_fig=next_name(pd_work))
+    # )
     df_mean = df.groupby(["Ancestor", "GCFID"], as_index=False).mean()
 
     sns.lmplot(
@@ -644,7 +648,7 @@ def analyze_kimura_distances(env, df):
     df["Min-Kimura"] = df["Kimura-to-query"].apply(min)
     df["Max-Kimura"] = df["Kimura-to-query"].apply(max)
 
-    contour_kimura_per_ancestor(env, df)
+    # contour_kimura_per_ancestor(env, df)
     one_dim_Kimura_accuracy(env, df)
 
     kimura_dist_plot(env, df)
@@ -767,10 +771,10 @@ def analyze_upstream_distances(env, df):
         figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-7,None], ylim=[0,1])
     )
 
-    sns.distplot(df, "Most frequent upstream", figure_options=FigureOptions(
-        save_fig=next_name(pd_work)
-    ),
-                 sns_kwargs={"kde": True})
+    # sns.distplot(df, "Most frequent upstream", figure_options=FigureOptions(
+    #     save_fig=next_name(pd_work)
+    # ),
+    #              sns_kwargs={"kde": True})
 
 
     import seaborn
@@ -782,6 +786,7 @@ def analyze_upstream_distances(env, df):
      .rename('Percentage (by clade)')
      .reset_index()
      .pipe((seaborn.catplot, 'data'), x="Most frequent upstream", y='Percentage (by clade)', hue="Ancestor", kind='point', scale=0.5, legend=False,
+           order=range(-9,10),
            palette=CM.get_map("ancestor"), aspect=1.5
            ))
 
@@ -797,177 +802,188 @@ def analyze_upstream_distances(env, df):
 
     plt.show()
 
+    # scatter
     (df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)]
      .groupby("Ancestor")["Most frequent upstream"]
-     .value_counts()
-     .rename('number')
+     .value_counts(normalize=True)
+     .mul(100)
+     .rename('Percentage (by clade)')
      .reset_index()
-     .pipe((seaborn.catplot, 'data'), x="Most frequent upstream", y='number', hue="Ancestor",
-           kind='point', scale=0.5, legend=False,
-           palette=CM.get_map("ancestor"), aspect=1.5
+     .pipe((seaborn.lineplot, 'data'), x="Most frequent upstream", y='Percentage (by clade)', hue="Ancestor",
+            legend=False,
+           palette=CM.get_map("ancestor"),
            ))
 
     plt.legend(loc="best", title="Clade")
     figure_options = FigureOptions(
         save_fig=next_name(pd_work),
         xlabel="Most frequent distance to upstream gene",
-        ylabel="Number of components"
+        ylabel="Percent of components (by clade)",
+        xlim=[-9.5, 9.5]
     )
     plt.xlabel(figure_options.xlabel)
     plt.ylabel(figure_options.ylabel)
+    plt.xlim(figure_options.xlim)
+    plt.xticks(range(-8,9,2))
+
     save_figure(figure_options)
 
     plt.show()
 
 
-    f, ax1 = plt.subplots()
-    ax2 = ax1.twinx()
-    for ancestor, df_group in df.groupby("Ancestor"):
-        seaborn.distplot(df_group["Most frequent upstream"], kde=False, ax=ax1)
+    # (df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)]
+    #  .groupby("Ancestor")["Most frequent upstream"]
+    #  .value_counts()
+    #  .rename('number')
+    #  .reset_index()
+    #  .pipe((seaborn.catplot, 'data'), x="Most frequent upstream", y='number', hue="Ancestor",
+    #        kind='point', scale=0.5, legend=False,
+    #        palette=CM.get_map("ancestor"), aspect=1.5
+    #        ))
+    #
+    # plt.legend(loc="best", title="Clade")
+    # figure_options = FigureOptions(
+    #     save_fig=next_name(pd_work),
+    #     xlabel="Most frequent distance to upstream gene",
+    #     ylabel="Number of components"
+    # )
+    # plt.xlabel(figure_options.xlabel)
+    # plt.ylabel(figure_options.ylabel)
+    # save_figure(figure_options)
+    #
+    # plt.show()
 
-        # ax2.set_ylim(0, 3)
-        ax2.yaxis.set_ticks([])
-        seaborn.kdeplot(df_group["Most frequent upstream"], ax=ax2)
-        ax1.set_xlabel('x var')
-        ax1.set_ylabel('Counts')
-    # g = seaborn.FacetGrid(df, hue="Ancestor")
-    # g = g.map(seaborn.distplot, "Most frequent upstream", hist=True)
-    plt.show()
+
+    # f, ax1 = plt.subplots()
+    # ax2 = ax1.twinx()
+    # for ancestor, df_group in df.groupby("Ancestor"):
+    #     seaborn.distplot(df_group["Most frequent upstream"], kde=False, ax=ax1)
+    #
+    #     # ax2.set_ylim(0, 3)
+    #     ax2.yaxis.set_ticks([])
+    #     seaborn.kdeplot(df_group["Most frequent upstream"], ax=ax2)
+    #     ax1.set_xlabel('x var')
+    #     ax1.set_ylabel('Counts')
+    # # g = seaborn.FacetGrid(df, hue="Ancestor")
+    # # g = g.map(seaborn.distplot, "Most frequent upstream", hist=True)
+    # plt.show()
 
 
-    print(df["Most frequent upstream"].value_counts(normalize=True))
+    # print(df["Most frequent upstream"].value_counts(normalize=True))
+    #
+    # sns.lmplot(
+    #     df, "Most frequent upstream", "PC(x,0)", hue="Ancestor", sns_kwargs={
+    #         "scatter": False, "lowess": True,
+    #         "palette": CM.get_map("ancestor")
+    #     },
+    #     figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-7, None], ylim=[0,1]),
+    # )
 
-    sns.lmplot(
-        df, "Most frequent upstream", "PC(x,0)", hue="Ancestor", sns_kwargs={
-            "scatter": False, "lowess": True,
-            "palette": CM.get_map("ancestor")
-        },
-        figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-7, None], ylim=[0,1]),
-    )
-
-    sns.lmplot(
-        df, "Most frequent upstream", "PC(x,3)", hue="Ancestor", sns_kwargs={
-            "scatter": False, "lowess": True,
-            "palette": CM.get_map("ancestor")
-        },
-        figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-7, None], ylim=[0,1])
-    )
+    # sns.lmplot(
+    #     df, "Most frequent upstream", "PC(x,3)", hue="Ancestor", sns_kwargs={
+    #         "scatter": False, "lowess": True,
+    #         "palette": CM.get_map("ancestor")
+    #     },
+    #     figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-7, None], ylim=[0,1])
+    # )
 
     # NCBI sensitivity
     # collect:
     # average 5' per ancestor, r,
 
-    ranges = [(-5,0), (0, 10), (10, 30), (30, 50), (50, 70)]
-    list_collect = list()
-    for r in ranges:
-
-        r_filter = (df["Most frequent upstream"] >= r[0]) & (df["Most frequent upstream"] < r[1])
-
-        df_summary_per_gcfid = get_summary_per_gcfid(df[r_filter])
-        # viz_summary_per_gcfid(env, df_summary_per_gcfid, title=str(r))
-
-
-        df_summary_per_gcfid = df_summary_per_gcfid.groupby("Ancestor", as_index=False).mean()
-        df_summary_per_gcfid["Range"] = str(r)
-        list_collect.append(df_summary_per_gcfid)
-
-
-    df_tmp = pd.concat(list_collect, sort=False)
-
-    sns.catplot(df_tmp, "Range", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="Ancestor", kind="point",
-                sns_kwargs={"palette": CM.get_map("ancestor")})
-
-    sns.catplot(df_tmp, "Range", "GMS2=SBSP", hue="Ancestor", kind="point",
-                sns_kwargs={"palette": CM.get_map("ancestor")})
-
-    # do not average per gcfid - average per ancestor
-    list_collect = list()
-
-    range_avgs = list()
-    range_label = list()
-
-    for r in ranges:
-        r_filter = (df["Most frequent upstream"] >= r[0]) & (df["Most frequent upstream"] < r[1])
-        df_r = df[r_filter]
-
-        for ancestor, df_group in df_r.groupby("Ancestor", as_index=False):       # type: str, pd.DataFrame
-
-            f_gms2_eq_sbsp_with_ncbi_pred = (df_group["GMS2=SBSP"]) & (df_group["NCBI"])
-            f_gms2_eq_sbsp_not_eq_ncbi = (f_gms2_eq_sbsp_with_ncbi_pred) & (df_group["(GMS2=SBSP)!=NCBI"])
-
-            sensitivity = 100 * f_gms2_eq_sbsp_not_eq_ncbi.sum() / float(f_gms2_eq_sbsp_with_ncbi_pred.sum())
-            list_collect.append({
-                "Ancestor": ancestor,
-                "Range": str(r),
-                "range_avg": (r[1] + r[0]) / 2.0,
-                "(GMS2=SBSP)!=NCBI % GMS2=SBSP": sensitivity,
-                "GMS2=SBSP": f_gms2_eq_sbsp_with_ncbi_pred.sum()
-            })
-
-        range_label.append(r)
-        range_avgs.append((r[1]+r[0]) / 2.0)
-
-    df_tmp = pd.DataFrame(list_collect)
-
-    sns.catplot(df_tmp, "Range", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="Ancestor", kind="point",
-                sns_kwargs={"palette": CM.get_map("ancestor")})
-
-    sns.catplot(df_tmp, "Range", "GMS2=SBSP", hue="Ancestor", kind="point",
-                sns_kwargs={"palette": CM.get_map("ancestor")})
-
-    ancestors = list(set(df_tmp["Ancestor"]))
-    fig, axes = plt.subplots(len(ancestors), 1, sharex="all",)
-    for ancestor, ax in zip(ancestors, axes.ravel()):       # type: str, plt.Axes
-        ax2 = ax.twinx()
-        curr_df = df_tmp[df_tmp["Ancestor"] == ancestor]
-        seaborn.lineplot("range_avg", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", data=curr_df, ax=ax)
-        seaborn.lineplot("range_avg", "GMS2=SBSP", data=curr_df,
-                     color='r', legend=False,
-                     ax=ax2)
-        ax.set_ylabel(None)
-        ax2.set_ylabel(None)
-        ax.set_xlabel("Range Average")
-
-
-    plt.xticks(range_avgs, range_label)
-    plt.show()
-
-    fig, ax = plt.subplots()
-    ax2 = ax.twinx()
-    seaborn.lineplot("range_avg", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", data=df_tmp, ax=ax, color="b", ci=None, hue="Ancestor")
-    seaborn.lineplot("range_avg", "GMS2=SBSP", data=df_tmp, ci=None,
-                     color='r', legend=False,
-                     ax=ax2, hue="Ancestor")
-    # plt.xticks(range_avgs, range_label)
-    ax.set_ylim([0, None])
-    ax2.set_ylim([0, None])
-
-    ax.set_ylabel("NCBI 5' error rate vs GMS2=SBSP")
-    ax2.set_ylabel("Number of GMS2=SBSP genes")
-    ax.set_xlabel("Range Average")
-
-    ax.yaxis.label.set_color('b')
-    ax2.yaxis.label.set_color('r')
-    ax.set_xlabel("Distance to upstream gene (nt)")
-    plt.show()
-
-
-
-
-
-
-
-    # sbsp_geom_density(df, "Most frequent upstream", "GMS2=SBSP=NCBI", pd_work)
+    # ranges = [(-5,0), (0, 10), (10, 30), (30, 50), (50, 70)]
+    # list_collect = list()
+    # for r in ranges:
     #
-    # for ancestor, df_group in df.groupby("Ancestor", as_index=False):
-    #     sbsp_geom_density(df_group, "Most frequent upstream", "GMS2=SBSP=NCBI", pd_work, ancestor)
-    #     sbsp_geom_density(df_group, "Support", "GMS2=SBSP=NCBI", pd_work, ancestor)
-
-
-    a = 0
-    # for index in df[df["Upstream-distance"].isnull()].index:
-    #     df.at[index, "Upstream-distance"] = list()
-
+    #     r_filter = (df["Most frequent upstream"] >= r[0]) & (df["Most frequent upstream"] < r[1])
+    #
+    #     df_summary_per_gcfid = get_summary_per_gcfid(df[r_filter])
+    #     # viz_summary_per_gcfid(env, df_summary_per_gcfid, title=str(r))
+    #
+    #
+    #     df_summary_per_gcfid = df_summary_per_gcfid.groupby("Ancestor", as_index=False).mean()
+    #     df_summary_per_gcfid["Range"] = str(r)
+    #     list_collect.append(df_summary_per_gcfid)
+    #
+    #
+    # df_tmp = pd.concat(list_collect, sort=False)
+    #
+    # sns.catplot(df_tmp, "Range", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="Ancestor", kind="point",
+    #             sns_kwargs={"palette": CM.get_map("ancestor")})
+    #
+    # sns.catplot(df_tmp, "Range", "GMS2=SBSP", hue="Ancestor", kind="point",
+    #             sns_kwargs={"palette": CM.get_map("ancestor")})
+    #
+    # # do not average per gcfid - average per ancestor
+    # list_collect = list()
+    #
+    # range_avgs = list()
+    # range_label = list()
+    #
+    # for r in ranges:
+    #     r_filter = (df["Most frequent upstream"] >= r[0]) & (df["Most frequent upstream"] < r[1])
+    #     df_r = df[r_filter]
+    #
+    #     for ancestor, df_group in df_r.groupby("Ancestor", as_index=False):       # type: str, pd.DataFrame
+    #
+    #         f_gms2_eq_sbsp_with_ncbi_pred = (df_group["GMS2=SBSP"]) & (df_group["NCBI"])
+    #         f_gms2_eq_sbsp_not_eq_ncbi = (f_gms2_eq_sbsp_with_ncbi_pred) & (df_group["(GMS2=SBSP)!=NCBI"])
+    #
+    #         sensitivity = 100 * f_gms2_eq_sbsp_not_eq_ncbi.sum() / float(f_gms2_eq_sbsp_with_ncbi_pred.sum())
+    #         list_collect.append({
+    #             "Ancestor": ancestor,
+    #             "Range": str(r),
+    #             "range_avg": (r[1] + r[0]) / 2.0,
+    #             "(GMS2=SBSP)!=NCBI % GMS2=SBSP": sensitivity,
+    #             "GMS2=SBSP": f_gms2_eq_sbsp_with_ncbi_pred.sum()
+    #         })
+    #
+    #     range_label.append(r)
+    #     range_avgs.append((r[1]+r[0]) / 2.0)
+    #
+    # df_tmp = pd.DataFrame(list_collect)
+    #
+    # sns.catplot(df_tmp, "Range", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", hue="Ancestor", kind="point",
+    #             sns_kwargs={"palette": CM.get_map("ancestor")})
+    #
+    # sns.catplot(df_tmp, "Range", "GMS2=SBSP", hue="Ancestor", kind="point",
+    #             sns_kwargs={"palette": CM.get_map("ancestor")})
+    #
+    # ancestors = list(set(df_tmp["Ancestor"]))
+    # fig, axes = plt.subplots(len(ancestors), 1, sharex="all",)
+    # for ancestor, ax in zip(ancestors, axes.ravel()):       # type: str, plt.Axes
+    #     ax2 = ax.twinx()
+    #     curr_df = df_tmp[df_tmp["Ancestor"] == ancestor]
+    #     seaborn.lineplot("range_avg", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", data=curr_df, ax=ax)
+    #     seaborn.lineplot("range_avg", "GMS2=SBSP", data=curr_df,
+    #                  color='r', legend=False,
+    #                  ax=ax2)
+    #     ax.set_ylabel(None)
+    #     ax2.set_ylabel(None)
+    #     ax.set_xlabel("Range Average")
+    #
+    #
+    # plt.xticks(range_avgs, range_label)
+    # plt.show()
+    #
+    # fig, ax = plt.subplots()
+    # ax2 = ax.twinx()
+    # seaborn.lineplot("range_avg", "(GMS2=SBSP)!=NCBI % GMS2=SBSP", data=df_tmp, ax=ax, color="b", ci=None, hue="Ancestor")
+    # seaborn.lineplot("range_avg", "GMS2=SBSP", data=df_tmp, ci=None,
+    #                  color='r', legend=False,
+    #                  ax=ax2, hue="Ancestor")
+    # # plt.xticks(range_avgs, range_label)
+    # ax.set_ylim([0, None])
+    # ax2.set_ylim([0, None])
+    #
+    # ax.set_ylabel("NCBI 5' error rate vs GMS2=SBSP")
+    # ax2.set_ylabel("Number of GMS2=SBSP genes")
+    # ax.set_xlabel("Range Average")
+    #
+    # ax.yaxis.label.set_color('b')
+    # ax2.yaxis.label.set_color('r')
+    # ax.set_xlabel("Distance to upstream gene (nt)")
+    # plt.show()
 
 def analyze_support(env, df):
     # type: (Environment, pd.DataFrame) -> None
@@ -1059,6 +1075,8 @@ def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
 
     df = read_analysis_per_query_to_df(args.pf_data)
+    df = df[df["Ancestor"] != "Alphaproteobacteria"].copy()
+    # df = df.sample(1000).copy()
     viz_analysis_per_query(env, df)
 
 
