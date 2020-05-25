@@ -29,15 +29,21 @@ from sbsp_general import Environment
 from sbsp_general.MotifModel import MotifModel
 from sbsp_general.general import os_join, get_value
 from sbsp_general.labels import Labels, Label
+from sbsp_general.shelf import compute_gc_from_file, compute_gc_from_sequences
 from sbsp_io.general import remove_p
 from sbsp_io.labels import read_labels_from_file
 from sbsp_io.sequences import read_fasta_into_hash
+from sbsp_options.pbs import PBSOptions
+from sbsp_parallelization.pbs import PBS
+import sbsp_argparse.parallelization
+from sbsp_pbs_data.mergers import merge_identity
+from sbsp_pbs_data.splitters import split_genome_info_list
 
 parser = argparse.ArgumentParser("Gather sequences, and motif scores.")
 
 parser.add_argument('--pf-genome-list', required=True, help="List of genomes")
 parser.add_argument('--pf-output', required=True, help="Output file")
-
+sbsp_argparse.parallelization.add_pbs_options(parser)
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -115,18 +121,26 @@ def gather_upstream_sequences_for_genome(env, gi, **kwargs):
     sequences = read_fasta_into_hash(pf_sequences)
     labels = read_labels_from_file(pf_labels)
 
+    gc = 100 * compute_gc_from_sequences(sequences)
+
     upstream_info = extract_upstream_sequences(labels, sequences)
 
     for info in upstream_info:
         label = info[0]      # type: Label
         frag = info[1]      # type: Seq
 
+        gene_gc = 100 * compute_gc_from_sequences({
+            "any": sequences[label.seqname()][label.left():label.right()+1]
+        })
+
         list_entries.append({
-            "left": label.left() + 1,
-            "right": label.right() + 1,
-            "strand": label.strand() ,
             "GCFID": gi.name,
             "Accession": label.seqname(),
+            "Genome GC": gc,
+            "Gene GC": gene_gc,
+            "left": label.left() + 1,
+            "right": label.right() + 1,
+            "strand": label.strand(),
             "upstream_nt": str(frag)
         })
 
@@ -141,7 +155,6 @@ def create_motif_model_from_gms2_model(mod, key):
     value_spacer = mod.items[f"{key}_POS_DISTR"] if f"{key}_POS_DISTR" in mod.items else None
 
     return MotifModel(value_motif, value_spacer)
-
 
 def gather_mgm_test_set_for_genome(env, gi, **kwargs):
     # type: (Environment, GenomeInfo, Dict[str, Any]) -> pd.DataFrame
@@ -187,7 +200,7 @@ def gather_mgm_test_set_for_genome(env, gi, **kwargs):
 
 
 def gather_mgm_test_set(env, gil, pf_output, **kwargs):
-    # type: (Environment, GenomeInfoList, str, Dict[str, Any]) -> None
+    # type: (Environment, GenomeInfoList, str, Dict[str, Any]) -> str
 
     remove_p(pf_output)     # start clean
 
@@ -196,12 +209,43 @@ def gather_mgm_test_set(env, gil, pf_output, **kwargs):
         df = gather_mgm_test_set_for_genome(env, gi, **kwargs)
         append_data_frame_to_csv(df, pf_output)
 
+    return pf_output
+
+def merge_csv_files(list_pf_csv, pf_output):
+    # type: (List[str, Any], str) -> None
+
+    remove_p(pf_output)
+
+    for pf in list_pf_csv:
+        df = pd.read_csv(pf)
+        append_data_frame_to_csv(df, pf_output)
+
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
 
     gil = GenomeInfoList.init_from_file(args.pf_genome_list)
     gather_mgm_test_set(env, gil, args.pf_output)
+
+    pbs_options = PBSOptions.init_from_dict(env, vars(args))
+
+    if pbs_options is not None:
+        pbs = PBS(env, pbs_options,
+                  splitter=split_genome_info_list,
+                  merger=merge_identity
+                  )
+
+        output = pbs.run(
+            data={"gil": gil},
+            func=gather_mgm_test_set,
+            func_kwargs={
+                "env": env,
+            }
+        )       # output is list of filenames
+
+        merge_csv_files(output, args.pf_output)
+    else:
+        gather_mgm_test_set(env, gil, args.pf_output)
 
 
 if __name__ == "__main__":
