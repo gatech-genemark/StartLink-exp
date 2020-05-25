@@ -124,7 +124,7 @@ def gather_upstream_sequences_for_genome(env, gi, **kwargs):
         list_entries.append({
             "left": label.left() + 1,
             "right": label.right() + 1,
-            "strand": label.strand() + 1,
+            "strand": label.strand() ,
             "GCFID": gi.name,
             "Accession": label.seqname(),
             "upstream_nt": str(frag)
@@ -159,8 +159,9 @@ def gather_mgm_test_set_for_genome(env, gi, **kwargs):
     models = [m_rbs, m_promoter]
 
     # add score columns to dataframe
-    score_column_names = [x + y for x in ["RBS", "Promoter"] for y in ["motif", "spacer", "both"]]
-    df.reindex(columns=[*(df.columns.tolist()+score_column_names)], fill_value=None)
+    score_column_names = [x + "_" +  y + "_" + z for x in ["RBS", "PROMOTER"] for y in ["motif", "spacer", "both"] for z in ["score", "position"]]
+    df = df.reindex(columns=[*(df.columns.tolist()+score_column_names)], fill_value=None)
+
 
     for idx in df.index:
         frag = df.at[idx, "upstream_nt"]
@@ -173,6 +174,14 @@ def gather_mgm_test_set_for_genome(env, gi, **kwargs):
                     score = result[1]
                     df.at[idx, f"{name}_{c}_score"] = score
                     df.at[idx, f"{name}_{c}_position"] = len(frag) - pos - model.motif_width()
+
+        # get best score across models
+        best = max([(name, df.at[idx, f"{name}_both_score"]) for name in names], key=lambda x: x[1])
+
+        df.at[idx, "best_score"] = best[1]
+        df.at[idx, "best_name"] = best[0]
+
+
 
     return df
 
