@@ -34,10 +34,16 @@ class MotifModel:
         score = 0 if use_log else 1
         if component != "spacer":
             for i in range(self._motif_width):
-                if use_log:
-                    score += self._motif[fragment[begin + i]][i]
+                if fragment[begin + i] == "N":
+                    if use_log:
+                        score += 0.25
+                    else:
+                        score *= 0.25
                 else:
-                    score *= self._motif[fragment[begin + i]][i]
+                    if use_log:
+                        score += self._motif[fragment[begin + i]][i]
+                    else:
+                        score *= self._motif[fragment[begin + i]][i]
 
         if component != "motif":
             if self._spacer is not None:
