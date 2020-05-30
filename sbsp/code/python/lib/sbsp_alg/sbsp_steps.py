@@ -1479,7 +1479,10 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
         df.drop(df.index, inplace=True)
         return  # FIXME: implement recovery strategy
 
-
+    logger.info("Step {}: S5 = {}".format(predicted_at_step,
+        count_number_of_5prime_candidates_at_position(msa_t, start_position_in_msa, sbsp_options) / float(
+            msa_t.number_of_sequences())
+    ))
 
     # get label of new start in genome
     q_label_sbsp = get_label_from_start_position_in_msa(
