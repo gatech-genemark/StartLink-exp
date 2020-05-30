@@ -19,7 +19,7 @@ import pathmagic
 import sbsp_log  # runs init in sbsp_log and configures logger
 
 # Custom imports
-from sbsp_general import Environment
+from sbsp_general import Environment, TOOL, TOOLp
 from sbsp_general.general import os_join
 from sbsp_general.shelf import next_name
 from sbsp_io.general import mkdir_p
@@ -93,15 +93,15 @@ def get_summary_for_gcfid(df):
         df_subset = df[df[y]]
         result["{} % {}".format(x, y)] = round(100 * df_subset[x].sum() / float(df_subset[y].sum()))
 
-    result["Sen(SBSP,NCBI)"] = 100 * df["SBSP=NCBI"].sum() / float(((df["SBSP"]) & (df["NCBI"])).sum())
+    result["Sen(SBSP,NCBI)"] = 100 - 100 * df["SBSP=NCBI"].sum() / float(((df["SBSP"]) & (df["NCBI"])).sum())
     result["Cov(SBSP,NCBI)"] = 100 * df["SBSP"].sum() / float(df.iloc[0]["Total SBSP"])
     result["Cov2(SBSP,NCBI)"] = 100 * ((df["SBSP"]) & (df["NCBI"])).sum() / float(df["NCBI"].sum())
 
-    result["Sen(GMS2,NCBI)"] = 100 * df["GMS2=NCBI"].sum() / float(((df["GMS2"]) & (df["NCBI"])).sum())
+    result["Sen(GMS2,NCBI)"] = 100 - 100 * df["GMS2=NCBI"].sum() / float(((df["GMS2"]) & (df["NCBI"])).sum())
     result["Cov(GMS2,NCBI)"] = 100 * df["GMS2"].sum() / float(df.iloc[0]["Total GMS2"])
     result["Cov2(GMS2,NCBI)"] = 100 * ((df["GMS2"]) & (df["NCBI"])).sum() / float(df["NCBI"].sum())
 
-    result["Sen(GMS2=SBSP,NCBI)"] = 100 * df["GMS2=SBSP=NCBI"].sum() / float(((df["GMS2=SBSP"]) & (df["NCBI"])).sum())
+    result["Sen(GMS2=SBSP,NCBI)"] = 100 - 100 * df["GMS2=SBSP=NCBI"].sum() / float(((df["GMS2=SBSP"]) & (df["NCBI"])).sum())
     result["Cov(GMS2=SBSP,NCBI)"] = 100 * df["GMS2=SBSP"].sum() / float(df.iloc[0]["Total GMS2=SBSP"])
     result["Cov2(GMS2=SBSP,NCBI)"] = 100 * ((df["GMS2=SBSP"]) & (df["NCBI"])).sum() / float(df["NCBI"].sum())
 
@@ -180,8 +180,8 @@ def viz_summary_per_gcfid_per_step(env, df):
     sns.lineplot(df_per_gcfid_per_step, "SBSP Step", "Sen(SBSP,NCBI)", hue="GCFID", ax=ax[0],
                  sns_kwargs={"palette": CM.get_map("verified")}, legend=False,
                  figure_options=FigureOptions(
-            ylabel="Sensitivity",
-            ylim=[85,105],
+            ylabel="Error",
+            ylim=[0,20],
 
         ))
 
@@ -212,8 +212,8 @@ def viz_summary_per_gcfid_per_step(env, df):
     sns.lineplot(df_per_gcfid_per_step, "SBSP Step", "Sen(GMS2=SBSP,NCBI)", hue="GCFID", ax=ax[0],
                  sns_kwargs={"palette": CM.get_map("verified")}, legend=False,
                  figure_options=FigureOptions(
-                     ylabel="Sensitivity",
-                     ylim=[85, 105],
+                     ylabel="Error",
+                     ylim=[0, None],
 
                  ))
 
@@ -240,8 +240,8 @@ def viz_summary_per_gcfid_per_step(env, df):
     for ax in axes.ravel():
         ax.set_xlabel("Steps")
 
-    axes[0][0].set_title("SBSP")
-    axes[0][1].set_title("GMS2=SBSP")
+    axes[0][0].set_title(TOOL)
+    axes[0][1].set_title(TOOLp)
 
     fig.subplots_adjust(bottom=0.21)
 

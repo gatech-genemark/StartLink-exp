@@ -23,9 +23,10 @@ from sbsp_general import Environment
 # ------------------------------ #
 from sbsp_general.MGMMotifModel import MGMMotifModel
 from sbsp_general.general import get_value
+from sbsp_general.mgm_motif_model_all_gc import MGMMotifModelAllGC
 from sbsp_general.shelf import bin_by_gc, get_consensus_sequence, create_numpy_for_column_with_extended_motif, \
     get_position_distributions_by_shift
-from sbsp_io.objects import load_obj
+from sbsp_io.objects import load_obj, save_obj
 from sbsp_viz.mgm_motif_model import MGMMotifModelVisualizer
 
 parser = argparse.ArgumentParser("Build MGM start models.")
@@ -130,7 +131,7 @@ def build_mgm_motif_model_for_gc(env, df, col, **kwargs):
     # get prior probabilities on shift position
     counter = Counter(update_shifts)
     total = sum(counter.values())
-    to_add = sorted(set(range(4)).difference(counter.keys()))
+    to_add = sorted(set(range(max(counter.keys()))).difference(counter.keys()))
     normalized = [[x, 100 * counter[x] / total] for x in counter] + [[x, 0] for x in to_add]
     normalized = np.array(normalized)
     shifts_dict = {normalized[x, 0]: normalized[x, 1] for x in range(normalized.shape[0])}
@@ -168,16 +169,15 @@ def build_mgm_motif_model_for_gc(env, df, col, **kwargs):
         }
 
     # compile into single model
-    try:
-        mgm_mm = MGMMotifModel(shifts_dict, extended_motif_dict, original_width, position_distributions_by_shift)
-    except ValueError:
-        print("Nope")
+
+    mgm_mm = MGMMotifModel(shifts_dict, extended_motif_dict, original_width, position_distributions_by_shift)
 
     MGMMotifModelVisualizer.visualize(mgm_mm, title=title)
+    return mgm_mm
 
 
 def build_mgm_motif_models_for_all_gc(env, df, name, **kwargs):
-    # type: (Environment, pd.DataFrame, str, Dict[str, Any]) -> None
+    # type: (Environment, pd.DataFrame, str, Dict[str, Any]) -> MGMMotifModelAllGC
     df = df[~df[name].isna()].copy()  # we only need non-NA
 
     bin_size = get_value(kwargs, "bin_size", 5, default_if_none=True)
@@ -189,25 +189,82 @@ def build_mgm_motif_models_for_all_gc(env, df, name, **kwargs):
     binned_dfs = bin_by_gc(df, step=bin_size)
 
     # for each binned dataframe, build specific model
+    list_mgm_models = list() # type: List[Tuple[float, float, MGMMotifModel]]
     for info in binned_dfs:
         lower, upper, df_gc = info
 
-        if len(df_gc) <= 1:
-            continue
 
-        if lower >= 75:
-            print("Hi")
 
-        mgm_mm = build_mgm_motif_model_for_gc(env, df_gc, name, title=f"[{lower},{upper}]", **kwargs)
+        mgm_mm = None
+        if len(df_gc) > 1:
+            mgm_mm = build_mgm_motif_model_for_gc(env, df_gc, name, title=f"[{lower},{upper}]", **kwargs)
+
+        if lower == 30 and upper == 35 and mgm_mm is None:
+            print('hi')
+
+        if mgm_mm is None:
+            # use previous model
+            if len(list_mgm_models) > 0:
+                list_mgm_models.append([lower, upper, mgm_mm])
+        else:
+            list_mgm_models.append([lower, upper, mgm_mm])
+
+    return MGMMotifModelAllGC(list_mgm_models)
 
 
 def build_mgm_models(env, df, pf_output):
     # type: (Environment, pd.DataFrame, str) -> None
 
-    name_to_models = dict()
+    # build the following models
+    # {
+    #   Bacteria: {
+    #       RBS: {
+    #           A,C: models_gc_rbs_ac
+    #           B: models_gc_rbs_b
+    #       }, PROMOTER: {
+    #           C: models_gc_promoter_c
+    #   },
+    #   Archaea: {
+    #       RBS: {
+    #           A,D: models_gc_rbs_ad
+    #       },
+    #       PROMOTER: {
+    #           D: models_gc_promoter_d
+    #       }
+    #   },
 
-    for name in ["RBS", "PROMOTER"]:
-        build_mgm_motif_models_for_all_gc(env, df[df["GENOME_TYPE"].isin({"A", "C"})], name + "_MAT")
+    type_model_group = {
+        "Bacteria": {
+            "RBS": {
+                "AC", "B"
+            },
+            "PROMOTER": {
+                "C"
+            }
+        },
+        "Archaea": {
+            "RBS": {
+                "AD"
+            },
+            "PROMOTER": {
+                "D"
+            }
+        }
+    }
+
+    name_to_models = dict()     # type: Dict[str, Dict[str, Dict[str, MGMMotifModelAllGC]]]
+    for species_type in type_model_group.keys():
+        name_to_models[species_type] = dict()       # type: Dict[str, Dict[str, MGMMotifModelAllGC]]
+        for name in type_model_group[species_type].keys():
+            name_to_models[species_type][name] = dict()
+            for group in type_model_group[species_type][name]:
+                if group != "C":
+                    continue
+                name_to_models[species_type][name][group] = build_mgm_motif_models_for_all_gc(
+                    env, df[(df["Type"] == species_type) & (df["GENOME_TYPE"].isin(set(group)))], name + "_MAT"
+                )
+
+    save_obj(name_to_models, pf_output)
 
 
 def main(env, args):

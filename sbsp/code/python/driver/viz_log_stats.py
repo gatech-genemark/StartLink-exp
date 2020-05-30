@@ -6,6 +6,8 @@ import logging
 import argparse
 import pandas as pd
 from typing import *
+import seaborn
+import matplotlib.pyplot as plt
 
 # noinspection All
 import pathmagic
@@ -21,7 +23,7 @@ from sbsp_viz.colormap import ColorMap as CM
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
-from sbsp_viz.general import FigureOptions
+from sbsp_viz.general import FigureOptions, save_figure
 
 parser = argparse.ArgumentParser("Visualization additional statistics collected from log files.")
 
@@ -127,6 +129,38 @@ def viz_per_genome(env, df):
                  legend_ncol=2,
                  sns_kwargs={"ci": "sd", "palette": CM.get_map("ancestor")})
 
+
+    fig, axes = plt.subplots(2,2, sharex="all", sharey="all")
+
+    ancestors = sorted(set(df["Ancestor"]))
+
+    for anc, ax in zip(ancestors, axes.ravel()):
+
+        df_anc = df_tmp[df_tmp["Ancestor"] == anc]
+        sns.lineplot(df_anc[df_anc["x"] <= 40], "x", "y", hue="Ancestor",
+                     legend=None,
+                     ax=ax,
+                     sns_kwargs={"ci": "sd", "palette": CM.get_map("ancestor")})
+        ax.set_title(anc)
+        ax.set_xlabel(None)
+        ax.set_ylabel(None)
+
+    figure_options = FigureOptions(
+        xlabel="Number of BLASTp hits",
+        ylabel="Cumulative percent of queries (per genome)",
+        save_fig=next_name(env["pd-work"]),
+    )
+
+    fig.add_subplot(111, frameon=False)
+    # # hide tick and tick label of the big axes
+    plt.tick_params(top=False, bottom=False, left=False, right=False, which="both",
+                    labelbottom=False, labeltop=False, labelleft=False, labelright=False)
+    plt.xlabel(figure_options.xlabel, labelpad=20)
+    plt.ylabel(figure_options.ylabel, labelpad=30)
+
+    save_figure(figure_options, fig)
+
+    plt.show()
 
 def compute_more(df):
     # type: (pd.DataFrame) -> None

@@ -52,6 +52,9 @@ my_env = Environment(pd_data=parsed_args.pd_data,
                      pd_work=parsed_args.pd_work,
                      pd_results=parsed_args.pd_results)
 
+TOOL = "StartLink"
+TOOLp = TOOL + "+"
+
 # Setup logger
 logging.basicConfig(level=parsed_args.loglevel)
 logger = logging.getLogger("logger")  # type: logging.Logger
@@ -79,6 +82,8 @@ def get_summary_for_gcfid(df):
     numerator_denominator = [
         ("GMS2=SBSP", "SBSP"),
         ("GMS2=SBSP", "GMS2"),
+        ("GMS2=SBSP", "NCBI"),
+        ("SBSP", "NCBI"),
         ("GMS2=SBSP=NCBI", "GMS2=SBSP"),
         ("GMS2=SBSP=Prodigal", "GMS2=SBSP"),
         ("(GMS2=SBSP)!=NCBI", "GMS2=SBSP"),
@@ -113,7 +118,7 @@ def viz_summary_per_gcfid(env, df, title=None):
             save_fig=next_name(pd_work),
             ylim=[None, 100],
             title=title,
-            ylabel="Percent of GMS2=SBSP from SBSP Predictions"
+            ylabel=f"Percent of {TOOLp} from {TOOL} Predictions"
         ),
         sns_kwargs={"palette": CM.get_map("ancestor")}
     )
@@ -122,7 +127,7 @@ def viz_summary_per_gcfid(env, df, title=None):
         save_fig=next_name(pd_work),
         ylim=[0, 20],
         # ylabel="1 - Sen(NCBI, GMS2=SBSP)",
-        ylabel="Err(NCBI, GMS2=SBSP)",
+        ylabel=f"Err(PGAP, {TOOLp})",
         xlabel="Clade",
         title=title
     ),
@@ -153,7 +158,7 @@ def viz_summary_per_gcfid(env, df, title=None):
         ylim=[0, None],
         title=title,
         # ylabel="1 - Sen(NCBI, GMS2=SBSP)",
-        ylabel="Err(NCBI, GMS2=SBSP)"
+        ylabel=f"Err(PGAP, {TOOLp})"
     ),
                legend_loc="best",
                sns_kwargs={"palette": CM.get_map("ancestor"), "scatter": True, "lowess": True,
@@ -177,6 +182,50 @@ def viz_summary_per_gcfid(env, df, title=None):
                sns_kwargs={"palette": CM.get_map("ancestor"), "scatter": True, "lowess": True,
                            "scatter_kws": {"s": 5}
                            })
+
+    sns.lmplot(df, "Genome GC", "GMS2=SBSP % NCBI", hue="Ancestor", figure_options=FigureOptions(
+        save_fig=next_name(pd_work),
+        ylim=[50, 100],
+        title=title,
+        xlabel="GC",
+        ylabel=f"Cov({TOOLp}, PGAP)"
+    ),
+               sns_kwargs={"palette": CM.get_map("ancestor"), "scatter": True, "lowess": True,
+                           "scatter_kws": {"s": 5}
+                           })
+
+    sns.lmplot(df, "Genome GC", "SBSP % NCBI", hue="Ancestor", figure_options=FigureOptions(
+        save_fig=next_name(pd_work),
+        ylim=[50, 100],
+        title=title,
+        xlabel="GC",
+        ylabel=f"Cov({TOOL}, PGAP)"
+    ),
+               sns_kwargs={"palette": CM.get_map("ancestor"), "scatter": True, "lowess": True,
+                           "scatter_kws": {"s": 5}
+                           })
+
+    sns.catplot(df, "Ancestor", "GMS2=SBSP % NCBI", kind="box", figure_options=FigureOptions(
+        save_fig=next_name(pd_work),
+        # ylim=[0, 20],
+        ylim=[50, 100],
+        # ylabel="1 - Sen(NCBI, GMS2=SBSP)",
+        ylabel=f"Cov({TOOLp}, PGAP)",
+        xlabel="Clade",
+        title=title
+    ),
+                sns_kwargs={"palette": CM.get_map("ancestor")})
+
+    sns.catplot(df, "Ancestor", "SBSP % NCBI", kind="box", figure_options=FigureOptions(
+        save_fig=next_name(pd_work),
+        # ylim=[0, 20],
+        ylim=[50, 100],
+        # ylabel="1 - Sen(NCBI, GMS2=SBSP)",
+        ylabel=f"Cov({TOOL}, PGAP)",
+        xlabel="Clade",
+        title=title
+    ),
+                sns_kwargs={"palette": CM.get_map("ancestor")})
 
     # sns.lmplot(df, "Genome GC", "GMS2=SBSP % GMS2", hue="Ancestor", figure_options=FigureOptions(
     #     save_fig=next_name(pd_work),
@@ -343,7 +392,7 @@ def heat_map_Kimura_accuracy(env, df_all, x, y, num_steps=20, balance=False,
             gms2_eq_sbsp_eq_ncbi[x_pos][y_pos] += 1 if df.at[index, "GMS2=SBSP=NCBI"] else 0
 
         gms2_eq_sbsp_and_ncbi [gms2_eq_sbsp_and_ncbi < 10] = 0
-        accuracy = np.divide(gms2_eq_sbsp_eq_ncbi, gms2_eq_sbsp_and_ncbi)
+        accuracy = 100 - 100 * np.divide(gms2_eq_sbsp_eq_ncbi, gms2_eq_sbsp_and_ncbi)
         # accuracy = np.flip(accuracy, 0)
 
         import seaborn
@@ -357,8 +406,10 @@ def heat_map_Kimura_accuracy(env, df_all, x, y, num_steps=20, balance=False,
         xticklabels = [round(l_x[i], 2) for i in xticks]
         yticklabels = [round(l_y[i], 2) for i in yticks]
         g = seaborn.heatmap(
-            accuracy.transpose(), vmin=0, vmax=1,
+            accuracy.transpose(), vmin=0, vmax=100,
             xticklabels=xticklabels, yticklabels=yticklabels, ax=ax,
+            # cmap=seaborn.light_palette("green"),
+            cmap="Blues",
         cbar=False)
         # cbar_ax=None if axis_idx != 0 else cbar_ax, cbar=axis_idx==0)
 
@@ -1024,7 +1075,7 @@ def viz_summary_per_gcfid_per_step(env, df):
         figure_options=FigureOptions(
             save_fig=next_name(pd_work),
             xlabel="Clade",
-            ylabel="Err(NCBI,GMS2=SBSP)"
+            ylabel=f"Err(PGAP,{TOOLp})"
         )
     )
 
@@ -1076,7 +1127,7 @@ def main(env, args):
 
     df = read_analysis_per_query_to_df(args.pf_data)
     df = df[df["Ancestor"] != "Alphaproteobacteria"].copy()
-    # df = df.sample(1000).copy()
+    # df = df.sample(100).copy()
     viz_analysis_per_query(env, df)
 
 

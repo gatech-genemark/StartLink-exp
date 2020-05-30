@@ -3,6 +3,9 @@ import copy
 from typing import *
 from sbsp_general import general
 
+TOOL = "StartLink"
+TOOLp = f"{TOOL}+"
+
 
 class Environment:
     """A class representing the project environment variables, including

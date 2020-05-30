@@ -145,7 +145,7 @@ def plot_per_tool_by_genome_type(env, df):
     for tag, c, a in zip(list_tags, ["b", "g", "r", "o"], ax.ravel()):
         x, y, y_l, y_u = loess_with_stde(df, "GC", f"M:{tag}", a, tag.replace("=", ","))
 
-        a.set_title(tag.replace("=", ","))
+        a.set_title(tag.replace("=", ",").replace("NCBI", "PGAP").replace("GMS2", "GeneMarkS-2"))
         # a.set_ylim([65,100])
         a.set_ylim([0, 35])
 

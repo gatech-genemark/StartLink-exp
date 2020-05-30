@@ -39,17 +39,23 @@ class MGMMotifModel(MotifModel):
 
         score_per_shift = list()
         for s in self._shift_prior:
-
+            s = int(s)
             # shift prior
             score = math.log(self._shift_prior[s]) if use_log else self._shift_prior[s]
 
             # motif
             if component != "spacer":
                 for i in range(self._motif_width):
-                    if use_log:
-                        score += math.log(self._motif[fragment[begin + i]][s + i])
+                    if fragment[begin + i] == "N":
+                        if use_log:
+                            score += 0.25
+                        else:
+                            score *= 0.25
                     else:
-                        score *= self._motif[fragment[begin + i]][s + i]
+                        if use_log:
+                            score += math.log(self._motif[fragment[begin + i]][s + i])
+                        else:
+                            score *= self._motif[fragment[begin + i]][s + i]
 
             # spacer
             if component != "motif":
@@ -86,6 +92,8 @@ class MGMMotifModel(MotifModel):
             shift = int(shift)
 
             if isinstance(spacer[shift], dict):
+                if len(spacer[shift].keys()) == 0:
+                    continue
                 max_position = max([int(x) for x in spacer[shift].keys()])
                 result = [0] * (max_position + 1)
                 for i in spacer[shift].keys():

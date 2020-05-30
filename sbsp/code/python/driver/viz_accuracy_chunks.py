@@ -70,7 +70,7 @@ def main(env, args):
                  legend=False,
                  figure_options=FigureOptions(
                      xlabel="Chunk size (mb)",
-                     ylabel="Sensitivity",
+                     ylabel="Accuracy",
                      ylim=[74, 101],
                      save_fig=next_name(env["pd-work"])
                  ))
@@ -106,7 +106,7 @@ def main(env, args):
 
     fo = FigureOptions(
                      xlabel="Chunk size (mb)",
-                     ylabel="Sensitivity",
+                     ylabel="Accuracy",
                      ylim=[74,101],
                      save_fig=next_name(env["pd-work"])
                  )
