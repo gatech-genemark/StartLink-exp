@@ -82,7 +82,8 @@ def collect_start_info_from_gi(env, gi):
         "GC": 100*gc,
         **{
             x: mod.items[x] for x in {
-                "GENOME_TYPE", "RBS_MAT", "RBS_MAT", "PROMOTER_MAT", "PROMOTER_WIDTH", "RBS_WIDTH"
+                "GENOME_TYPE", "RBS_MAT", "RBS_MAT", "PROMOTER_MAT", "PROMOTER_WIDTH", "RBS_WIDTH",
+                "RBS_POS_DISTR", "PROMOTER_POS_DISTR", "ATG", "GTG", "TTG", "TAA", "TGA", "TAG"
             } if x in mod.items.keys()
         }
     }
@@ -105,7 +106,7 @@ def main(env, args):
     gil = GenomeInfoList.init_from_file(args.pf_genome_list)
     pbs_options = PBSOptions.init_from_dict(env, vars(args))
 
-    
+
     if pbs_options is not None:
         pbs = PBS(env, pbs_options,
           splitter=split_genome_info_list,

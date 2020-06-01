@@ -70,10 +70,13 @@ logger = logging.getLogger("logger")  # type: logging.Logger
 def append_data_frame_to_csv(df, pf_output):
     # type: (pd.DataFrame, str) -> None
     if df is not None and len(df) > 0:
-        if not os.path.isfile(pf_output):
-            df.to_csv(pf_output, index=False)
-        else:
-            df.to_csv(pf_output, mode="a", index=False, header=False)
+        try:
+            if not os.path.isfile(pf_output):
+                df.to_csv(pf_output, index=False)
+            else:
+                df.to_csv(pf_output, mode="a", index=False, header=False)
+        except FileNotFoundError:
+            raise ValueError(f"Could not write to file {pf_output}")
 
 
 def extract_upstream_sequences(labels, sequences, **kwargs):
@@ -194,14 +197,11 @@ def gather_mgm_test_set_for_genome(env, gi, **kwargs):
         df.at[idx, "best_score"] = best[1]
         df.at[idx, "best_name"] = best[0]
 
-
-
     return df
 
 
 def gather_mgm_test_set(env, gil, pf_output, **kwargs):
     # type: (Environment, GenomeInfoList, str, Dict[str, Any]) -> str
-
     remove_p(pf_output)     # start clean
 
     for gi in tqdm(gil, total=len(gil)):
@@ -225,7 +225,6 @@ def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
 
     gil = GenomeInfoList.init_from_file(args.pf_genome_list)
-    gather_mgm_test_set(env, gil, args.pf_output)
 
     pbs_options = PBSOptions.init_from_dict(env, vars(args))
 
@@ -236,7 +235,7 @@ def main(env, args):
                   )
 
         output = pbs.run(
-            data={"gil": gil},
+                data={"gil": gil, "pf_output_template": args.pf_output + "_{}"},
             func=gather_mgm_test_set,
             func_kwargs={
                 "env": env,

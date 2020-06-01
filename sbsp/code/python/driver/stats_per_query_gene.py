@@ -23,7 +23,7 @@ from sbsp_general import Environment
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
-from sbsp_general.general import os_join
+from sbsp_general.general import os_join, get_value
 from sbsp_general.labels import Label
 from sbsp_general.shelf import add_q_key_3p_to_df, map_key_3p_to_label, map_key_3p_to_df_group, labels_match_5p_3p
 from sbsp_io.general import remove_p
@@ -33,8 +33,10 @@ parser = argparse.ArgumentParser("Description of driver.")
 
 parser.add_argument('--pf-genome-list', required=True, help="List containing genome information")
 parser.add_argument('--pf-output-summary', required=True, help="Output summary file")
+parser.add_argument('--dn-run', required=False, default="sbsp")
 
 parser.add_argument('--prodigal', default=False, action="store_true")
+parser.add_argument('--verified', default=False, action="store_true")
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -166,13 +168,18 @@ def analyze_query(key, key_to_label_sbsp, key_to_label_gms2, key_to_label_ncbi, 
 def analysis_per_query_for_genome(env, gi, pd_sbsp, **kwargs):
     # type: (Environment, GenomeInfo, str, Dict[str, Any]) -> pd.DataFrame
 
+    use_verified = get_value(kwargs, "verified", None)
+
     pd_genome = os_join(env["pd-data"], gi.name)
     pd_runs = os_join(env["pd-runs"], gi.name)
     pf_gms2 = os_join(pd_runs, "gms2", "gms2.gff")
     pf_prodigal = os_join(pd_runs, "prodigal", "prodigal.gff")
     pf_sbsp = os_join(pd_sbsp, "accuracy", "{}.gff".format(gi.name))
-    # pf_ncbi = os_join(pd_runs, "ncbi", "ncbi.gff")
-    pf_ncbi = os_join(pd_genome, "verified.gff")
+    pf_ncbi = os_join(pd_runs, "ncbi", "ncbi.gff")
+
+    if use_verified:
+        pf_ncbi = os_join(pd_genome, "verified.gff")
+        
     pf_sbsp_details = os_join(pd_sbsp, "output.csv")
 
 
@@ -231,6 +238,8 @@ def append_data_frame_to_csv(df, pf_output):
 def analysis_per_query(env, gil, pf_output_summary, **kwargs):
     # type: (Environment, GenomeInfoList, str, Dict[str, Any]) -> None
 
+    dn_run = get_value(kwargs, "dn_run", "sbsp", default_if_none=True)
+
     if os.path.isfile(pf_output_summary):
         remove_p(pf_output_summary)
 
@@ -240,9 +249,9 @@ def analysis_per_query(env, gil, pf_output_summary, **kwargs):
         pd_genome = os.path.join(env["pd-data"], gi.name)
         pf_sequence = os.path.join(pd_genome, "sequence.fasta")
         gc = compute_gc_from_file(pf_sequence)
-        pd_run = os.path.join(env["pd-runs"], gi.name, "sbsp")
+        pd_run = os.path.join(env["pd-runs"], gi.name, dn_run)
 
-        df = analysis_per_query_for_genome(env, gi, pd_run)
+        df = analysis_per_query_for_genome(env, gi, pd_run, **kwargs)
         df["GCFID"] = gi.name
         df["Name"] = gi.attributes["name"] if "name" in gi.attributes else gi.name
         df["Genome GC"] = gc
@@ -260,7 +269,9 @@ def main(env, args):
     analysis_per_query(
         env,
         gil, args.pf_output_summary,
-        prodigal=args.prodigal
+        prodigal=args.prodigal,
+        verified=args.verified,
+        dn_run=args.dn_run
     )
 
 

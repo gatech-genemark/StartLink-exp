@@ -27,8 +27,6 @@ from sbsp_viz.general import FigureOptions, save_figure
 from sbsp_viz import sns
 from sbsp_viz.colormap import ColorMap as CM
 
-from plotnine import *
-
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
