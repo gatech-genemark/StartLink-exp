@@ -5,3 +5,5 @@
 
 !*.pdf
 !*.org
+
+_minted*
