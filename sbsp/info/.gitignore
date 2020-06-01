@@ -6,4 +6,4 @@
 !*.pdf
 !*.org
 
-_minted*
+*_minted*
