@@ -16,6 +16,7 @@ export bin_external=$base/bin_external
 export data_root=$base/data
 export data=${data_root}/all
 export data_verified=${data_root}/verified
+export db=$base/db
 
 export metadata=$base/metadata
 

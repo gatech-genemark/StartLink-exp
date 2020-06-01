@@ -26,7 +26,7 @@ from sbsp_general import Environment
 # ------------------------------ #
 from sbsp_general.general import os_join
 from sbsp_general.labels_comparison_detailed import LabelsComparisonDetailed
-from sbsp_general.shelf import create_q_key_3p
+from sbsp_general.shelf import create_q_key_3p, add_q_key_3p_to_df
 from sbsp_io.general import mkdir_p
 from sbsp_io.labels import read_labels_from_file
 
@@ -74,10 +74,15 @@ def collect_alignments_for_genome(env, gi):
         "ignore_frameshifted": True, "ignore_partial": True, "shift": 0
     }
 
-    labels_sbsp = read_labels_from_file(pf_sbsp, name="SBSP", **common_options)
-    labels_gms2 = read_labels_from_file(pf_gms2, name="GMS2", **common_options)
-    labels_ncbi = read_labels_from_file(pf_ncbi, name="NCBI", **common_options)
-    df_details = pd.read_csv(pf_sbsp_details)
+    try:
+
+        labels_sbsp = read_labels_from_file(pf_sbsp, name="SBSP", **common_options)
+        labels_gms2 = read_labels_from_file(pf_gms2, name="GMS2", **common_options)
+        labels_ncbi = read_labels_from_file(pf_ncbi, name="NCBI", **common_options)
+        df_details = pd.read_csv(pf_sbsp_details)
+        add_q_key_3p_to_df(df_details, "q-3prime")
+    except FileNotFoundError:
+        return
 
     # get genes where GMS2=SBSP
     lcd_full = LabelsComparisonDetailed(labels_gms2, labels_sbsp,
@@ -94,7 +99,7 @@ def collect_alignments_for_genome(env, gi):
 
     df_gms2_eq_sbsp_not_ncbi = df_details[df_details["q-3prime"].isin(set_3prime_keys)]
 
-    set_pf_msa_out = set(df_gms2_eq_sbsp_not_ncbi["q-3prime"])
+    set_pf_msa_out = set(df_gms2_eq_sbsp_not_ncbi["pf-msa-output"])
 
     for pf_msa_out in set_pf_msa_out:
         shutil.copy(pf_msa_out, pd_genome)
