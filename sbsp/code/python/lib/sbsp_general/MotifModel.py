@@ -69,7 +69,7 @@ class MotifModel:
 
     @staticmethod
     def _init_spacer(spacer=None):
-        # type: (Union[None, Dict[int, float], List[float]) -> Union[List[float], None]
+        # type: (Union[None, Dict[int, float], List[float]]) -> Union[List[float], None]
 
         if spacer is None:
             return None

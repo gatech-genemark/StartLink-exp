@@ -192,8 +192,9 @@ def gather_mgm_test_set_for_genome(env, gi, **kwargs):
                     df.at[idx, f"{name}_{c}_position"] = len(frag) - pos - model.motif_width()
 
         # get best score across models
-        best = max([(name, df.at[idx, f"{name}_both_score"]) for name in names], key=lambda x: x[1])
+        best = max([(name, df.at[idx, f"{name}_both_score", df.at[idx, f"{name}_both_position"]]) for name in names], key=lambda x: x[1])
 
+        df.at[idx, "best_position"] = best[2]
         df.at[idx, "best_score"] = best[1]
         df.at[idx, "best_name"] = best[0]
 

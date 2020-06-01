@@ -92,7 +92,7 @@ def mat_to_dict(mat):
     return result
 
 def build_mgm_motif_model_for_gc(env, df, col, **kwargs):
-    # type: (Environment, pd.DataFrame, str, Dict[str, Any]) -> MGMMotifModel
+    # type: (Environment, pd.DataFrame, str, Dict[str, Any]) -> Union[MGMMotifModel, None]
 
     min_consensus_occurence = get_value(kwargs, "min_consensus_occurence", 5)
     title = get_value(kwargs, "title", "")
@@ -172,7 +172,8 @@ def build_mgm_motif_model_for_gc(env, df, col, **kwargs):
 
     mgm_mm = MGMMotifModel(shifts_dict, extended_motif_dict, original_width, position_distributions_by_shift)
 
-    MGMMotifModelVisualizer.visualize(mgm_mm, title=title)
+    MGMMotifModelVisualizer.visualize(mgm_mm, title=title, msa_t=collect["msa_t"],
+                                      raw_motif_data=[array, update_shifts])
     return mgm_mm
 
 
@@ -205,7 +206,8 @@ def build_mgm_motif_models_for_all_gc(env, df, name, **kwargs):
         if mgm_mm is None:
             # use previous model
             if len(list_mgm_models) > 0:
-                list_mgm_models.append([lower, upper, mgm_mm])
+                prev = list_mgm_models[-1][2]
+                list_mgm_models.append([lower, upper, prev])
         else:
             list_mgm_models.append([lower, upper, mgm_mm])
 
@@ -214,24 +216,6 @@ def build_mgm_motif_models_for_all_gc(env, df, name, **kwargs):
 
 def build_mgm_models(env, df, pf_output):
     # type: (Environment, pd.DataFrame, str) -> None
-
-    # build the following models
-    # {
-    #   Bacteria: {
-    #       RBS: {
-    #           A,C: models_gc_rbs_ac
-    #           B: models_gc_rbs_b
-    #       }, PROMOTER: {
-    #           C: models_gc_promoter_c
-    #   },
-    #   Archaea: {
-    #       RBS: {
-    #           A,D: models_gc_rbs_ad
-    #       },
-    #       PROMOTER: {
-    #           D: models_gc_promoter_d
-    #       }
-    #   },
 
     type_model_group = {
         "Bacteria": {
@@ -258,8 +242,8 @@ def build_mgm_models(env, df, pf_output):
         for name in type_model_group[species_type].keys():
             name_to_models[species_type][name] = dict()
             for group in type_model_group[species_type][name]:
-                if group != "C":
-                    continue
+                # if group != "D":
+                #     continue
                 name_to_models[species_type][name][group] = build_mgm_motif_models_for_all_gc(
                     env, df[(df["Type"] == species_type) & (df["GENOME_TYPE"].isin(set(group)))], name + "_MAT"
                 )
@@ -272,9 +256,6 @@ def main(env, args):
     df = read_archaea_bacteria_inputs(args.pf_input_arc, args.pf_input_bac)
 
     build_mgm_models(env, df, args.pf_output)
-
-
-
 
 
 if __name__ == "__main__":
