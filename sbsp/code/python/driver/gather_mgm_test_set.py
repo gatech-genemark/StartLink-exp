@@ -177,7 +177,7 @@ def gather_mgm_test_set_for_genome(env, gi, **kwargs):
     # add score columns to dataframe
     score_column_names = [x + "_" +  y + "_" + z for x in ["RBS", "PROMOTER"] for y in ["motif", "spacer", "both"] for z in ["score", "position"]]
     df = df.reindex(columns=[*(df.columns.tolist()+score_column_names)], fill_value=None)
-
+    df["Group"] = mod.items["GENOME_TYPE"].strip("-")[1]
 
     for idx in df.index:
         frag = df.at[idx, "upstream_nt"]
