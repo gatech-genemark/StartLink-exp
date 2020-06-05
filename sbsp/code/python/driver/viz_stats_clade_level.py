@@ -1085,6 +1085,7 @@ def viz_analysis_per_query(env, df, **kwargs):
     # type: (Environment, pd.DataFrame, Dict[str, Any]) -> None
 
     pd_work = env["pd-work"]
+    df.reset_index(inplace=True)
 
     df["(GMS2=SBSP)!=NCBI"] = df["GMS2=SBSP"] & df["NCBI"] & ~df["GMS2=SBSP=NCBI"]
     df["(GMS2=SBSP)!=Prodigal"] = df["GMS2=SBSP"] & df["Prodigal"] & ~df["GMS2=SBSP=Prodigal"]
@@ -1092,6 +1093,7 @@ def viz_analysis_per_query(env, df, **kwargs):
     print(df[["Ancestor", "GMS2=SBSP"]].groupby("Ancestor", as_index=False).sum().to_string())
     print(df[["Ancestor", "GCFID"]].groupby("Ancestor")["GCFID"].nunique().to_string())
 
+    df.drop(df[((df["Ancestor"] == "FCB group") & (df["Genome GC"] > 0.6))].index, axis=0, inplace=True)
     # remove all step C
     # df.drop(df.index[df["Predicted-at-step"] == "C"], inplace=True)
     # df.loc[df["Predicted-at-step"] == "B", "Predicted-at-step"] = "C"
