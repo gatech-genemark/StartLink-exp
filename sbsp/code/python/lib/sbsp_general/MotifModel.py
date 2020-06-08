@@ -1,5 +1,6 @@
 import logging
 from typing import *
+import pandas as pd
 
 from sbsp_general.general import get_value
 
@@ -9,7 +10,7 @@ class MotifModel:
     """Motif model, holding the composition matrix and position (spacer) distribution"""
 
     def __init__(self, motif, spacer=None):
-        # type: (Dict[str, List[float]], Dict[int, float]) -> None
+        # type: (Dict[str, List[float]], Union[None, Dict[int, float]]) -> None
 
         self._motif = motif     # type: Dict[str, List[float]]
         self._motif_width = max([len(motif[x]) for x in self._motif.keys()])
@@ -59,7 +60,8 @@ class MotifModel:
         # type: (str, Dict[str, Any]) -> Tuple[int, float]
 
         return max(
-            [(pos, self.score(fragment, begin=pos, **kwargs)) for pos in range(len(fragment) - self._motif_width)],
+            [(pos, self.score(fragment, begin=pos, **kwargs))
+             for pos in range(len(fragment) - self._motif_width)],
             key=lambda x: x[1]
         )
 
@@ -88,7 +90,16 @@ class MotifModel:
         raise ValueError(f"Unknown spacer type: {type(spacer)}")
 
 
+    def pwm_to_df(self):
+        # type: () -> pd.DataFrame
 
+        keys = sorted(self._motif.keys())
 
+        list_entries = list()
+        for p in range(self.motif_width()):
+            list_entries.append(
+                [self._motif[k][p] for k in keys]
+            )
 
+        return pd.DataFrame(list_entries, columns=keys)
 

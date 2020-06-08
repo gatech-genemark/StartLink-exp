@@ -22,6 +22,7 @@ import sbsp_log  # runs init in sbsp_log and configures logger
 # Custom imports
 from sbsp_alg.sbsp_steps import run_msa_on_sequences
 from sbsp_general import Environment
+from sbsp_general.general import os_join
 from sbsp_general.msa_2 import MSAType
 from sbsp_general.shelf import next_name, bin_by_gc, get_consensus_sequence, gather_consensus_sequences, \
     print_reduced_msa, create_numpy_for_column_with_extended_motif, get_position_distributions_by_shift
@@ -29,6 +30,7 @@ from sbsp_io.objects import load_obj
 import seaborn
 import matplotlib.pyplot as plt
 import logomaker as lm
+from matplotlib.font_manager import FontProperties
 
 
 
@@ -36,6 +38,7 @@ import logomaker as lm
 #           Parse CMD            #
 # ------------------------------ #
 from sbsp_options.sbsp import SBSPOptions
+from sbsp_viz.general import save_figure, FigureOptions
 from sbsp_viz.shelf import loess_with_stde
 
 parser = argparse.ArgumentParser("Description of driver.")
@@ -86,6 +89,8 @@ def create_numpy_for_column(df, col):
         # for each base
         for b_pos, letter in enumerate(sorted(dict_arr.keys())):
             for w_pos, value in enumerate(dict_arr[letter]):
+                if w_pos == 6:
+                    print("HI")
                 mat[n_pos, w_pos, b_pos] = value
 
     return mat
@@ -105,7 +110,11 @@ def visualize_matrix_column(env, df, col):
     # type: (Environment, pd.DataFrame, str) -> None
 
     # first, remove all NA for column
-    df = df[~df[col].isna()]            # we only need non-NA
+    df = df[~df[col].isna()]           # we only need non-NA
+
+
+    fp = FontProperties()
+    fp.set_family("monospace")
 
     # create N x 6 x 4 matrix for RBS
     mat = create_numpy_for_column(df, col)
@@ -115,43 +124,57 @@ def visualize_matrix_column(env, df, col):
     gc = df["GC"]
     group = df["GENOME_TYPE"]
 
+    for r in range(1):
 
-    reducer = umap.UMAP()
-    reducer = reducer.fit(mat)
-    embedding = reducer.embedding_
-    print(embedding.shape)
+        reducer = umap.UMAP(random_state=r)
+        reducer = reducer.fit(mat)
+        embedding = reducer.embedding_
+        print(embedding.shape)
 
-    # fig, ax = plt.subplots()
-    #
-    # plt.scatter(embedding[:, 0], embedding[:, 1], c=gc, marker="+")
-    # plt.colorbar()
-    # plt.show()
-    # themes = ["fire", "viridis", "inferno", "blue", "red", "green", "darkblue", "darkred", "darkgreen"]
-    # fig, axes = plt.subplots(3, 3)
-    # for ax, theme in zip(axes.ravel(), themes):
-    #     fig, ax = plt.subplots()
-    #     umap.plot.points(reducer, values=gc, theme=theme, )
-    #     plt.show()
-    ax = umap.plot.points(reducer, values=gc, cmap="viridis")
-    mappable = create_mappable_for_colorbar(gc, "viridis")
-    plt.colorbar(mappable)
-    plt.title(col)
-    plt.show()
+        # fig, ax = plt.subplots()
+        #
+        # plt.scatter(embedding[:, 0], embedding[:, 1], c=gc, marker="+")
+        # plt.colorbar()
+        # plt.show()
+        # themes = ["fire", "viridis", "inferno", "blue", "red", "green", "darkblue", "darkred", "darkgreen"]
+        # fig, axes = plt.subplots(3, 3)
+        # for ax, theme in zip(axes.ravel(), themes):
+        #     fig, ax = plt.subplots()
+        #     umap.plot.points(reducer, values=gc, theme=theme, )
+        #     plt.show()
+        ax = umap.plot.points(reducer, values=gc, cmap="viridis")
+        mappable = create_mappable_for_colorbar(gc, "viridis")
+        plt.colorbar(mappable)
+        plt.title(col)
+        plt.tight_layout()
+        save_figure(FigureOptions(
+            save_fig=next_name(env["pd-work"])
+        ))
+        plt.show()
 
-    umap.plot.points(reducer, labels=group.values, color_key_cmap="Paired")
-    plt.title(col)
-    plt.show()
+        umap.plot.points(reducer, labels=group.values, color_key_cmap="Paired")
+        plt.title(col)
+        plt.tight_layout()
+        save_figure(FigureOptions(
+            save_fig=next_name(env["pd-work"])
+        ))
+        plt.show()
 
-    umap.plot.points(reducer, labels=group.values, color_key_cmap="Dark2")
-    plt.title(col)
-    plt.show()
+        # umap.plot.points(reducer, labels=group.values, color_key_cmap="Dark2")
+        # plt.title(col)
+        # save_figure(FigureOptions(
+        #     save_fig=next_name(env["pd-work"])
+        # ))
+        # plt.show()
 
 
-
-
-    umap.plot.points(reducer, labels=df["Type"])
-    plt.title(col)
-    plt.show()
+        umap.plot.points(reducer, labels=df["Type"])
+        plt.title(col)
+        plt.tight_layout()
+        save_figure(FigureOptions(
+            save_fig=next_name(env["pd-work"])
+        ))
+        plt.show()
 
     # fig, ax = plt.subplots()
     # plt.scatter(embedding[:, 0], embedding[:, 1], c=group.values, cmap=cm.brg)
@@ -716,9 +739,16 @@ def main(env, args):
     df.loc[df["GENOME_TYPE"] == "D2", "GENOME_TYPE"] = "D"
 
     df.reset_index(inplace=True)
+    import matplotlib
+    matplotlib.rcParams.update({
+        # "pgf.texsystem": "pdflatex",
+        'font.family': 'serif',
+        'text.usetex': False,
+        'pgf.rcfonts': False,
+    })
 
-    # visualize_matrix_column(env, df, "RBS_MAT")
-    # visualize_matrix_column(env, df[df["Type"] == "Bacteria"], "PROMOTER_MAT")
+    visualize_matrix_column(env, df, "RBS_MAT")
+    visualize_matrix_column(env, df[(df["Type"] == "Bacteria") & (df["GENOME_TYPE"] == "C")], "PROMOTER_MAT")
     #
     # build_consensus_from_consensus(env, df[df["GENOME_TYPE"] == "A"] , "RBS_MAT")
     # build_consensus_from_consensus(env, df[df["GENOME_TYPE"] == "B"], "RBS_MAT")
@@ -735,11 +765,11 @@ def main(env, args):
     # plot_letter_over_gc_with_single_alignment(env,  df[df["GENOME_TYPE"] != "D"], "RBS_MAT")
     # plot_letter_over_gc_with_single_alignment(env, df[df["GENOME_TYPE"] == "C"], "PROMOTER_MAT")
 
-    plot_letter_per_gc_over_position_with_alignment_per_gc(env,df[df["GENOME_TYPE"].isin({"A", "C"})], "RBS_MAT")
-    plot_letter_per_gc_over_position_with_alignment_per_gc(env, df[df["GENOME_TYPE"].isin({"C"})], "PROMOTER_MAT")
-
-    plot_candidate_starts(env, df)
-    plot_candidate_stops(env, df)
+    # plot_letter_per_gc_over_position_with_alignment_per_gc(env,df[df["GENOME_TYPE"].isin({"A", "C"})], "RBS_MAT")
+    # plot_letter_per_gc_over_position_with_alignment_per_gc(env, df[df["GENOME_TYPE"].isin({"C"})], "PROMOTER_MAT")
+    #
+    # plot_candidate_starts(env, df)
+    # plot_candidate_stops(env, df)
 
     # for g in ["A", "B", "C"]:
     #     plot_candidate_starts(env, df[df["GENOME_TYPE"] == g])

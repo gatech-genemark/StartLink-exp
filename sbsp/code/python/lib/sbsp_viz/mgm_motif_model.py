@@ -9,7 +9,7 @@ from matplotlib.font_manager import FontProperties
 
 from sbsp_general.general import get_value
 from sbsp_general.msa_2 import MSAType
-from sbsp_general.shelf import print_reduced_msa
+from sbsp_general.shelf import print_reduced_msa, next_name
 import logomaker as lm
 
 log = logging.getLogger(__name__)
@@ -133,6 +133,7 @@ class MGMMotifModelVisualizer:
 
         plt.tight_layout()
         plt.subplots_adjust(top=0.9)
+        plt.savefig(next_name("."))
         plt.show()
 
     @staticmethod

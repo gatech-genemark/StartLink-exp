@@ -28,6 +28,7 @@ class MGMMotifModel(MotifModel):
         begin = get_value(kwargs, "begin", None)
         use_log = get_value(kwargs, "use_log", False)
         component = get_value(kwargs, "component", "both", choices=["both", "motif", "spacer"])
+        prior = get_value(kwargs, "prior", True)
 
         if begin is None and len(fragment) != self._motif_width:
             raise ValueError("If 'begin' not specified, fragment length should equal motif width")
@@ -41,7 +42,9 @@ class MGMMotifModel(MotifModel):
         for s in self._shift_prior:
             s = int(s)
             # shift prior
-            score = math.log(self._shift_prior[s]) if use_log else self._shift_prior[s]
+            score = 0 if use_log else 1
+            if prior:
+                score = math.log(self._shift_prior[s]) if use_log else self._shift_prior[s]
 
             # motif
             if component != "spacer":
@@ -71,10 +74,11 @@ class MGMMotifModel(MotifModel):
         return max(score_per_shift)
 
     def find_best_position_and_score(self, fragment, **kwargs):
-        # type: (str, Dict[str, Any]) -> Tuple[int, float]
+        # type: (str, Dict[str, Any]) -> Tuple[int, float, float]
 
+        v_list = [(pos, self.score(fragment, begin=pos, **kwargs), self.score(fragment, begin=pos, prior=False, **kwargs)) for pos in range(len(fragment) - self._motif_width)]
         return max(
-            [(pos, self.score(fragment, begin=pos, **kwargs)) for pos in range(len(fragment) - self._motif_width)],
+            v_list,
             key=lambda x: x[1]
         )
 
