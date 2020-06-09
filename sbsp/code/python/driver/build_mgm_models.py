@@ -170,7 +170,8 @@ def build_mgm_motif_model_for_gc(env, df, col, **kwargs):
 
     # compile into single model
 
-    mgm_mm = MGMMotifModel(shifts_dict, extended_motif_dict, original_width, position_distributions_by_shift)
+    mgm_mm = MGMMotifModel(shifts_dict, extended_motif_dict, original_width, position_distributions_by_shift,
+                           avg_gc=df["GC"].mean())
 
     MGMMotifModelVisualizer.visualize(mgm_mm, title=title, msa_t=collect["msa_t"],
                                       raw_motif_data=[array, update_shifts])
@@ -194,6 +195,8 @@ def build_mgm_motif_models_for_all_gc(env, df, name, **kwargs):
     for info in binned_dfs:
         lower, upper, df_gc = info
 
+        # if int(lower) != 40:
+        #     continue
 
 
         mgm_mm = None
@@ -242,7 +245,7 @@ def build_mgm_models(env, df, pf_output):
         for name in type_model_group[species_type].keys():
             name_to_models[species_type][name] = dict()
             for group in type_model_group[species_type][name]:
-                # if group != "D":
+                # if group != "A" and species_type != "Archaea":
                 #     continue
                 name_to_models[species_type][name][group] = build_mgm_motif_models_for_all_gc(
                     env, df[(df["Type"] == species_type) & (df["GENOME_TYPE"].isin(set(group)))], name + "_MAT"

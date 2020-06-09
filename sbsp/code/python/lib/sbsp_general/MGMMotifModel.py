@@ -1,5 +1,6 @@
 import logging
 import math
+import pandas as pd
 from typing import *
 
 from sbsp_general.MotifModel import MotifModel
@@ -10,8 +11,8 @@ log = logging.getLogger(__name__)
 class MGMMotifModel(MotifModel):
     """Motif model, holding the composition matrix and position (spacer) distribution"""
 
-    def __init__(self, shift_prior, motif, motif_width, spacer=None):
-        # type: (Dict[int, float], Dict[str, List[float]], int, Dict[int, Dict[int, float]]) -> None
+    def __init__(self, shift_prior, motif, motif_width, spacer=None, **kwargs):
+        # type: (Dict[int, float], Dict[str, List[float]], int, Dict[int, Dict[int, float]], Dict[str, Any]) -> None
 
         super().__init__(motif)
         self._motif_width = motif_width
@@ -19,7 +20,7 @@ class MGMMotifModel(MotifModel):
 
         self._spacer = MGMMotifModel._init_spacer(spacer)       # type: Union[None, Dict[int, List[float]]]
 
-
+        self._kwargs = kwargs.copy()
 
 
     def score(self, fragment, **kwargs):
@@ -114,6 +115,18 @@ class MGMMotifModel(MotifModel):
         return new_spacer
 
 
+    def pwm_to_df(self):
+        # type: () -> pd.DataFrame
+
+        keys = sorted(self._motif.keys())
+
+        list_entries = list()
+        for p in range(len(next(iter(self._motif.values())))):
+            list_entries.append(
+                [self._motif[k][p] for k in keys]
+            )
+
+        return pd.DataFrame(list_entries, columns=keys)
 
 
 

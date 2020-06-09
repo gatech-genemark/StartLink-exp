@@ -83,7 +83,8 @@ def collect_start_info_from_gi(env, gi):
         **{
             x: mod.items[x] for x in {
                 "GENOME_TYPE", "RBS_MAT", "RBS_MAT", "PROMOTER_MAT", "PROMOTER_WIDTH", "RBS_WIDTH",
-                "RBS_POS_DISTR", "PROMOTER_POS_DISTR", "ATG", "GTG", "TTG", "TAA", "TGA", "TAG"
+                "RBS_POS_DISTR", "PROMOTER_POS_DISTR", "ATG", "GTG", "TTG", "TAA", "TGA", "TAG",
+                "NON_MAT"
             } if x in mod.items.keys()
         }
     }

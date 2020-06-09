@@ -1,4 +1,5 @@
 import logging
+import math
 from typing import *
 from sbsp_general.MGMMotifModel import MGMMotifModel
 import seaborn
@@ -39,16 +40,33 @@ class MGMMotifModelVisualizer:
             ax.set_ylim(*ylim)
 
     @staticmethod
-    def _viz_logo(msa_t, ax):
-        # type: (MSAType, plt.Axes) -> None
+    def _viz_logo(mgm_mm, ax):
+        # type: (MGMMotifModel, plt.Axes) -> None
 
-        seqs = [x.seq._data for x in msa_t.list_alignment_sequences]
-        counts_mat = lm.alignment_to_matrix(sequences=seqs, to_type='counts', characters_to_ignore='.-X')
+        # seqs = [x.seq._data for x in msa_t.list_alignment_sequences]
+        # counts_mat = lm.alignment_to_matrix(sequences=seqs, to_type='counts', characters_to_ignore='.-X')
 
         # Counts matrix -> Information matrix
-        info_mat = lm.transform_matrix(counts_mat,
-                                       from_type='counts',
-                                       to_type='information')
+        bgd = [0.25]*4
+        # if "avg_gc" in mgm_mm._kwargs:
+        #     gc = mgm_mm._kwargs["avg_gc"] / 100.0
+        #     g = c = gc / 2.0
+        #     at = 1 - gc
+        #     a = at / 2.0
+        #     t = 1 - a - g - c
+        #     bgd = [a, c, g, t]
+        info_mat = lm.transform_matrix(mgm_mm.pwm_to_df(),
+                                       from_type='probability',
+                                       to_type='information',
+                                       background=bgd)
+
+        # df = mgm_mm.pwm_to_df()
+        #
+        # for idx in df.index:
+        #     for c in df.columns:
+        #         df.at[idx, c] = math.log2(4) - df.at[idx, c] * math.log2(df.at[idx, c])
+        #
+
 
         lm.Logo(info_mat, ax=ax, color_scheme="classic")
         ax.set_ylim(*[0, 2])
@@ -79,6 +97,9 @@ class MGMMotifModelVisualizer:
 
             seaborn.lineplot(range(len(dist)), dist, label=s, ax=ax)
 
+        ax.set_xlabel("Distance from gene start")
+        ax.set_ylabel("Probability")
+
 
     @staticmethod
     def _viz_prior(mgm_mm, ax):
@@ -93,7 +114,14 @@ class MGMMotifModelVisualizer:
                 x += [i]
                 y += [0]
 
+        x = [int(a) for a in x]
+        y = [a / float(sum(y)) for a in y]
+
         seaborn.barplot(x, y, ax=ax, color="blue")
+        ax.set_ylabel("Probability")
+        ax.set_xlabel("Shift")
+        ax.set_ylim(0,1)
+
 
     @staticmethod
     def visualize(mgm_mm, title="", **kwargs):
@@ -126,7 +154,7 @@ class MGMMotifModelVisualizer:
         MGMMotifModelVisualizer._viz_prior(mgm_mm, ax_counts)
 
         if msa_t is not None:
-            MGMMotifModelVisualizer._viz_logo(msa_t, ax_logo)
+            MGMMotifModelVisualizer._viz_logo(mgm_mm, ax_logo)
             MGMMotifModelVisualizer._viz_msa(msa_t, ax_text)
 
         plt.suptitle("Gc range: {}".format(title))

@@ -76,6 +76,8 @@ def main(env, args):
     sha_mat = lm.transform_matrix(df_motif, from_type="probability", to_type="information")
     lm.Logo(sha_mat, color_scheme="classic", ax=axes[1])
     axes[1].set_ylim(*[0, 2])
+
+    # fig.suptitle(f"GC = {mod.items['GC']}")
     plt.show()
 
 

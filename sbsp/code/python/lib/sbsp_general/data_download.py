@@ -296,6 +296,7 @@ def filter_assembly_summary_by_ancestor(ancestor_tag, tag_type, taxonomy_tree, d
             for i in range(len(info_list)):
                 info_list[i]["name"] = genome_node["name_txt"].replace(",", " ")
                 info_list[i]["parent_id"] = genome_node["parent_id"]
+                info_list[i]["genetic_code"] = genome_node["genetic_code"]
             list_rows += info_list
 
     if len(list_rows) > 0:
