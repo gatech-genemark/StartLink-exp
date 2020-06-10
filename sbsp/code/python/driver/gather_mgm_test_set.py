@@ -177,7 +177,10 @@ def gather_mgm_test_set_for_genome(env, gi, **kwargs):
     # add score columns to dataframe
     score_column_names = [x + "_" +  y + "_" + z for x in ["RBS", "PROMOTER"] for y in ["motif", "spacer", "both"] for z in ["score", "position"]]
     df = df.reindex(columns=[*(df.columns.tolist()+score_column_names)], fill_value=None)
-    df["Group"] = mod.items["GENOME_TYPE"].strip("-")[1]
+    grp = mod.items["GENOME_TYPE"].split("-")[1].upper()
+    if grp == "D2":
+        grp = "D"
+    df["Group"] = grp
 
     for idx in df.index:
         frag = df.at[idx, "upstream_nt"]
@@ -192,7 +195,7 @@ def gather_mgm_test_set_for_genome(env, gi, **kwargs):
                     df.at[idx, f"{name}_{c}_position"] = len(frag) - pos - model.motif_width()
 
         # get best score across models
-        best = max([(name, df.at[idx, f"{name}_both_score", df.at[idx, f"{name}_both_position"]]) for name in names], key=lambda x: x[1])
+        best = max([(name, df.at[idx, f"{name}_both_score"], df.at[idx, f"{name}_both_position"]) for name in names], key=lambda x: x[1])
 
         df.at[idx, "best_position"] = best[2]
         df.at[idx, "best_score"] = best[1]
@@ -205,6 +208,7 @@ def gather_mgm_test_set(env, gil, pf_output, **kwargs):
     # type: (Environment, GenomeInfoList, str, Dict[str, Any]) -> str
     remove_p(pf_output)     # start clean
 
+    print(pf_output)
     for gi in tqdm(gil, total=len(gil)):
 
         df = gather_mgm_test_set_for_genome(env, gi, **kwargs)

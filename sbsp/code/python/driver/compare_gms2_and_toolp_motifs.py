@@ -5,12 +5,13 @@
 import logging
 import os
 import argparse
+from tqdm import tqdm
 import pandas as pd
 from typing import *
 import re
 import Bio.Seq
 from Bio import SeqIO
-from sbsp_general.MotifModel import MotifModel
+
 import matplotlib.pyplot as plt
 import logomaker as lm
 
@@ -25,6 +26,7 @@ import sbsp_log  # runs init in sbsp_log and configures logger
 from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_container.gms2_mod import GMS2Mod
 from sbsp_general import Environment
+from sbsp_general.MotifModel import MotifModel
 
 # ------------------------------ #
 #           Parse CMD            #
@@ -278,12 +280,12 @@ def main(env, args):
     mkdir_p(pd_figures)
 
 
-    for gi in gil:
+    for gi in tqdm(gil, total=len(gil)):
         # get gms2 and toolp models
         mod_gms2, mod_toolp = compare_gms2_and_toolp_motifs_for_gi(env, gi)
 
-        df_gms2 = MotifModel(mod_gms2.items["RBS_MAT"], None)
-        df_toolp = MotifModel(mod_toolp.items["RBS_MAT"], None)
+        df_gms2 = MotifModel(mod_gms2.items["RBS_MAT"], None).pwm_to_df()
+        df_toolp = MotifModel(mod_toolp.items["RBS_MAT"], None).pwm_to_df()
 
         fig, axes = plt.subplots(1, 2, sharex="all", sharey="all", figsize=(8, 4))
 
@@ -291,11 +293,13 @@ def main(env, args):
         rel_mat = lm.transform_matrix(df_gms2, from_type="probability", to_type="information")
         lm.Logo(rel_mat, color_scheme="classic", ax=axes[0])
         axes[0].set_ylim(*[0, 2])
+        axes[0].set_title("GeneMarkS-2")
 
         # shannon
         sha_mat = lm.transform_matrix(df_toolp, from_type="probability", to_type="information")
         lm.Logo(sha_mat, color_scheme="classic", ax=axes[1])
         axes[1].set_ylim(*[0, 2])
+        axes[1].set_title("StartLink+")
         plt.tight_layout()
         plt.savefig(next_name(pd_figures))
         plt.show()
