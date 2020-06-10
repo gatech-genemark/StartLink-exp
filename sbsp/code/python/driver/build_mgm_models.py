@@ -318,7 +318,7 @@ def build_mgm_motif_models_for_all_gc(env, df, name, **kwargs):
 
         mgm_mm = None
         if len(df_gc) > 1:
-            mgm_mm = build_mgm_motif_model_for_gc(env, df_gc, name, title=f"[{lower},{upper}]", **kwargs)
+            mgm_mm = build_mgm_motif_model_for_gc_v2(env, df_gc, name, title=f"[{lower},{upper}]", **kwargs)
 
         if lower == 30 and upper == 35 and mgm_mm is None:
             print('hi')

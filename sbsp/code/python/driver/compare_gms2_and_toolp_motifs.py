@@ -32,9 +32,12 @@ from sbsp_general.MotifModel import MotifModel
 #           Parse CMD            #
 # ------------------------------ #
 from sbsp_general.general import os_join, run_shell_cmd
-from sbsp_general.shelf import next_name
+from sbsp_general.labels_comparison_detailed import LabelsComparisonDetailed
+from sbsp_general.shelf import next_name, compute_gc_from_file
 from sbsp_io.general import remove_p, mkdir_p
+from sbsp_io.labels import read_labels_from_file
 from sbsp_io.sequences import write_fasta_hash_to_file
+from sbsp_viz.general import FigureOptions
 
 parser = argparse.ArgumentParser("Description of driver.")
 
@@ -265,8 +268,75 @@ def compare_gms2_and_toolp_motifs_for_gi(env, gi):
 
     return mod_gms2, mod_toolp
 
+def append_to_file(a_str, pf_output):
+    # type: (str, str) -> None
+
+    with open(pf_output, "a") as f:
+        f.write(a_str)
 
 
+def add_toolp_rbs_to_gms2_model(env, pf_sequence, pf_toolp, pf_gms2_mod, pf_new_mod):
+    # type: (Environment, str, str, str, str) -> None
+
+    # run toolp and create model file
+    rbs_toolp = train_and_create_models(
+        env,
+        pf_labels=pf_toolp,
+        pf_sequences=pf_sequence
+    ).items["RBS_MAT"]      # type: Dict[str, List[float]]
+
+    cmd = ""
+
+    # remove RBS_MAT from new model
+    cmd += " awk '{" + "if ($1 == \"$RBS_MAT\") NR += 4 ; else print }' {} > {}".format(pf_gms2_mod, pf_new_mod)
+
+    # write toolp RBS_MAT to new model file
+    rbs_as_str = "\n\n$RBS_MAT\n"
+    for i in sorted(rbs_toolp.keys()):
+        rbs_as_str += str(i) + " " + " ".join([str(x) for x in rbs_toolp[i]]) + "\n"
+    rbs_as_str += "\n\n"
+    append_to_file(
+        rbs_as_str, pf_new_mod
+    )
+
+    return
+
+
+def run_gms2_prediction_with_model(pf_sequence, pf_new_mod, pf_new_pred):
+    # type: (str, str, str) -> None
+
+    prog = "/storage4/karl/sbsp/biogem/sbsp/bin_external/gms2/gmhmmp2"
+    mgm_mod = "/home/karl/gms2-install/gms2_linux_64/mgm_11.mod"
+    cmd = f"{prog} -m {pf_new_mod} -M {mgm_mod} -s {pf_sequence} -o {pf_new_pred} --format gff"
+    run_shell_cmd(cmd)
+
+
+def compare_gms2_start_predictions_with_motif_from_toolp(env, gi):
+    # type: (Environment, GenomeInfo) -> float
+
+    pf_gms2 = os_join(env["pd-runs"], gi.name, "gms2", "gms2.gff")
+    pf_gms2_mod = os_join(env["pd-runs"], gi.name, "gms2", "GMS2.mod")
+    pf_sbsp = os_join(env["pd-runs"], gi.name, "sbsp_submission/accuracy", f"{gi.name}.gff")
+    pf_sequence = os_join(env["pd-data"], gi.name, "sequence.fasta")
+    pf_toolp = os_join(env["pd-work"], "toolp.gff")
+
+    # get toolp predictions
+    get_identital_labels(
+        pf_gms2, pf_sbsp, pf_toolp
+    )
+
+    # create new motif model with toolp and add it to new model file
+    pf_new_mod = os_join(env["pd-work"], "toolp.mod")
+    add_toolp_rbs_to_gms2_model(pf_sequence, pf_toolp, pf_gms2_mod, pf_new_mod)
+
+    # run prediction with new model
+    pf_new_pred = os_join(env["pd-work"], "new_pred.gff")
+    run_gms2_prediction_with_model(pf_sequence, pf_new_mod, pf_new_pred)
+
+    # compare predictions
+    lcd = LabelsComparisonDetailed(read_labels_from_file(pf_gms2), read_labels_from_file(pf_new_pred))
+
+    return 100 * len(lcd.match_3p_5p('a')) / len(lcd.match_3p('a'))
 
 
 
@@ -279,6 +349,8 @@ def main(env, args):
     pd_figures = os_join(env["pd-work"], "figures")
     mkdir_p(pd_figures)
 
+
+    list_run_info = list()
 
     for gi in tqdm(gil, total=len(gil)):
         # get gms2 and toolp models
@@ -303,6 +375,24 @@ def main(env, args):
         plt.tight_layout()
         plt.savefig(next_name(pd_figures))
         plt.show()
+
+
+        list_run_info.append({
+            "GC": compute_gc_from_file(os_join(env["pd-data"], gi.name, "sequence.fasta")),
+            "Accuracy": compare_gms2_start_predictions_with_motif_from_toolp(env, gi)
+        })
+
+    import sbsp_viz.sns as sns
+    sns.scatterplot(pd.DataFrame(list_run_info), "GC", "Accuracy",
+                    figure_options=FigureOptions(
+                        save_fig=next_name(env["pd-work"]),
+                        xlabel="GC",
+                        ylabel="Accuracy"
+                    ))
+
+
+
+
 
 
 if __name__ == "__main__":

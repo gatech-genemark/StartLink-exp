@@ -29,7 +29,7 @@ from sbsp_general.blast import run_blast
 from sbsp_general.labels import Label, Coordinates
 from sbsp_general.msa_2 import MSAType, MSASinglePointMarker
 from sbsp_io.general import mkdir_p, remove_p, write_string_to_file
-from sbsp_general.general import get_value, except_if_not_in_set
+from sbsp_general.general import get_value, except_if_not_in_set, os_join
 from sbsp_alg.ortholog_finder import get_orthologs_from_files, extract_labeled_sequences_for_genomes, \
     unpack_fasta_header, select_representative_hsp, create_info_for_query_target_pair, \
     compute_distance_based_on_local_alignment, compute_distance_based_on_global_alignment_from_sequences, \
@@ -2117,7 +2117,20 @@ def sbsp_steps(env, pipeline_options):
             list_pf_output_packages = read_rows_to_list(os.path.join(env["pd-work"], "pbs-summary.txt"))
             output = pbs.merge_output_package_files(list_pf_output_packages)
     else:
-        raise NotImplementedError("Only PBS version supported.s")
+        # raise NotImplementedError("Only PBS version supported.s")
+        pd_msa = os_join(env["pd-work"], "msa")
+        mkdir_p(pd_msa)
+
+        run_sbsp_steps(
+            env, q_sequences,
+            pipeline_options["pf-t-db"], pipeline_options["pf-output"], pipeline_options["sbsp-options"],
+            clean=True,
+            pd_msa_final=pd_msa,
+            num_processors=8,
+        )
+
+        output = [pipeline_options["pf-output"]]
+
 
     logger.info("Done sbsp steps")
 

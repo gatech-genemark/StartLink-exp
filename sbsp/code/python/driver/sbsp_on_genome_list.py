@@ -33,12 +33,13 @@ from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
 from sbsp_options.sbsp import SBSPOptions
 from sbsp_pipeline.pipeline_msa import PipelineSBSP
 
-parser = argparse.ArgumentParser("Description of driver.")
+parser = argparse.ArgumentParser("Run SBSP on a list of genomes.")
 
 parser.add_argument('--pf-q-list', required=True, help="File of query genomes")
-parser.add_argument('--simultaneous-genomes', type=int, default=1, help="Number of genomes to run on simultaneously.")
-parser.add_argument('--dn-run', default="sbsp", help="Name of directory with SBSP run")
 parser.add_argument('--pf-db-index', required=True, help="Path to file containing database information for each ancestor clade")
+
+parser.add_argument('--simultaneous-genomes', type=int, default=1, help="Number of genomes to run on simultaneously.")
+parser.add_argument('--dn-run', default="sbsp", help="Name of directory with SBSP run.")
 
 parser.add_argument('--fn-q-labels', default="ncbi.gff", required=False, type=Union[str],
                     help="Name of query file(s) containing gene labels")
@@ -49,7 +50,7 @@ parser.add_argument("--fn-q-labels-true", default="ncbi.gff", required=False, ty
                     help="Name of true labels file. If set, accuracy is computed after MSA.")
 
 parser.add_argument('--steps', nargs="+", required=False,
-                    choices=["find-orthologs", "compute-features", "filter", "build-msa", "accuracy"],
+                    choices=["prediction", "comparison"],
                     default=None)
 
 sbsp_argparse.parallelization.add_pbs_options(parser)
@@ -151,42 +152,6 @@ def main(env, args):
 
     # create job vector for parallel processing
     job_vector = list()
-    # for gi in gil:
-    #     pd_work = os_join(env["pd-work"], gi.name, args.dn_run)
-    #     curr_env = env.duplicate({"pd-work": pd_work})
-    #
-    #     pf_output = os_join(pd_work, "output.csv")
-    #
-    #     try:
-    #         pf_t_db = clade_to_pf_db[gi.attributes["ancestor"]]
-    #     except KeyError:
-    #         raise ValueError("Unknown clade {}".format(gi.attributes["ancestor"]))
-    #
-    #     po = PipelineSBSPOptions(
-    #         curr_env, **vars(args), pf_t_db=pf_t_db, pf_output=pf_output, sbsp_options=sbsp_options, pbs_options=pbs_options,
-    #     )
-    #
-    #     # create working dir
-    #
-    #     pf_list = os_join(pd_work, "query.list")
-    #     mkdir_p(pd_work)
-    #
-    #     # write genome to local list file
-    #     GenomeInfoList([gi]).to_file(pf_list)
-    #
-    #     # update custom options to local gi
-    #
-    #     po['pf-q-list'] = pf_list
-    #
-    #     job_vector.append(pool.apply_async(sbsp_on_gi, args=[gi, po]))
-    #
-    #     time.sleep(1)  # sleeping ensures that random seeds have time to default to new values
-    # run jobs
-    # for p in job_vector:
-    #     p.get()
-    #     done += 1
-    #     logger.info(f"Done {done}/{num_jobs}")
-
 
     lock = threading.Lock()
     active_threads = list()
@@ -234,8 +199,6 @@ def main(env, args):
 
     wait_for_all(active_threads)
 
-    num_jobs = len(job_vector)
-    done = 0
 
 
 
