@@ -24,6 +24,7 @@ from sbsp_general import Environment
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
+from sbsp_general.GMS2Noncoding import GMS2Noncoding
 from sbsp_general.shelf import next_name
 from sbsp_io.objects import load_obj
 
@@ -73,7 +74,7 @@ def motif_dict_to_df(motif_dict):
     return pd.DataFrame(list_entries)
 
 def get_models_by_gc(df, gc_values, motif_type):
-    # type: (pd.DataFrame, List[float], str) -> List[pd.DataFrame]
+    # type: (pd.DataFrame, List[float], str) -> List[[pd.DataFrame,np.ndarray]]
 
     df.sort_values("GC", inplace=True)
 
@@ -93,7 +94,9 @@ def get_models_by_gc(df, gc_values, motif_type):
             continue
 
         print(df.at[df.index[cpi], "GC"], df.at[df.index[cpi], "Genome"])
-        result.append(motif_dict_to_df(df.at[df.index[cpi], f"{motif_type}_MAT"]))
+        result.append([motif_dict_to_df(df.at[df.index[cpi], f"{motif_type}_MAT"]),
+                      GMS2Noncoding(df.at[df.index[cpi], "NON_MAT"]).pwm_to_array(0)])
+                        # [0.25]*4])
 
     return result
 
@@ -141,13 +144,28 @@ def main(env, args):
             bgd = [0.25]*4
             bgd = background_from_gc(gc_values[model_index])
 
-            newmod = lm.transform_matrix(models[model_index], to_type="information", from_type="probability", background=bgd)
+            newmod = lm.transform_matrix(
+                models[model_index][0], to_type="information", from_type="probability",
+                background=models[model_index][1]
+            )
+            # from copy import copy
+            # newmod = copy(models[model_index][0])
+            # for idx in newmod.index:
+            #     # see https://bioconductor.org/packages/release/bioc/vignettes/universalmotif/inst/doc/IntroductionToSequenceMotifs.pdf
+            #
+            #     uncertainty = sum(
+            #         [newmod.at[idx, l] * math.log2(newmod.at[idx, l]) for l in newmod.columns]
+            #     )
+            #     fIC = math.log2(4) - uncertainty
+            #     for i, l in enumerate(sorted(newmod.columns)):
+            #         newmod.at[idx, l] = max(1 * newmod.at[idx, l] * math.log2(newmod.at[idx, l] / models[model_index][1][i]), 0)
             lm.Logo(newmod, ax=axes[r][c])
 
             axes[r][c].set_ylim(0, 2)
             axes[r][c].set_title(int(gc_values[model_index]))
-
+            # fig.show()
             model_index += 1
+
 
     plt.tight_layout()
     plt.savefig(next_name(env["pd-work"]))
