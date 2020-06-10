@@ -8,19 +8,37 @@ from sbsp_general.general import get_value
 
 log = logging.getLogger(__name__)
 
-class MGMMotifModel(MotifModel):
+class MGMMotifModelV2(MotifModel):
     """Motif model, holding the composition matrix and position (spacer) distribution"""
 
     def __init__(self, shift_prior, motif, motif_width, spacer=None, **kwargs):
-        # type: (Dict[int, float], Dict[str, List[float]], int, Dict[int, Dict[int, float]], Dict[str, Any]) -> None
+        # type: (Dict[int, float], Dict[int, Dict[str, List[float]]], int, Dict[int, Dict[int, float]], Dict[str, Any]) -> None
 
-        super().__init__(motif)
+        super().__init__(next(iter(motif.values())), None)      # useless
+
+        self._motif = motif                 # type: Dict[int, Dict[str, List[float]]]
         self._motif_width = motif_width
         self._shift_prior = shift_prior
 
-        self._spacer = MGMMotifModel._init_spacer(spacer)       # type: Union[None, Dict[int, List[float]]]
+        self._spacer = MGMMotifModelV2._init_spacer(spacer)       # type: Union[None, Dict[int, List[float]]]
 
         self._kwargs = kwargs.copy()
+
+        # make shifts consistent across models
+        self._make_shifts_consistent()
+
+    def _make_shifts_consistent(self):
+        # type: () -> None
+
+        all_shifts = set(self._shift_prior.keys()).union(self._motif.keys()).union(self._spacer.keys())
+
+        for s in all_shifts:
+            if s not in self._shift_prior:
+                self._shift_prior[s] = 0
+            if s not in self._motif:
+                self._motif[s] = {
+                    l: [0] * self._motif_width for l in {"A", "C", "G", "T"}
+                }
 
 
     def score(self, fragment, **kwargs):
@@ -57,9 +75,9 @@ class MGMMotifModel(MotifModel):
                             score *= 0.25
                     else:
                         if use_log:
-                            score += math.log(self._motif[fragment[begin + i]][s + i])
+                            score += math.log(self._motif[s][fragment[begin + i]][i])
                         else:
-                            score *= self._motif[fragment[begin + i]][s + i]
+                            score *= self._motif[s][fragment[begin + i]][i]
 
             # spacer
             if component != "motif":
@@ -115,15 +133,16 @@ class MGMMotifModel(MotifModel):
         return new_spacer
 
 
-    def pwm_to_df(self):
-        # type: () -> pd.DataFrame
+    def pwm_to_df(self, shift):
+        # type: (int) -> pd.DataFrame
 
-        keys = sorted(self._motif.keys())
+        keys = sorted(self._motif[shift].keys())
 
         list_entries = list()
-        for p in range(len(next(iter(self._motif.values())))):
+        for p in range(len(next(iter(self._motif[shift].values())))):
+            print(p, shift)
             list_entries.append(
-                [self._motif[k][p] for k in keys]
+                [self._motif[shift][k][p] for k in keys]
             )
 
         return pd.DataFrame(list_entries, columns=keys)

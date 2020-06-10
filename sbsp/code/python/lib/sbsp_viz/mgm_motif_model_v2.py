@@ -1,7 +1,7 @@
 import logging
 import math
 from typing import *
-from sbsp_general.MGMMotifModel import MGMMotifModel
+from sbsp_general.MGMMotifModelV2 import MGMMotifModelV2
 import seaborn
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,33 +15,33 @@ import logomaker as lm
 
 log = logging.getLogger(__name__)
 
-class MGMMotifModelVisualizer:
+class MGMMotifModelVisualizerV2:
 
     @staticmethod
-    def _viz_letter(mgm_mm, letter, ax):
-        # type: (MGMMotifModel, str, plt.Axes) -> None
+    def _viz_letter(mgm_mm, letter, ax, shift):
+        # type: (MGMMotifModelV2, str, plt.Axes, int) -> None
 
         x = range(mgm_mm.motif_width())
-        y = [mgm_mm._motif[letter][p] for p in x]
+        y = [mgm_mm._motif[shift][letter][p] for p in x]
 
         seaborn.lineplot(x, y, ax=ax, color="blue")
 
     @staticmethod
-    def _viz_motif_pwm(mgm_mm, axes):
-        # type: (MGMMotifModel, List[plt.Axes]) -> None
+    def _viz_motif_pwm(mgm_mm, axes, shift):
+        # type: (MGMMotifModelV2, List[plt.Axes], int) -> None
 
         ylim = [-0.1, 1.1]
-        letters = sorted(mgm_mm._motif.keys())
+        letters = sorted(mgm_mm._motif[shift].keys())
 
         # for each letter
         for l, ax in zip(letters, axes):
-            MGMMotifModelVisualizer._viz_letter(mgm_mm, l, ax)
+            MGMMotifModelVisualizerV2._viz_letter(mgm_mm, l, ax, shift)
             ax.set_title(f"{l}")
             ax.set_ylim(*ylim)
 
     @staticmethod
-    def _viz_logo(mgm_mm, ax):
-        # type: (MGMMotifModel, plt.Axes) -> None
+    def _viz_logo(mgm_mm, ax, shift):
+        # type: (MGMMotifModelV2, plt.Axes, int) -> None
 
         # seqs = [x.seq._data for x in msa_t.list_alignment_sequences]
         # counts_mat = lm.alignment_to_matrix(sequences=seqs, to_type='counts', characters_to_ignore='.-X')
@@ -55,7 +55,7 @@ class MGMMotifModelVisualizer:
         #     a = at / 2.0
         #     t = 1 - a - g - c
         #     bgd = [a, c, g, t]
-        info_mat = lm.transform_matrix(mgm_mm.pwm_to_df(),
+        info_mat = lm.transform_matrix(mgm_mm.pwm_to_df(shift),
                                        from_type='probability',
                                        to_type='information',
                                        background=mgm_mm._kwargs["avg_bgd"])
@@ -90,7 +90,7 @@ class MGMMotifModelVisualizer:
 
     @staticmethod
     def _viz_spacer(mgm_mm, ax):
-        # type: (MGMMotifModel, plt.Axes) -> None
+        # type: (MGMMotifModelV2, plt.Axes) -> None
 
         for s in sorted(mgm_mm._spacer.keys()):
             dist = mgm_mm._spacer[s]
@@ -103,7 +103,7 @@ class MGMMotifModelVisualizer:
 
     @staticmethod
     def _viz_prior(mgm_mm, ax):
-        # type: (MGMMotifModel, plt.Axes) -> None
+        # type: (MGMMotifModelV2, plt.Axes) -> None
 
         n_show = 3
         x = sorted(mgm_mm._shift_prior.keys())
@@ -125,37 +125,41 @@ class MGMMotifModelVisualizer:
 
     @staticmethod
     def visualize(mgm_mm, title="", **kwargs):
-        # type: (MGMMotifModel, str, Dict[str, Any]) -> None
+        # type: (MGMMotifModelV2, str, Dict[str, Any]) -> None
 
         msa_t = get_value(kwargs, "msa_t", None)
         raw_motif_data = get_value(kwargs, "raw_motif_data", None)
 
-        fig = plt.figure(figsize=(10, 12))
-        shape = (4, 2)
+        num_shifts = len(mgm_mm._shift_prior.keys())
 
-        ax1 = plt.subplot2grid(shape, (0, 0))
-        ax2 = plt.subplot2grid(shape, (0, 1))
-        ax3 = plt.subplot2grid(shape, (1, 0))
-        ax4 = plt.subplot2grid(shape, (1, 1))
-        ax_logo = plt.subplot2grid(shape, (3, 0))
-        ax_counts = plt.subplot2grid(shape, (2, 0))
-        ax_pos_dist = plt.subplot2grid(shape, (2, 1))
-        ax_text = plt.subplot2grid(shape, (3, 1))
+        fig = plt.figure(figsize=(14, 4*num_shifts))
+        shape = (num_shifts+1, 5)
 
-        axes = [ax1, ax2, ax3, ax4]     # letters
+        # for each shift
+        for s in range(num_shifts):
+            # create consensus, followed by box plots
+            ax_logo = plt.subplot2grid(shape, (s, 0))
+            axes_box = [plt.subplot2grid(shape, (s, i)) for i in range(1,5)]
 
-        if raw_motif_data is None:
-            MGMMotifModelVisualizer._viz_motif_pwm(mgm_mm, axes)
-        else:
-            MGMMotifModelVisualizer._viz_motif_pwm_from_raw_data(raw_motif_data, axes, mgm_mm.motif_width())
+            MGMMotifModelVisualizerV2._viz_logo(mgm_mm, ax_logo, s)
+
+            if raw_motif_data is None:
+                MGMMotifModelVisualizerV2._viz_motif_pwm(mgm_mm, axes_box, s)
+            else:
+                MGMMotifModelVisualizerV2._viz_motif_pwm_from_raw_data(raw_motif_data[s], axes_box, mgm_mm.motif_width())
 
 
-        MGMMotifModelVisualizer._viz_spacer(mgm_mm, ax_pos_dist)
-        MGMMotifModelVisualizer._viz_prior(mgm_mm, ax_counts)
+
+        # last row: MSA, shift prior, spacers
+        ax_text = plt.subplot2grid(shape, (num_shifts, 0))
+        ax_counts = plt.subplot2grid(shape, (num_shifts, 1))
+        ax_pos_dist = plt.subplot2grid(shape, (num_shifts, 2))
+
+        MGMMotifModelVisualizerV2._viz_spacer(mgm_mm, ax_pos_dist)
+        MGMMotifModelVisualizerV2._viz_prior(mgm_mm, ax_counts)
 
         if msa_t is not None:
-            MGMMotifModelVisualizer._viz_logo(mgm_mm, ax_logo)
-            MGMMotifModelVisualizer._viz_msa(msa_t, ax_text)
+            MGMMotifModelVisualizerV2._viz_msa(msa_t, ax_text)
 
         plt.suptitle("Gc range: {}".format(title))
 
@@ -169,7 +173,7 @@ class MGMMotifModelVisualizer:
         # type: ([np.ndarray, List[int]], List[plt.Axes], int) -> None
         letters = list("ACGT")
         letter_to_idx = {x: i for i, x in enumerate(letters)}
-        array, shifts = raw_motif_data
+        array = raw_motif_data
 
         ylim = [-0.1, 1.1]
 
@@ -180,18 +184,17 @@ class MGMMotifModelVisualizer:
             all_probs = list()
             for w_pos in range(array.shape[1]):
 
-                for index in range(len(shifts)):
+                # go through all motifs at current position
+                for index in range(array.shape[0]):
 
-                    shifted_position = w_pos
-                    if w_pos < shifts[index] or w_pos >= shifts[index] + motif_width:
-                        continue
+                    w_pos
 
-                    all_positions.append(shifted_position)
+                    all_positions.append(w_pos)
 
-                    if array[index, shifted_position, letter_to_idx[l]] < 0 or array[
-                        index, shifted_position, letter_to_idx[l]] > 1:
+                    if array[index, w_pos, letter_to_idx[l]] < 0 or array[
+                        index, w_pos, letter_to_idx[l]] > 1:
                         raise ValueError("Something's up")
-                    all_probs.append(array[index, shifted_position, letter_to_idx[l]])
+                    all_probs.append(array[index, w_pos, letter_to_idx[l]])
 
                 # ax.scatter(all_gc, all_probs, marker="+")
                 # seaborn.regplot(all_gc, all_probs, ax=ax, lowess=True, scatter_kws={"s": 5, "alpha": 0.3})
