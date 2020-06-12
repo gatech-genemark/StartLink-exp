@@ -12,10 +12,10 @@ class PBSOptions(Options):
         # type: (Environment, str, str, str, SBSPOptions, str, Dict[str, Any]) -> None
         super(PBSOptions, self).__init__(env, pf_options_custom, **kwargs)
 
-        if self._options["pd-head"] is None:
-            self._options["pd-head"] = env["pd-work"]
-        if self._options["pd-root-compute"] is None:
-            self._options["pd-root-compute"] = self._options["pd-head"]
+        if self._options["pbs-pd-head"] is None:
+            self._options["pbs-pd-head"] = env["pd-work"]
+        if self._options["pbs-pd-root-compute"] is None:
+            self._options["pbs-pd-root-compute"] = self._options["pbs-pd-head"]
 
     def path_to_default_options_file(self, env):
         # type: (Environment) -> str
@@ -25,9 +25,9 @@ class PBSOptions(Options):
         # type: () -> Union[Set[str], None]
         return {
             # directories for pbs
-            "dn-compute",
+            "pbs-dn-compute",
             # node computation configuration
-            "num-processors", "num-nodes-per-job", "walltime",
+            "pbs-ppn", "pbs-nodes", "pbs-walltime",
             "num-jobs",
             "split-tag",
             "use-pbs"
