@@ -18,7 +18,7 @@ import sbsp_log  # runs init in sbsp_log and configures logger
 
 # Custom imports
 from sbsp_alg.ortholog_finder import extract_labeled_sequences_for_genome, extract_labeled_sequences_for_genomes
-from sbsp_alg.sbsp_steps import duplicate_pbs_options_with_updated_paths
+from sbsp_alg.sbsp_steps import duplicate_parallelization_options_with_updated_paths
 from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_general import Environment
 
@@ -26,7 +26,7 @@ from sbsp_general import Environment
 #           Parse CMD            #
 # ------------------------------ #
 from sbsp_io.sequences import read_fasta_into_hash
-from sbsp_options.pbs import PBSOptions
+from sbsp_options.parallelization import ParallelizationOptions
 from sbsp_parallelization.pbs import PBS
 from sbsp_pbs_data.mergers import merge_identity
 from sbsp_pbs_data.splitters import split_genome_info_list
@@ -35,7 +35,7 @@ parser = argparse.ArgumentParser("Description of driver.")
 
 parser.add_argument('--pf-genome-list', required=True, help="Genome list")
 parser.add_argument('--pf-output', required=True, help="Output file")
-sbsp_argparse.parallelization.add_pbs_options(parser)
+sbsp_argparse.parallelization.add_parallelization_options(parser)
 
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
@@ -65,13 +65,13 @@ def main(env, args):
 
     logger.debug("Running: sbsp_step_get_orthologs")
 
-    pbs_options = PBSOptions.init_from_dict(env, vars(args))
-    pbs_options = duplicate_pbs_options_with_updated_paths(env, pbs_options)
+    prl_options = ParallelizationOptions.init_from_dict(env, vars(args))
+    prl_options = duplicate_parallelization_options_with_updated_paths(env, prl_options)
 
-    if pbs_options.safe_get("pd-data-compute"):
-        env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
+    if prl_options.safe_get("pd-data-compute"):
+        env = env.duplicate({"pd-data": prl_options["pd-data-compute"]})
 
-    pbs = PBS(env, pbs_options,
+    pbs = PBS(env, prl_options,
               splitter=split_genome_info_list,
               merger=merge_identity
               )
@@ -80,7 +80,7 @@ def main(env, args):
 
     output = pbs.run(
         data={"gil": gil,
-              "pf_output_template": os.path.join(pbs_options["pd-head"], "sequences_{}.faa")},
+              "pf_output_template": os.path.join(prl_options["pbs-pd-head"], "sequences_{}.faa")},
         func=extract_labeled_sequences_for_genomes,
         func_kwargs={
             "env": env,

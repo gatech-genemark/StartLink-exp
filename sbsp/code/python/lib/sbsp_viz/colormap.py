@@ -8,12 +8,24 @@ logger = logging.getLogger(__name__)
 seaborn.set_palette(seaborn.xkcd_palette(["windows blue", "amber", "faded green", "dusty purple"]))
 
 
+# def _init_mapping_ancestors():
+#     colors = ["windows blue", "amber", "faded green", "dusty purple"]
+#     ancestors = ["Archaea", "Actinobacteria", "Enterobacterales", "FCB group"]
+#     palette = seaborn.xkcd_palette(colors)
+#     return {x[0]: x[1] for x in zip(ancestors, palette)}
+
 def _init_mapping_ancestors():
     colors = ["windows blue", "amber", "faded green", "dusty purple"]
     ancestors = ["Archaea", "Actinobacteria", "Enterobacterales", "FCB group"]
-    palette = seaborn.xkcd_palette(colors)
-    return {x[0]: x[1] for x in zip(ancestors, palette)}
 
+    color_pal = seaborn.color_palette("colorblind", 6).as_hex()
+    colors = ','.join(color_pal)
+    palette = seaborn.color_palette(color_pal)
+
+
+
+
+    return {x[0]: x[1] for x in zip(ancestors, palette)}
 
 def _init_mapping_verified():
     colors = ["windows blue", "amber", "faded green", "dusty purple", "pale red"]

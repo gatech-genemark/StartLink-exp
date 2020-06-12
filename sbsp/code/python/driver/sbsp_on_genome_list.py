@@ -28,7 +28,7 @@ import sbsp_argparse.sbsp
 # ------------------------------ #
 from sbsp_general.general import os_join
 from sbsp_io.general import mkdir_p
-from sbsp_options.pbs import PBSOptions
+from sbsp_options.parallelization import ParallelizationOptions
 from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
 from sbsp_options.sbsp import SBSPOptions
 from sbsp_pipeline.pipeline_msa import PipelineSBSP
@@ -53,8 +53,14 @@ parser.add_argument('--steps', nargs="+", required=False,
                     choices=["prediction", "comparison"],
                     default=None)
 
-sbsp_argparse.parallelization.add_pbs_options(parser)
+sbsp_argparse.parallelization.add_parallelization_options(parser)
 sbsp_argparse.sbsp.add_sbsp_options(parser)
+
+parser.add_argument(
+    f"--pf-parallelization-options", required=False, default=None,
+    help=f"Configuration file for parallelization"
+)
+
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -141,7 +147,8 @@ def main(env, args):
 
     gil = GenomeInfoList.init_from_file(args.pf_q_list)
     sbsp_options = SBSPOptions.init_from_dict(env, vars(args))
-    pbs_options = PBSOptions.init_from_dict(env, vars(args))
+
+    prl_options = ParallelizationOptions.init_from_dict(env, vars(args))
 
     # read database index file
     clade_to_pf_db = get_clade_to_pf_db(args.pf_db_index)
@@ -170,7 +177,7 @@ def main(env, args):
 
         po = PipelineSBSPOptions(
             curr_env, **vars(args), pf_t_db=pf_t_db, pf_output=pf_output, sbsp_options=sbsp_options,
-            pbs_options=pbs_options,
+            prl_options=prl_options,
         )
 
         # create working dir

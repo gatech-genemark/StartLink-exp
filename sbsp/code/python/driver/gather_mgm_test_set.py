@@ -33,7 +33,7 @@ from sbsp_general.shelf import compute_gc_from_file, compute_gc_from_sequences
 from sbsp_io.general import remove_p
 from sbsp_io.labels import read_labels_from_file
 from sbsp_io.sequences import read_fasta_into_hash
-from sbsp_options.pbs import PBSOptions
+from sbsp_options.parallelization import ParallelizationOptions
 from sbsp_parallelization.pbs import PBS
 import sbsp_argparse.parallelization
 from sbsp_pbs_data.mergers import merge_identity
@@ -43,7 +43,7 @@ parser = argparse.ArgumentParser("Gather sequences, and motif scores.")
 
 parser.add_argument('--pf-genome-list', required=True, help="List of genomes")
 parser.add_argument('--pf-output', required=True, help="Output file")
-sbsp_argparse.parallelization.add_pbs_options(parser)
+sbsp_argparse.parallelization.add_parallelization_options(parser)
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -231,10 +231,10 @@ def main(env, args):
 
     gil = GenomeInfoList.init_from_file(args.pf_genome_list)
 
-    pbs_options = PBSOptions.init_from_dict(env, vars(args))
+    prl_options = ParallelizationOptions.init_from_dict(env, vars(args))
 
-    if pbs_options is not None:
-        pbs = PBS(env, pbs_options,
+    if prl_options is not None:
+        pbs = PBS(env, prl_options,
                   splitter=split_genome_info_list,
                   merger=merge_identity
                   )

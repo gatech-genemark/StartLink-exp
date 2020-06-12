@@ -37,7 +37,7 @@ class PipelineSBSPOptions(Options):
 
     def use_pbs(self):
         # type: () -> bool
-        return "pbs-options" in self and self["pbs-options"]["use-pbs"]
+        return "prl-options" in self and self["prl-options"]["use-pbs"]
 
     @staticmethod
     def init_from_dict(env, dict_options):

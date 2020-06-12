@@ -40,8 +40,8 @@ from sbsp_io.general import read_rows_to_list
 from sbsp_io.msa_2 import add_true_starts_to_msa_output
 from sbsp_io.sequences import read_fasta_into_hash, write_fasta_hash_to_file
 from sbsp_ml.msa_features_2 import ScoringMatrix
+from sbsp_options.parallelization import ParallelizationOptions
 from sbsp_options.sbsp import SBSPOptions
-from sbsp_options.pbs import PBSOptions
 from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
 from sbsp_parallelization.pbs import PBS
 from sbsp_pbs_data.mergers import merge_identity
@@ -50,19 +50,19 @@ from sbsp_pbs_data.splitters import *
 logger = logging.getLogger(__name__)
 
 
-def duplicate_pbs_options_with_updated_paths(env, pbs_options, **kwargs):
-    # type: (Environment, PBSOptions, Dict[str, Any]) -> PBSOptions
+def duplicate_parallelization_options_with_updated_paths(env, prl_options, **kwargs):
+    # type: (Environment, ParallelizationOptions, Dict[str, Any]) -> ParallelizationOptions
     keep_on_head = get_value(kwargs, "keep_on_head", False, default_if_none=True)
 
-    pbs_options = copy.deepcopy(pbs_options)
-    pbs_options["pd-head"] = os.path.abspath(env["pd-work"])
+    prl_options = copy.deepcopy(prl_options)
+    prl_options["pbs-pd-head"] = os.path.abspath(env["pd-work"])
 
     if keep_on_head:
-        pbs_options["pd-root-compute"] = os.path.abspath(env["pd-work"])
-    elif pbs_options["pd-root-compute"] is None:
-        pbs_options["pd-root-compute"] = os.path.abspath(env["pd-work"])
+        prl_options["pbs-pd-root-compute"] = os.path.abspath(env["pd-work"])
+    elif prl_options["pbs-pd-root-compute"] is None:
+        prl_options["pbs-pd-root-compute"] = os.path.abspath(env["pd-work"])
 
-    return pbs_options
+    return prl_options
 
 
 def run_step_generic(env, pipeline_options, step_name, splitter, merger, data, func, func_kwargs, **kwargs):
@@ -73,12 +73,12 @@ def run_step_generic(env, pipeline_options, step_name, splitter, merger, data, f
     }
 
     if pipeline_options.use_pbs():
-        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
+        prl_options = duplicate_parallelization_options_with_updated_paths(env, pipeline_options["prl-options"])
 
-        if pbs_options.safe_get("pd-data-compute"):
-            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
+        if prl_options.safe_get("pd-data-compute"):
+            env = env.duplicate({"pd-data": prl_options["pd-data-compute"]})
 
-        pbs = PBS(env, pbs_options,
+        pbs = PBS(env, prl_options,
                   splitter=splitter,
                   merger=merger
                   )
@@ -115,12 +115,12 @@ def sbsp_step_get_orthologs(env, pipeline_options):
 
     if pipeline_options.use_pbs():
 
-        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
+        prl_options = duplicate_parallelization_options_with_updated_paths(env, pipeline_options["prl-options"])
 
-        if pbs_options.safe_get("pd-data-compute"):
-            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
+        if prl_options.safe_get("pd-data-compute"):
+            env = env.duplicate({"pd-data": prl_options["pd-data-compute"]})
 
-        pbs = PBS(env, pbs_options,
+        pbs = PBS(env, prl_options,
                   splitter=split_query_genomes_target_genomes_one_vs_group,
                   merger=merge_identity
         )
@@ -128,7 +128,7 @@ def sbsp_step_get_orthologs(env, pipeline_options):
         if pipeline_options.perform_step("get-orthologs"):
             output = pbs.run(
                 data={"pf_q_list": pipeline_options["pf-q-list"],
-                      "pf_output_template": os.path.join(pbs_options["pd-head"], pipeline_options["fn-orthologs"] + "_{}")},
+                      "pf_output_template": os.path.join(prl_options["pbs-pd-head"], pipeline_options["fn-orthologs"] + "_{}")},
                 func=get_orthologs_from_files,
                 func_kwargs={
                     "env": env,
@@ -163,12 +163,12 @@ def sbsp_step_compute_features(env, pipeline_options, list_pf_previous):
 
     if pipeline_options.use_pbs():
 
-        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
+        prl_options = duplicate_parallelization_options_with_updated_paths(env, pipeline_options["prl-options"])
 
-        if pbs_options.safe_get("pd-data-compute"):
-            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
+        if prl_options.safe_get("pd-data-compute"):
+            env = env.duplicate({"pd-data": prl_options["pd-data-compute"]})
 
-        pbs = PBS(env, pbs_options,
+        pbs = PBS(env, prl_options,
                   splitter=split_list,
                   merger=merge_identity
                   )
@@ -177,7 +177,7 @@ def sbsp_step_compute_features(env, pipeline_options, list_pf_previous):
 
             output = pbs.run(
                 data={"list_pf_data": list_pf_previous,
-                      "pf_output_template": os.path.join(pbs_options["pd-head"],
+                      "pf_output_template": os.path.join(prl_options["pbs-pd-head"],
                                                          pipeline_options["fn-compute-features"] + "_{}")},
                 func=compute_features,
                 func_kwargs={
@@ -206,12 +206,12 @@ def sbsp_step_filter(env, pipeline_options, list_pf_previous):
     }
 
     if pipeline_options.use_pbs():
-        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
+        prl_options = duplicate_parallelization_options_with_updated_paths(env, pipeline_options["prl-options"])
 
-        if pbs_options.safe_get("pd-data-compute"):
-            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
+        if prl_options.safe_get("pd-data-compute"):
+            env = env.duplicate({"pd-data": prl_options["pd-data-compute"]})
 
-        pbs = PBS(env, pbs_options,
+        pbs = PBS(env, prl_options,
                   splitter=split_list,
                   merger=merge_identity
                   )
@@ -221,7 +221,7 @@ def sbsp_step_filter(env, pipeline_options, list_pf_previous):
 
             output = pbs.run(
                 data={"list_pf_data": list_pf_previous,
-                      "pf_output_template": os.path.join(pbs_options["pd-head"],
+                      "pf_output_template": os.path.join(prl_options["pbs-pd-head"],
                                                          pipeline_options["fn-filter"] + "_{}")},
                 func=filter_orthologs,
                 func_kwargs={
@@ -252,17 +252,18 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
     }
 
     if pipeline_options.use_pbs():
-        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"], keep_on_head=False)
+        prl_options = duplicate_parallelization_options_with_updated_paths(env, pipeline_options["prl-options"],
+                                                                           keep_on_head=False)
 
-        if pbs_options.safe_get("pd-data-compute"):
-            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
+        if prl_options.safe_get("pd-data-compute"):
+            env = env.duplicate({"pd-data": prl_options["pd-data-compute"]})
 
-        # pbs = PBS(env, pbs_options,
+        # pbs = PBS(env, prl_options,
         #           splitter=split_list_and_remerge_by_key,
         #           merger=merge_identity
         #           )
 
-        pbs = PBS(env, pbs_options,
+        pbs = PBS(env, prl_options,
                   splitter=split_q3prime_to_list_of_data_files,
                   merger=merge_identity
                   )
@@ -271,13 +272,13 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
 
             # get files per 3prime key
             q3prime_to_list_pf = get_files_per_key(list_pf_previous)
-            pd_msa = os.path.join(pbs_options["pd-head"], "msa")
+            pd_msa = os.path.join(prl_options["pbs-pd-head"], "msa")
             mkdir_p(pd_msa)
 
 
             output = pbs.run(
                 data={"q3prime_to_list_pf": q3prime_to_list_pf,
-                      "pf_output_template": os.path.join(pbs_options["pd-head"],
+                      "pf_output_template": os.path.join(prl_options["pbs-pd-head"],
                                                          pipeline_options["fn-msa"] + "_{}")},
                 func=run_sbsp_msa_from_multiple_for_multiple_queries,
                 func_kwargs={
@@ -291,7 +292,7 @@ def sbsp_step_msa(env, pipeline_options, list_pf_previous):
 
             # output = pbs.run(
             #     data={"list_pf_data": list_pf_previous, "group_key": "q-3prime",
-            #           "pf_output_template": os.path.join(pbs_options["pd-head"],
+            #           "pf_output_template": os.path.join(prl_options["pbs-pd-head"],
             #                                              pipeline_options["fn-msa"] + "_{}")},
             #     func=run_sbsp_msa,
             #     func_kwargs={
@@ -2082,24 +2083,25 @@ def sbsp_steps(env, pipeline_options):
     q_sequences = read_fasta_into_hash(pf_aa, stop_at_first_space=False)
 
     if pipeline_options.use_pbs():
-        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"], keep_on_head=False)
+        prl_options = duplicate_parallelization_options_with_updated_paths(env, pipeline_options["prl-options"],
+                                                                           keep_on_head=False)
 
-        if pbs_options.safe_get("pd-data-compute"):
-            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
+        if prl_options.safe_get("pd-data-compute"):
+            env = env.duplicate({"pd-data": prl_options["pd-data-compute"]})
 
-        pbs = PBS(env, pbs_options,
+        pbs = PBS(env, prl_options,
                   splitter=split_dict,
                   merger=merge_identity
                   )
 
         if pipeline_options.perform_step("build-msa"):
 
-            pd_msa = os.path.join(pbs_options["pd-head"], "msa")
+            pd_msa = os.path.join(prl_options["pbs-pd-head"], "msa")
             mkdir_p(pd_msa)
 
             output = pbs.run(
                 data={"dict": q_sequences,
-                      "pf_output_template": os.path.join(pbs_options["pd-head"],
+                      "pf_output_template": os.path.join(prl_options["pbs-pd-head"],
                                                          pipeline_options["fn-msa"] + "_{}")},
                 func=run_sbsp_steps,
                 func_kwargs={
@@ -2108,7 +2110,7 @@ def sbsp_steps(env, pipeline_options):
                     "sbsp_options": pipeline_options["sbsp-options"],
                     "clean": True,
                     "pd_msa_final": pd_msa,
-                    "num_processors": pbs_options["num-processors"]
+                    "num_processors": prl_options["pbs-ppn"]
                 }
             )
 
