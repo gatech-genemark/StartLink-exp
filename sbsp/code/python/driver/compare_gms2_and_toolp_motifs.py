@@ -473,6 +473,7 @@ def main(env, args):
             xlabel="Genome",
             ylabel="Error"))
 
+<<<<<<< HEAD
         sns.lineplot(df, "Genome", "RE", hue="Tool",
                         figure_options=FigureOptions(
                             save_fig=next_name(env["pd-work"]),
@@ -480,6 +481,12 @@ def main(env, args):
                             ylabel="Relative entropy",
                         ))
 
+=======
+
+        sns.scatterplot(df, "RE GMS2", "RE toolp", identity=True, figure_options=FigureOptions(
+            save_fig=next_name(env["pd-work"])
+        ))
+>>>>>>> 13aa97bc72bb15c5eb047c94d4998addd1cd9853
     else:
 
         df = pd.DataFrame(list_run_info)
@@ -493,11 +500,20 @@ def main(env, args):
 
         df.to_csv(next_name(env["pd-work"], ext="csv"))
 
+<<<<<<< HEAD
 
 
         sns.scatterplot(df, "RE GMS2", "RE toolp", identity=True, figure_options=FigureOptions(
             save_fig=next_name(env["pd-work"])
         ))
+=======
+        sns.scatterplot(df, "GC", "RE", hue="Tool",
+                        figure_options=FigureOptions(
+                            save_fig=next_name(env["pd-work"]),
+                            xlabel="GC",
+                            ylabel="Relative entropy",
+                        ))
+>>>>>>> 13aa97bc72bb15c5eb047c94d4998addd1cd9853
 
         print("Average Error: {}".format(df["Accuracy"].mean()))
 
@@ -511,9 +527,18 @@ def main(env, args):
                         ylim=[0,10],
                     ))
 
+<<<<<<< HEAD
         sns.scatterplot(df, "RE GMS2", "RE toolp", identity=True, figure_options=FigureOptions(
             save_fig=next_name(env["pd-work"])
         ))
+=======
+        sns.scatterplot(df, "GC", "RE", hue="Tool",
+                        figure_options=FigureOptions(
+                            save_fig=next_name(env["pd-work"]),
+                            xlabel="GC",
+                            ylabel="Relative entropy",
+                        ))
+>>>>>>> 13aa97bc72bb15c5eb047c94d4998addd1cd9853
 
         print("Average Error: {}".format(df["Accuracy"].mean()))
 
