@@ -31,7 +31,7 @@ from sbsp_general.MotifModel import MotifModel
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
-from sbsp_general.general import os_join, run_shell_cmd
+from sbsp_general.general import os_join, run_shell_cmd, get_value
 from sbsp_general.labels_comparison_detailed import LabelsComparisonDetailed
 from sbsp_general.shelf import next_name, compute_gc_from_file
 from sbsp_io.general import remove_p, mkdir_p
@@ -42,6 +42,7 @@ from sbsp_viz.general import FigureOptions
 parser = argparse.ArgumentParser("Description of driver.")
 
 parser.add_argument('--pf-genome-list', required=True)
+parser.add_argument('--verified', required=False, action="store_true", default=False)
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -210,30 +211,36 @@ def convert_multi_fasta_to_single(env, pf_sequences, pf_labels):
     return pf_new_seq, pf_new_labels
 
 
-def get_identital_labels(pf_gms2, pf_sbsp, pf_toolp):
-    run_shell_cmd(
-        f"compp -a {pf_gms2} -b {pf_sbsp} -I -q -n | grep -v \"#\" > {pf_toolp}"
-    )
+def get_identital_labels(pf_gms2, pf_sbsp, pf_toolp, **kwargs):
+
+    pf_lst = get_value(kwargs, "pf_lst", None)
+    if pf_lst is not None:
+        run_shell_cmd()
+
+    else:
+        run_shell_cmd(
+            f"compp -a {pf_gms2} -b {pf_sbsp} -I -q -n | grep -v \"#\" > {pf_toolp}"
+        )
 
 
-def train_gms2_model(env, pf_new_seq, pf_new_labels):
+def train_gms2_model(env, pf_new_seq, pf_new_labels, **kwargs):
+    group = get_value(kwargs, "group", "A", default_if_none=True)
     pf_mod = os_join(env["pd-work"], "a.mod")
     cmd = f"cd {env['pd-work']}; "
-    cmd += f"/storage4/karl/sbsp/biogem/sbsp/bin_external/gms2/biogem gms2-training -s {pf_new_seq} -l {pf_new_labels} -m {pf_mod} --order-coding 5 --order-noncoding 2 --only-train-on-native 1 --genetic-code 11 --order-start-context 2 --fgio-dist-thr 25 --genome-group A --ga-upstr-len-rbs 20 --align right --ga-width-rbs 6"
+    cmd += f"/storage4/karl/sbsp/biogem/sbsp/bin_external/gms2/biogem gms2-training -s {pf_new_seq} -l {pf_new_labels} -m {pf_mod} --order-coding 5 --order-noncoding 2 --only-train-on-native 1 --genetic-code 11 --order-start-context 2 --fgio-dist-thr 25 --genome-group {group} --ga-upstr-len-rbs 20 --align right --ga-width-rbs 6"
     run_shell_cmd(
         cmd
     )
-
     mod = GMS2Mod.init_from_file(pf_mod)
     remove_p(pf_mod)
 
     return mod
 
-def train_and_create_models(env, pf_labels, pf_sequences):
+def train_and_create_models(env, pf_labels, pf_sequences, **kwargs):
     # type: (Environment, str, str) -> GMS2Mod
     pf_new_seq, pf_new_labels = convert_multi_fasta_to_single(env, pf_sequences, pf_labels)
 
-    mod = train_gms2_model(env, pf_new_seq, pf_new_labels)
+    mod = train_gms2_model(env, pf_new_seq, pf_new_labels, **kwargs)
     remove_p(pf_new_labels)
     remove_p(pf_new_seq)
 
@@ -275,20 +282,25 @@ def append_to_file(a_str, pf_output):
         f.write(a_str)
 
 
-def add_toolp_rbs_to_gms2_model(env, pf_sequence, pf_toolp, pf_gms2_mod, pf_new_mod):
+def add_toolp_rbs_to_gms2_model(env, pf_sequence, pf_toolp, pf_gms2_mod, pf_new_mod, **kwargs):
     # type: (Environment, str, str, str, str) -> None
+
+    group = get_value(kwargs, "group", None)
 
     # run toolp and create model file
     rbs_toolp = train_and_create_models(
         env,
         pf_labels=pf_toolp,
-        pf_sequences=pf_sequence
+        pf_sequences=pf_sequence,
+        group=group
     ).items["RBS_MAT"]      # type: Dict[str, List[float]]
 
     cmd = ""
 
     # remove RBS_MAT from new model
-    cmd += " awk '{" + "if ($1 == \"$RBS_MAT\") NR += 4 ; else print }' {} > {}".format(pf_gms2_mod, pf_new_mod)
+    cmd += " awk '{if ($1 == \"$RBS_MAT\") NR += 4 ; else print }' " + "{} > {}".format(pf_gms2_mod, pf_new_mod)
+
+    run_shell_cmd(cmd)
 
     # write toolp RBS_MAT to new model file
     rbs_as_str = "\n\n$RBS_MAT\n"
@@ -327,7 +339,7 @@ def compare_gms2_start_predictions_with_motif_from_toolp(env, gi):
 
     # create new motif model with toolp and add it to new model file
     pf_new_mod = os_join(env["pd-work"], "toolp.mod")
-    add_toolp_rbs_to_gms2_model(pf_sequence, pf_toolp, pf_gms2_mod, pf_new_mod)
+    add_toolp_rbs_to_gms2_model(env, pf_sequence, pf_toolp, pf_gms2_mod, pf_new_mod)
 
     # run prediction with new model
     pf_new_pred = os_join(env["pd-work"], "new_pred.gff")
@@ -340,6 +352,42 @@ def compare_gms2_start_predictions_with_motif_from_toolp(env, gi):
 
 
 
+def compare_gms2_start_predictions_with_motif_from_toolp_verified(env, gi, **kwargs):
+    # type: (Environment, GenomeInfo) -> [float, float]
+
+    group = get_value(kwargs, "group", None)
+
+    pf_gms2 = os_join(env["pd-runs"], gi.name, "gms2", "gms2.gff")
+    pf_gms2_mod = os_join(env["pd-runs"], gi.name, "gms2", "GMS2.mod")
+    pf_sbsp = os_join(env["pd-runs"], gi.name, "sbsp_submission/accuracy", f"{gi.name}.gff")
+    pf_sequence = os_join(env["pd-data"], gi.name, "sequence.fasta")
+    pf_toolp = os_join(env["pd-work"], "toolp.gff")
+    pf_verified = os_join(env["pd-data"], gi.name, "verified.gff")
+
+    # get toolp predictions
+    get_identital_labels(
+        pf_gms2, pf_sbsp, pf_toolp
+    )
+
+    # create new motif model with toolp and add it to new model file
+    pf_new_mod = os_join(env["pd-work"], "toolp.mod")
+    add_toolp_rbs_to_gms2_model(env, pf_sequence, pf_toolp, pf_gms2_mod, pf_new_mod, group=group)
+
+    # run prediction with new model
+    pf_new_pred = os_join(env["pd-work"], "new_pred.gff")
+    run_gms2_prediction_with_model(pf_sequence, pf_new_mod, pf_new_pred)
+
+    # compare predictions
+    lcd1 = LabelsComparisonDetailed(read_labels_from_file(pf_gms2), read_labels_from_file(pf_verified))
+    lcd2 = LabelsComparisonDetailed(read_labels_from_file(pf_new_pred), read_labels_from_file(pf_verified))
+
+    return [100 * len(lcd.match_3p_5p('a')) / len(lcd.match_3p('a')) for lcd in [lcd1, lcd2]]
+
+def fix_names(genome):
+    # type: (str) -> None
+    return "{}. {}".format(
+        genome[0], genome.split("_")[1]
+    )
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
@@ -356,6 +404,7 @@ def main(env, args):
         # get gms2 and toolp models
         mod_gms2, mod_toolp = compare_gms2_and_toolp_motifs_for_gi(env, gi)
 
+        group = mod_gms2.items["GENOME_TYPE"].split("-")[1].upper()
         df_gms2 = MotifModel(mod_gms2.items["RBS_MAT"], None).pwm_to_df()
         df_toolp = MotifModel(mod_toolp.items["RBS_MAT"], None).pwm_to_df()
 
@@ -376,20 +425,60 @@ def main(env, args):
         plt.savefig(next_name(pd_figures))
         plt.show()
 
+        if not args.verified:
+            list_run_info.append({
+                "GC": compute_gc_from_file(os_join(env["pd-data"], gi.name, "sequence.fasta")),
+                "Accuracy": 100 - compare_gms2_start_predictions_with_motif_from_toolp(env, gi)
+            })
+        else:
+            comp = compare_gms2_start_predictions_with_motif_from_toolp_verified(env, gi, group=group)
+            list_run_info.append({
+                "Genome": fix_names(gi.name),
+                "Error": 100 - comp[0],
+                "Tool": "GMS2"
+                })
+            list_run_info.append({
+                "Genome": fix_names(gi.name),
+                "Error": 100 - comp[1],
+                "Tool": "GMS2 with SL"
+                })
 
-        list_run_info.append({
-            "GC": compute_gc_from_file(os_join(env["pd-data"], gi.name, "sequence.fasta")),
-            "Accuracy": compare_gms2_start_predictions_with_motif_from_toolp(env, gi)
-        })
+            print(list_run_info[-2:])
 
     import sbsp_viz.sns as sns
-    sns.scatterplot(pd.DataFrame(list_run_info), "GC", "Accuracy",
+    if args.verified:
+        sns.lineplot(pd.DataFrame(list_run_info), "Genome", "Error", hue="Tool", figure_options=FigureOptions(
+            save_fig=next_name(env["pd-work"]),
+            xlabel="Genome",
+            ylabel="Error"))
+    else:
+
+        df = pd.DataFrame(list_run_info)
+        sns.scatterplot(df, "GC", "Accuracy",
                     figure_options=FigureOptions(
                         save_fig=next_name(env["pd-work"]),
                         xlabel="GC",
-                        ylabel="Accuracy"
+                        ylabel="Percentage of different 5' ends",
+                        ylim=[0,10],
                     ))
 
+        df.to_csv(next_name(env["pd-work"], ext="csv"))
+
+        print("Average Error: {}".format(df["Accuracy"].mean()))
+
+        df = pd.DataFrame(list_run_info)
+        df = df[df["Accuracy"] < 2].copy()
+        sns.scatterplot(df, "GC", "Accuracy",
+                    figure_options=FigureOptions(
+                        save_fig=next_name(env["pd-work"]),
+                        xlabel="GC",
+                        ylabel="Percentage of different 5' ends",
+                        ylim=[0,10],
+                    ))
+
+        print("Average Error: {}".format(df["Accuracy"].mean()))
+
+        df.to_csv(next_name(env["pd-work"], ext="csv"))
 
 
 
