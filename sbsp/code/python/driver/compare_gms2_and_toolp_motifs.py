@@ -26,6 +26,7 @@ import sbsp_log  # runs init in sbsp_log and configures logger
 from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_container.gms2_mod import GMS2Mod
 from sbsp_general import Environment
+from sbsp_general.GMS2Noncoding import GMS2Noncoding
 from sbsp_general.MotifModel import MotifModel
 
 # ------------------------------ #
@@ -33,7 +34,7 @@ from sbsp_general.MotifModel import MotifModel
 # ------------------------------ #
 from sbsp_general.general import os_join, run_shell_cmd, get_value
 from sbsp_general.labels_comparison_detailed import LabelsComparisonDetailed
-from sbsp_general.shelf import next_name, compute_gc_from_file
+from sbsp_general.shelf import next_name, compute_gc_from_file, relative_entropy
 from sbsp_io.general import remove_p, mkdir_p
 from sbsp_io.labels import read_labels_from_file
 from sbsp_io.sequences import write_fasta_hash_to_file
@@ -405,8 +406,14 @@ def main(env, args):
         mod_gms2, mod_toolp = compare_gms2_and_toolp_motifs_for_gi(env, gi)
 
         group = mod_gms2.items["GENOME_TYPE"].split("-")[1].upper()
-        df_gms2 = MotifModel(mod_gms2.items["RBS_MAT"], None).pwm_to_df()
-        df_toolp = MotifModel(mod_toolp.items["RBS_MAT"], None).pwm_to_df()
+
+
+        mm_gms2 = MotifModel(mod_gms2.items["RBS_MAT"], None)
+        mm_toolp = MotifModel(mod_toolp.items["RBS_MAT"], None)
+        non_gms2 = GMS2Noncoding(mod_gms2.items["NON_MAT"])
+
+        df_gms2 = mm_gms2.pwm_to_df()
+        df_toolp = mm_toolp.pwm_to_df()
 
         fig, axes = plt.subplots(1, 2, sharex="all", sharey="all", figsize=(8, 4))
 
@@ -425,32 +432,54 @@ def main(env, args):
         plt.savefig(next_name(pd_figures))
         plt.show()
 
+        rel_gms2 = relative_entropy(mm_gms2, non_gms2)
+        rel_toolp = relative_entropy(mm_toolp, non_gms2)
+        gc = 100 * compute_gc_from_file(os_join(env["pd-data"], gi.name, "sequence.fasta"))
+
         if not args.verified:
             list_run_info.append({
-                "GC": compute_gc_from_file(os_join(env["pd-data"], gi.name, "sequence.fasta")),
-                "Accuracy": 100 - compare_gms2_start_predictions_with_motif_from_toolp(env, gi)
+                "GC": gc,
+                "Accuracy": 100 - compare_gms2_start_predictions_with_motif_from_toolp(env, gi),
+                "RE GMS2": rel_gms2,
+                "RE toolp": rel_toolp
             })
         else:
+            # verified
             comp = compare_gms2_start_predictions_with_motif_from_toolp_verified(env, gi, group=group)
             list_run_info.append({
                 "Genome": fix_names(gi.name),
                 "Error": 100 - comp[0],
-                "Tool": "GMS2"
+                "Tool": "GMS2",
+                "RE": rel_gms2,
+                "GC": gc
                 })
             list_run_info.append({
                 "Genome": fix_names(gi.name),
                 "Error": 100 - comp[1],
-                "Tool": "GMS2 with SL"
+                "Tool": "GMS2 with SL",
+                "RE": rel_toolp,
+                "GC": gc
                 })
 
             print(list_run_info[-2:])
 
     import sbsp_viz.sns as sns
     if args.verified:
-        sns.lineplot(pd.DataFrame(list_run_info), "Genome", "Error", hue="Tool", figure_options=FigureOptions(
+        df = pd.DataFrame(list_run_info)
+        df.to_csv(next_name(env["pd-work"], ext="csv"))
+
+        sns.lineplot(df, "Genome", "Error", hue="Tool", figure_options=FigureOptions(
             save_fig=next_name(env["pd-work"]),
             xlabel="Genome",
             ylabel="Error"))
+
+        sns.lineplot(df, "Genome", "RE", hue="Tool",
+                        figure_options=FigureOptions(
+                            save_fig=next_name(env["pd-work"]),
+                            xlabel="Genome",
+                            ylabel="Relative entropy",
+                        ))
+
     else:
 
         df = pd.DataFrame(list_run_info)
@@ -464,6 +493,12 @@ def main(env, args):
 
         df.to_csv(next_name(env["pd-work"], ext="csv"))
 
+
+
+        sns.scatterplot(df, "RE GMS2", "RE toolp", identity=True, figure_options=FigureOptions(
+            save_fig=next_name(env["pd-work"])
+        ))
+
         print("Average Error: {}".format(df["Accuracy"].mean()))
 
         df = pd.DataFrame(list_run_info)
@@ -475,6 +510,10 @@ def main(env, args):
                         ylabel="Percentage of different 5' ends",
                         ylim=[0,10],
                     ))
+
+        sns.scatterplot(df, "RE GMS2", "RE toolp", identity=True, figure_options=FigureOptions(
+            save_fig=next_name(env["pd-work"])
+        ))
 
         print("Average Error: {}".format(df["Accuracy"].mean()))
 

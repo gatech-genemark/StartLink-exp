@@ -1,4 +1,5 @@
 import logging
+import math
 from typing import *
 from collections import Counter
 import numpy as np
@@ -287,5 +288,20 @@ def get_position_distributions_by_shift(df, col, shifts):
             result[s] = list()
 
         result[s].append(df.at[idx, col])
+
+    return result
+
+
+def relative_entropy(motif, background):
+    # type: (MotifModel, GMS2Noncoding) -> float
+
+    df_motif = motif.pwm_to_df()
+    arr_bgd = background.pwm_to_array(0)
+
+    result = 0.0
+
+    for idx in df_motif.index:
+        for i, l in enumerate(sorted(df_motif.columns)):
+            result += df_motif.at[idx, l] * math.log2(df_motif.at[idx, l] / arr_bgd[i])
 
     return result
