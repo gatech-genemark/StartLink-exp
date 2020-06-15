@@ -5,10 +5,8 @@
 # Created: 3/17/20
 import logging
 import argparse
-import math
 
 import pandas as pd
-from typing import *
 
 # noinspection All
 import pathmagic
@@ -24,6 +22,7 @@ from sbsp_general import Environment
 # ------------------------------ #
 from sbsp_general.GMS2Noncoding import GMS2Noncoding
 from sbsp_general.MotifModel import MotifModel
+from sbsp_general.shelf import relative_entropy
 from sbsp_io.objects import load_obj
 import sbsp_viz.sns as sns
 
@@ -53,20 +52,6 @@ my_env = Environment(pd_data=parsed_args.pd_data,
 logging.basicConfig(level=parsed_args.loglevel)
 logger = logging.getLogger("logger")  # type: logging.Logger
 
-
-def relative_entropy(motif, background):
-    # type: (MotifModel, GMS2Noncoding) -> float
-
-    df_motif = motif.pwm_to_df()
-    arr_bgd = background.pwm_to_array(0)
-
-    result = 0.0
-
-    for idx in df_motif.index:
-        for i, l in enumerate(sorted(df_motif.columns)):
-            result += df_motif.at[idx, l] * math.log2(df_motif.at[idx, l] / arr_bgd[i])
-
-    return result
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
