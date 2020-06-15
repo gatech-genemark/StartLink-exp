@@ -56,10 +56,10 @@ parser.add_argument('--steps', nargs="+", required=False,
 sbsp_argparse.parallelization.add_parallelization_options(parser)
 sbsp_argparse.sbsp.add_sbsp_options(parser)
 
-parser.add_argument(
-    f"--pf-parallelization-options", required=False, default=None,
-    help=f"Configuration file for parallelization"
-)
+# parser.add_argument(
+#     f"--pf-parallelization-options", required=False, default=None,
+#     help=f"Configuration file for parallelization"
+# )
 
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
@@ -153,7 +153,7 @@ def main(env, args):
     # read database index file
     clade_to_pf_db = get_clade_to_pf_db(args.pf_db_index)
 
-    
+
     import multiprocessing as mp
     pool = mp.Pool(processes=args.simultaneous_genomes)
 
