@@ -103,3 +103,11 @@ class MotifModel:
 
         return pd.DataFrame(list_entries, columns=keys)
 
+    def to_string(self):
+        # type: () -> str
+        out = ""
+        for letter in sorted(self._motif.keys()):
+            out += letter + " ".join([str(x) for x in self._motif[letter]]) + "\n"
+        return out
+
+

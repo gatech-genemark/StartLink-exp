@@ -5,7 +5,11 @@ from collections import Counter
 import numpy as np
 
 from sbsp_alg.sbsp_steps import run_msa_on_sequences
-from sbsp_general.general import os_join, get_value
+from sbsp_container.gms2_mod import GMS2Mod
+from sbsp_general.GMS2Noncoding import GMS2Noncoding
+from sbsp_general.MotifModel import MotifModel
+from sbsp_general.general import os_join, get_value, run_shell_cmd
+from sbsp_io.general import remove_p, convert_multi_fasta_to_single
 from sbsp_options.sbsp import SBSPOptions
 
 logger = logging.getLogger(__name__)
@@ -292,16 +296,109 @@ def get_position_distributions_by_shift(df, col, shifts):
     return result
 
 
-def relative_entropy(motif, background):
-    # type: (MotifModel, GMS2Noncoding) -> float
+def relative_entropy(motif, background, component=None):
+    # type: (MotifModel, GMS2Noncoding, str) -> float
 
     df_motif = motif.pwm_to_df()
     arr_bgd = background.pwm_to_array(0)
 
     result = 0.0
 
-    for idx in df_motif.index:
-        for i, l in enumerate(sorted(df_motif.columns)):
-            result += df_motif.at[idx, l] * math.log2(df_motif.at[idx, l] / arr_bgd[i])
+    if component in {"motif", "both", None}:
+        for idx in df_motif.index:
+            for i, l in enumerate(sorted(df_motif.columns)):
+                result += df_motif.at[idx, l] * math.log2(df_motif.at[idx, l] / arr_bgd[i])
+
+    if component in {"spacer", "both", None} and motif._spacer is not None:
+        sp = motif._spacer
+        sp_length = len(sp)
+        for i in range(sp_length):
+            result += sp[i] * math.log2(sp[i] / (1.0 / sp_length))
 
     return result
+
+
+def run_gms2_prediction_with_model(pf_sequence, pf_new_mod, pf_new_pred):
+    # type: (str, str, str) -> None
+
+    from sbsp_general import ENV
+    bin_external = ENV["pd-bin-external"]
+    prog = f"{bin_external}/gms2/gmhmmp2"
+    mgm_mod = f"{bin_external}/gms2/mgm_11.mod"
+    cmd = f"{prog} -m {pf_new_mod} -M {mgm_mod} -s {pf_sequence} -o {pf_new_pred} --format gff"
+    run_shell_cmd(cmd)
+
+
+def train_gms2_model(env, pf_new_seq, pf_new_labels, **kwargs):
+    group = get_value(kwargs, "group", "A", default_if_none=True)
+    pf_mod = os_join(env["pd-work"], "a.mod")
+    cmd = f"cd {env['pd-work']}; "
+    cmd += f"{env['pd-bin-external']}/gms2/biogem gms2-training -s {pf_new_seq} -l {pf_new_labels} -m {pf_mod} --order-coding 5 --order-noncoding 2 --only-train-on-native 1 --genetic-code 11 --order-start-context 2 --fgio-dist-thr 25 --genome-group {group} --ga-upstr-len-rbs 20 --align right --ga-width-rbs 6"
+    run_shell_cmd(
+        cmd
+    )
+    mod = GMS2Mod.init_from_file(pf_mod)
+    # remove_p(pf_mod)
+
+    return mod
+
+
+def train_and_create_models(env, pf_labels, pf_sequences, **kwargs):
+    # type: (Environment, str, str) -> GMS2Mod
+    pf_new_seq, pf_new_labels = convert_multi_fasta_to_single(env, pf_sequences, pf_labels)
+
+    mod = train_gms2_model(env, pf_new_seq, pf_new_labels, **kwargs)
+    remove_p(pf_new_labels)
+    remove_p(pf_new_seq)
+
+    return mod
+
+
+def append_to_file(a_str, pf_output):
+    # type: (str, str) -> None
+
+    with open(pf_output, "a") as f:
+        f.write(a_str)
+
+
+def add_toolp_rbs_to_gms2_model(env, pf_sequence, pf_toolp, pf_gms2_mod, pf_new_mod, **kwargs):
+    # type: (Environment, str, str, str, str) -> None
+
+    group = get_value(kwargs, "group", None)
+
+    # run toolp and create model file
+    mod = train_and_create_models(
+        env,
+        pf_labels=pf_toolp,
+        pf_sequences=pf_sequence,
+        group=group
+    )
+    rbs_toolp = mod.items["RBS_MAT"]      # type: Dict[str, List[float]]
+    spacer = mod.items["RBS_POS_DISTR"]
+
+    cmd = ""
+
+    # remove RBS_MAT and RBS_POS_DISTR from new model
+    # cmd += " awk '{if ($1 == \"$RBS_MAT\") NR += 4 ; else print }' " + "{} > {}".format(pf_gms2_mod, pf_new_mod)
+    cmd += "awk 'BEGIN{sut=0} {if (sut == 1) {l=substr($1,1,1);  if (l != \"$\") next ; else {sut=0; print}} "
+    cmd += "else if ($1 == \"$RBS_MAT\" || $1 == \"$RBS_POS_DISTR\") sut = 1; else print }' "
+    cmd += "{} > {}".format(pf_gms2_mod, pf_new_mod)
+    run_shell_cmd(cmd)
+
+    # write toolp RBS_MAT to new model file
+    rbs_as_str = "\n\n$RBS_MAT\n"
+    for i in sorted(rbs_toolp.keys()):
+        rbs_as_str += str(i) + " " + " ".join([str(x) for x in rbs_toolp[i]]) + "\n"
+    rbs_as_str += "\n\n"
+
+    rbs_as_str += "$RBS_POS_DISTR\n"
+    for i in sorted(spacer.keys()):
+        rbs_as_str += str(i) + " " + str(spacer[i]) + "\n"
+    rbs_as_str += "\n\n"
+
+
+    append_to_file(
+        rbs_as_str, pf_new_mod
+    )
+
+    return

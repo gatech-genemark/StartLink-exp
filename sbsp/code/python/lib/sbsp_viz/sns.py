@@ -31,10 +31,12 @@ def scatterplot(df, x, y, hue=None, figure_options=None, **kwargs):
     # type: (pd.DataFrame, str, str, Union[str, None], FigureOptions, Dict[str, Any]) -> None
 
     sns_kwargs = get_value(kwargs, "sns_kwargs", dict())
+    ax = get_value(kwargs, "ax", None)
 
     identity = get_value(kwargs, "identity", False)
 
-    _, ax = plt.subplots()
+    if not ax:
+        _, ax = plt.subplots()
 
     g = sns.scatterplot(x=x, y=y, hue=hue, data=df, linewidth=0, **sns_kwargs)
 
