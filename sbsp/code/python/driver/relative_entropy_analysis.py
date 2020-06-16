@@ -233,42 +233,18 @@ def fix_names(r):
     )
 
 def relative_entropy_analysis(env, gil, prl_options):
-    # type: (Environment, GenomeInfoList, ParallelizationOptions) -> None
+    # type: (Environment, GenomeInfoList, ParallelizationOptions) -> pd.DataFrame
 
     list_df = list()
-    if not prl_options["use-pbs"]:
-        for gi in gil:
-            list_df.append(relative_entropy_analysis_for_gi(env, gi, prl_options))
-    else:
-        pbs = PBS(env, prl_options, splitter=split_genome_info_list, merger=merge_identity)
-        list_df = pbs.run(
-            data={"gil": gil},
-            func=relative_entropy_analysis_for_gi,
-            func_kwargs={"env": env, "prl_options": prl_options}
-        )
 
+    for gi in gil:
+        list_df.append(relative_entropy_analysis_for_gi(env, gi, prl_options))
 
     df = pd.concat(list_df, ignore_index=True, sort=False)
     df["Genome"] = df.apply(fix_names, axis=1)
-    # TODO: plot what's needed
-    df.to_csv(os_join(env["pd-work"], "summary.csv"), index=False)
 
+    return df
 
-    pd_figures = os_join(env["pd-work"], "summary_figures")
-    mkdir_p(pd_figures)
-
-    sns.scatterplot(df, "Percent", "Error", figure_options=FigureOptions(ylim=[0,20], save_fig=next_name(pd_figures)))
-    sns.lineplot(df, "RE", "Error", hue="Genome", figure_options=FigureOptions(ylim=[0,20], save_fig=next_name(pd_figures)))
-    sns.lineplot(df, "RE Motif", "Error",hue="Genome", figure_options=FigureOptions(ylim=[0,20], save_fig=next_name(pd_figures)))
-    sns.lineplot(df, "RE Spacer", "Error", hue="Genome",figure_options=FigureOptions(ylim=[0,20], save_fig=next_name(pd_figures)))
-    sns.scatterplot(df, "RE Motif", "RE Spacer", hue="Genome", identity=True, figure_options=FigureOptions(save_fig=next_name(pd_figures)))
-
-    sns.lmplot(df, "Percent", "Error", hue="Genome", figure_options=FigureOptions(ylim=[0, 20], save_fig=next_name(pd_figures)))
-    sns.lmplot(df, "RE", "Error", hue="Genome", figure_options=FigureOptions(ylim=[0, 20], save_fig=next_name(pd_figures)))
-    sns.lmplot(df, "RE Motif", "Error", hue="Genome", figure_options=FigureOptions(ylim=[0, 20], save_fig=next_name(pd_figures)))
-    sns.lmplot(df, "RE Spacer", "Error", hue="Genome", figure_options=FigureOptions(ylim=[0, 20], save_fig=next_name(pd_figures)))
-    sns.lmplot(df, "Percent", "RE", hue="Genome",
-               figure_options=FigureOptions(save_fig=next_name(pd_figures)))
 
 
 
@@ -277,11 +253,46 @@ def relative_entropy_analysis(env, gil, prl_options):
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
     gil = GenomeInfoList.init_from_file(args.pf_genome_list)
+
     prl_options = ParallelizationOptions.init_from_dict(env, vars(args))
 
+    if not prl_options["use-pbs"]:
+        df = relative_entropy_analysis(env, gil, prl_options)
+    else:
+        pbs = PBS(env, prl_options, splitter=split_genome_info_list, merger=merge_identity)
+        list_df = pbs.run(
+            data={"gil": gil},
+            func=relative_entropy_analysis,
+            func_kwargs={"env": env, "prl_options": prl_options}
+        )
+        df = pd.concat(list_df, ignore_index=True, sort=False)
 
 
-    relative_entropy_analysis(env, gil, prl_options)
+    df.to_csv(os_join(env["pd-work"], "summary.csv"), index=False)
+
+    pd_figures = os_join(env["pd-work"], "summary_figures")
+    mkdir_p(pd_figures)
+
+    sns.scatterplot(df, "Percent", "Error", figure_options=FigureOptions(ylim=[0, 20], save_fig=next_name(pd_figures)))
+    sns.lineplot(df, "RE", "Error", hue="Genome",
+                 figure_options=FigureOptions(ylim=[0, 20], save_fig=next_name(pd_figures)))
+    sns.lineplot(df, "RE Motif", "Error", hue="Genome",
+                 figure_options=FigureOptions(ylim=[0, 20], save_fig=next_name(pd_figures)))
+    sns.lineplot(df, "RE Spacer", "Error", hue="Genome",
+                 figure_options=FigureOptions(ylim=[0, 20], save_fig=next_name(pd_figures)))
+    sns.scatterplot(df, "RE Motif", "RE Spacer", hue="Genome", identity=True,
+                    figure_options=FigureOptions(save_fig=next_name(pd_figures)))
+
+    sns.lmplot(df, "Percent", "Error", hue="Genome",
+               figure_options=FigureOptions(ylim=[0, 20], save_fig=next_name(pd_figures)))
+    sns.lmplot(df, "RE", "Error", hue="Genome",
+               figure_options=FigureOptions(ylim=[0, 20], save_fig=next_name(pd_figures)))
+    sns.lmplot(df, "RE Motif", "Error", hue="Genome",
+               figure_options=FigureOptions(ylim=[0, 20], save_fig=next_name(pd_figures)))
+    sns.lmplot(df, "RE Spacer", "Error", hue="Genome",
+               figure_options=FigureOptions(ylim=[0, 20], save_fig=next_name(pd_figures)))
+    sns.lmplot(df, "Percent", "RE", hue="Genome",
+               figure_options=FigureOptions(save_fig=next_name(pd_figures)))
 
 
 if __name__ == "__main__":
