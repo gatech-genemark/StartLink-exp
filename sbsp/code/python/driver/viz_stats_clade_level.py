@@ -699,7 +699,7 @@ def analyze_kimura_distances(env, df):
     df["Min-Kimura"] = df["Kimura-to-query"].apply(min)
     df["Max-Kimura"] = df["Kimura-to-query"].apply(max)
 
-    # contour_kimura_per_ancestor(env, df)
+    contour_kimura_per_ancestor(env, df)
     one_dim_Kimura_accuracy(env, df)
 
     kimura_dist_plot(env, df)
