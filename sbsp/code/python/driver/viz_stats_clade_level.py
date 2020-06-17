@@ -593,7 +593,20 @@ def one_dim_Kimura_accuracy(env, df_all, num_steps=20):
                  ax=ax,
                  show=True,
                  legend_loc="best",
+                 legend_title="",
                  sns_kwargs={"palette": CM.get_map("ancestor")})
+
+
+    fig, ax = plt.subplots()
+    import seaborn
+    seaborn.lineplot("Average-Kimura", "Percentage-of-queries", data=df, hue="Ancestor", ax=ax, palette=CM.get_map("ancestor"))
+
+    ax.set_ylabel("Percentage of queries")
+    ax.set_xlabel("Average Kimura distance")
+    plt.legend(loc="best", title="")
+    plt.tight_layout()
+    plt.savefig(next_name(pd_work))
+    plt.show()
 
     sns.lineplot(df, "Average-Kimura", "Cumulative-percentage-of-queries", hue="Ancestor", figure_options=FigureOptions(
         save_fig=next_name(pd_work),
@@ -699,7 +712,7 @@ def analyze_kimura_distances(env, df):
     df["Min-Kimura"] = df["Kimura-to-query"].apply(min)
     df["Max-Kimura"] = df["Kimura-to-query"].apply(max)
 
-    contour_kimura_per_ancestor(env, df)
+    #contour_kimura_per_ancestor(env, df)
     one_dim_Kimura_accuracy(env, df)
 
     kimura_dist_plot(env, df)
@@ -820,7 +833,8 @@ def analyze_upstream_distances(env, df):
         df_tmp, "Most frequent upstream", "DC(x,f)", hue="Flexibility", sns_kwargs={
             "scatter": False, "lowess": True
         },
-        figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-7,None], ylim=[0,1])
+        legend_loc="best",
+        figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-9,None], ylim=[0,1], ylabel="Distance conservation", xlabel="Most frequent distance to upstream gene")
     )
 
     # sns.distplot(df, "Most frequent upstream", figure_options=FigureOptions(
@@ -829,6 +843,7 @@ def analyze_upstream_distances(env, df):
     #              sns_kwargs={"kde": True})
 
 
+    fig, ax = plt.subplots()
     import seaborn
     # seaborn.countplot("Most frequent upstream", data=df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)], hue="Ancestor")
     (df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)]
@@ -854,6 +869,7 @@ def analyze_upstream_distances(env, df):
 
     plt.show()
 
+    fig, ax = plt.subplots()
     # scatter
     (df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)]
      .groupby("Ancestor")["Most frequent upstream"]
@@ -881,6 +897,35 @@ def analyze_upstream_distances(env, df):
     save_figure(figure_options)
 
     plt.show()
+
+
+    fig, ax = plt.subplots()
+
+    tmp_df = df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)].groupby("Ancestor")["Most frequent upstream"].value_counts(normalize=True).mul(100).rename('Percentage (by clade)').reset_index()
+
+    missing_values = set(range(-9, 10)).difference(set(df["Most frequent upstream"]))
+    for m in missing_values:
+        for a in set(tmp_df["Ancestor"]):
+            tmp_df.append({"Most frequent upstream": m, "Percentage (by clade)": 0, "Ancestor": a}, ignore_index=True)
+
+    (tmp_df.pipe((seaborn.barplot, 'data'), x="Most frequent upstream", y='Percentage (by clade)', hue="Ancestor",order=range(-9,10),palette=CM.get_map("ancestor")))
+
+    plt.legend(loc="best", title="Clade")
+    figure_options = FigureOptions(
+        save_fig=next_name(pd_work),
+        xlabel="Most frequent distance to upstream gene",
+        ylabel="Percentage of components (by clade)",
+        #xlim=[-9.5, 9.5]
+    )
+    plt.xlabel(figure_options.xlabel)
+    plt.ylabel(figure_options.ylabel)
+   # plt.xlim(figure_options.xlim)
+    #plt.xticks(range(-8,9,2))
+
+    save_figure(figure_options)
+
+    plt.show()
+
 
 
     # (df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)]

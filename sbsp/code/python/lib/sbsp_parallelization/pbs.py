@@ -293,7 +293,7 @@ class PBS:
 
         pbs_text += "#PBS -W umask=002" + "\n"
 
-        pbs_text += "export PATH=\"/home/karl/anaconda/envs/sbsp/bin:$PATH\"\n"
+        pbs_text += "export PATH=\"/home/karl/anaconda/envs/biogem_sbsp/bin:$PATH\"\n"
 
         pbs_text += "mkdir -p {}".format(pd_job_template) + "\n"
 
