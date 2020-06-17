@@ -118,7 +118,7 @@ def viz_summary_per_gcfid(env, df, title=None):
             save_fig=next_name(pd_work),
             ylim=[None, 100],
             title=title,
-            ylabel=f"Percent of {TOOLp} from {TOOL} Predictions"
+            ylabel=f"Percentage of {TOOLp} from {TOOL} Predictions"
         ),
         sns_kwargs={"palette": CM.get_map("ancestor")}
     )
