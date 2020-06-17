@@ -23,7 +23,7 @@ from sbsp_general.shelf import next_name
 #           Parse CMD            #
 # ------------------------------ #
 from sbsp_viz.general import FigureOptions, save_figure
-from sbsp_viz.shelf import loess_with_stde
+from sbsp_viz.shelf import loess_with_stde, create_mappable_for_colorbar
 
 parser = argparse.ArgumentParser("Description of driver.")
 
@@ -140,36 +140,71 @@ def plot_per_tool_by_genome_type(env, df):
     num_tags = len(list_tags)
 
     fig, ax = plt.subplots(2, math.ceil(num_tags/2), sharey="all", sharex="all")
+    fig.add_axes([.91, .3, .03, .4])
+    cbar_ax = fig.axes[-1]
+    #
+    # save_figure(FigureOptions(
+    #     save_fig=next_name(env["pd-work"])
+    #         ), fig)
+    #
+    # plt.show()
+    # return
+
+    import numpy as np
+    kws = {
+        # "levels": np.arange(0, 1, 0.2),
+        # "vmin": 0, "vmax": 0.55,
+        # "norm": True
+        "xlim": [0.2, 0.8],
+        "ylim": [0, 35],
+        "cbar_max": 1,
+        "num_steps": 35,
+    }
+
+    cbar_enable = {        "cbar_ax": cbar_ax, "cbar": True,}
 
     counter = 0
     for tag, c, a in zip(list_tags, ["b", "g", "r", "o"], ax.ravel()):
-        x, y, y_l, y_u = loess_with_stde(df, "GC", f"M:{tag}", a, tag.replace("=", ","))
+        x, y, y_l, y_u = loess_with_stde(df, "GC", f"M:{tag}", a, tag.replace("=", ","),
+                                         **kws, **cbar_enable if counter == 0 else dict())
 
         a.set_title(tag.replace("=", ",").replace("NCBI", "PGAP").replace("GMS2", "GeneMarkS-2"))
         # a.set_ylim([65,100])
-        a.set_ylim([0, 35])
-
-        if counter % 2 == 0:
-            a.set_ylabel("Percent 5' Mismatch")
-        if counter >= math.ceil(num_tags/2):
-            a.set_xlabel("GC")
+        # a.set_ylim([0, 35])
+        # eps_x = [z for z in a.get_ylim()]
+        # eps_x[0] -= 0.01
+        # eps_x[1] += 0.01
+        #
+        # a.set_xlim(eps_x)
+        # if counter % 2 == 0:
+        #     a.set_ylabel("Percentage of gene-start differences")
+        # if counter >= math.ceil(num_tags/2):
+        #     a.set_xlabel("GC")
         counter += 1
+
+        mappable = a.collections[0]
+
 
     # plt.legend(loc="best")
     figure_options = FigureOptions(
         save_fig=next_name(env["pd-work"])
             )
-    # fig.tight_layout(rect=[0, 0, .9, 1])
-    # fig.add_subplot(111, frameon=False)
-    # # hide tick and tick label of the big axes
-    # plt.tick_params(top=False, bottom=False, left=False, right=False, which="both",
-    #                 labelbottom=False, labeltop=False, labelleft=False, labelright=False)
-    # plt.xlabel("GC", labelpad=30)
-    # plt.ylabel("Percent 5' Match", labelpad=30)
+    fig.add_subplot(111, frameon=False)
+    # hide tick and tick label of the big axes
+    plt.tick_params(top=False, bottom=False, left=False, right=False, which="both",
+                    labelbottom=False, labeltop=False, labelleft=False, labelright=False)
+    plt.xlabel("GC", labelpad=30)
+    plt.ylabel("Percentage of gene-start differences", labelpad=30)
     # plt.xlabel("GC")
     # plt.ylabel("Percent 5' Match")
-    plt.tight_layout()
+
+    # mappable=create_mappable_for_colorbar(np.arange(0, 0.4, 0.05), "Reds")
+    # plt.colorbar(mappable, cax=cbar_ax, cmap="Reds")
+    fig.tight_layout(rect=[-0.02, -0.02, .9, 1])
+
+    # plt.tight_layout()
     # FigureOptions.set_properties_for_axis(ax, figure_options)
+
     save_figure(figure_options, fig)
     plt.show()
     #
@@ -227,7 +262,7 @@ def plot_per_tool_by_genome_type(env, df):
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
     df = pd.read_csv(args.pf_stats)
-
+    # df = df.sample(50)
     compute_percentages(df)
 
     # cleanup

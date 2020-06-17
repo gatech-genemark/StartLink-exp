@@ -127,7 +127,7 @@ def viz_summary_per_gcfid(env, df, title=None):
         save_fig=next_name(pd_work),
         ylim=[0, 20],
         # ylabel="1 - Sen(NCBI, GMS2=SBSP)",
-        ylabel=f"Err(PGAP, {TOOLp})",
+        ylabel=f"Diff(PGAP, {TOOLp})",
         xlabel="Clade",
         title=title
     ),
@@ -158,7 +158,7 @@ def viz_summary_per_gcfid(env, df, title=None):
         ylim=[0, None],
         title=title,
         # ylabel="1 - Sen(NCBI, GMS2=SBSP)",
-        ylabel=f"Err(PGAP, {TOOLp})"
+        ylabel=f"Diff(PGAP, {TOOLp})"
     ),
                legend_loc="best",
                sns_kwargs={"palette": CM.get_map("ancestor"), "scatter": True, "lowess": True,
@@ -286,8 +286,8 @@ def contour_kimura_per_ancestor(env, df):
     # # hide tick and tick label of the big axes
     plt.tick_params(top=False, bottom=False, left=False, right=False, which="both",
                     labelbottom=False, labeltop=False, labelleft=False, labelright=False)
-    plt.xlabel("Minimum Kimura", labelpad=20)
-    plt.ylabel("Maximum Kimura", labelpad=30)
+    plt.xlabel("Minimum Kimura distance", labelpad=20)
+    plt.ylabel("Maximum Kimura distance", labelpad=30)
 
     fig.tight_layout()
     save_figure(FigureOptions(
@@ -588,7 +588,7 @@ def one_dim_Kimura_accuracy(env, df_all, num_steps=20):
     sns.lineplot(df, "Average-Kimura", "Percentage-of-queries", hue="Ancestor",  figure_options=FigureOptions(
         save_fig=next_name(pd_work),
         ylabel="Percentage of queries",
-        xlabel="Average Kimura"
+        xlabel="Average Kimura distance"
     ),
                  ax=ax,
                  show=True,
@@ -703,8 +703,9 @@ def analyze_kimura_distances(env, df):
     one_dim_Kimura_accuracy(env, df)
 
     kimura_dist_plot(env, df)
-    heat_map_Kimura_accuracy(env, df, "Min-Kimura", "Max-Kimura", balance=True, xlabel="Minimum Kimura",
-                             ylabel="Maximum Kimura")
+    heat_map_Kimura_accuracy(env, df, "Min-Kimura", "Max-Kimura", balance=True,
+                             xlabel="Minimum Kimura distance",
+                             ylabel="Maximum Kimura distance")
     heat_map_Kimura_accuracy(env, df, "Average-Kimura", "Std-Kimura", balance=False)
 
 
@@ -770,7 +771,7 @@ def analyze_upstream_distances(env, df):
 
     # compute consistencies with different flexibilities
     for flexibility in {0, 3}:
-        df["PC(x,{})".format(flexibility)] = df[["Most frequent upstream", "Upstream-distance"]].apply(
+        df["DC(x,{})".format(flexibility)] = df[["Most frequent upstream", "Upstream-distance"]].apply(
             lambda r: compute_consistency(r["Upstream-distance"], r["Most frequent upstream"], flexibility),
             axis=1
         )
@@ -802,7 +803,7 @@ def analyze_upstream_distances(env, df):
     # NCBI consistency as a func
     df = df[(df["Support"] > 10) & (df["GMS2=SBSP"]) & (df["Most frequent upstream"] < 100) & (df["Most frequent upstream"] > -50)]
 
-    df_tmp = stack_columns_as_rows(df_tmp[["Most frequent upstream", "PC(x,0)", "PC(x,3)", "Ancestor"]], ["PC(x,0)", "PC(x,3)"], "PC(x,f)", None, label_col="Flexibility")
+    df_tmp = stack_columns_as_rows(df_tmp[["Most frequent upstream", "DC(x,0)", "DC(x,3)", "Ancestor"]], ["DC(x,0)", "DC(x,3)"], "DC(x,f)", None, label_col="Flexibility")
     # seaborn.lmplot("Most frequent upstream", "PC(x,f)", df_tmp,
     #                scatter=False, hue="Flexibility", lowess=True)
     # plt.show()
@@ -816,7 +817,7 @@ def analyze_upstream_distances(env, df):
     # plt.show()
 
     sns.lmplot(
-        df_tmp, "Most frequent upstream", "PC(x,f)", hue="Flexibility", sns_kwargs={
+        df_tmp, "Most frequent upstream", "DC(x,f)", hue="Flexibility", sns_kwargs={
             "scatter": False, "lowess": True
         },
         figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-7,None], ylim=[0,1])
@@ -845,7 +846,7 @@ def analyze_upstream_distances(env, df):
     figure_options = FigureOptions(
         save_fig=next_name(pd_work),
         xlabel="Most frequent distance to upstream gene",
-        ylabel="Percent of components (by clade)"
+        ylabel="Percentage of components (by clade)"
     )
     plt.xlabel(figure_options.xlabel)
     plt.ylabel(figure_options.ylabel)
@@ -869,7 +870,7 @@ def analyze_upstream_distances(env, df):
     figure_options = FigureOptions(
         save_fig=next_name(pd_work),
         xlabel="Most frequent distance to upstream gene",
-        ylabel="Percent of components (by clade)",
+        ylabel="Percentage of components (by clade)",
         xlim=[-9.5, 9.5]
     )
     plt.xlabel(figure_options.xlabel)
@@ -1075,7 +1076,7 @@ def viz_summary_per_gcfid_per_step(env, df):
         figure_options=FigureOptions(
             save_fig=next_name(pd_work),
             xlabel="Clade",
-            ylabel=f"Err(PGAP,{TOOLp})"
+            ylabel=f"Diff(PGAP,{TOOLp})"
         )
     )
 

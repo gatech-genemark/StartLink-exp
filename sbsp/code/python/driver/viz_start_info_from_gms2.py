@@ -22,7 +22,6 @@ import sbsp_log  # runs init in sbsp_log and configures logger
 # Custom imports
 from sbsp_alg.sbsp_steps import run_msa_on_sequences
 from sbsp_general import Environment
-from sbsp_general.general import os_join
 from sbsp_general.msa_2 import MSAType
 from sbsp_general.shelf import next_name, bin_by_gc, get_consensus_sequence, gather_consensus_sequences, \
     print_reduced_msa, create_numpy_for_column_with_extended_motif, get_position_distributions_by_shift
@@ -39,7 +38,7 @@ from matplotlib.font_manager import FontProperties
 # ------------------------------ #
 from sbsp_options.sbsp import SBSPOptions
 from sbsp_viz.general import save_figure, FigureOptions
-from sbsp_viz.shelf import loess_with_stde
+from sbsp_viz.shelf import loess_with_stde, create_mappable_for_colorbar
 
 parser = argparse.ArgumentParser("Description of driver.")
 
@@ -95,16 +94,6 @@ def create_numpy_for_column(df, col):
 
     return mat
 
-def create_mappable_for_colorbar(values, cmap):
-    import matplotlib.colors
-    import matplotlib.cm
-    vmin=min(values)
-    vmax = max(values)
-
-    norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
-    mappable = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
-    mappable.set_array(values)
-    return mappable
 
 def visualize_matrix_column(env, df, col):
     # type: (Environment, pd.DataFrame, str) -> None
