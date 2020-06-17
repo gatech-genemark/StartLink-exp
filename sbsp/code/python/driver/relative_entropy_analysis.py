@@ -232,7 +232,7 @@ def fix_names(r):
         r["Genome"][0], r["Genome"].split("_")[1]
     )
 
-def relative_entropy_analysis(env, gil, prl_options):
+def relative_entropy_analysis(env, gil, prl_options, pf_output=None):
     # type: (Environment, GenomeInfoList, ParallelizationOptions) -> pd.DataFrame
 
     list_df = list()
