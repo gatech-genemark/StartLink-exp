@@ -46,7 +46,7 @@ parser.add_argument('--fn-q-labels', default="ncbi.gff", required=False, type=Un
 parser.add_argument('--fn-t-labels', default="ncbi.gff", required=False, type=Union[str],
                     help="Name of target file(s) containing gene labels")
 
-parser.add_argument("--fn-q-labels-true", default="ncbi.gff", required=False, type=Union[str],
+parser.add_argument("--fn-q-labels-compare", default="ncbi.gff", required=False, type=Union[str],
                     help="Name of true labels file. If set, accuracy is computed after MSA.")
 
 parser.add_argument('--steps', nargs="+", required=False,

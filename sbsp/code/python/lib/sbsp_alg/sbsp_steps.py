@@ -2128,46 +2128,39 @@ def sbsp_steps(env, pipeline_options):
             pipeline_options["pf-t-db"], pipeline_options["pf-output"], pipeline_options["sbsp-options"],
             clean=True,
             pd_msa_final=pd_msa,
-            num_processors=8,
+            num_processors=pipeline_options["prl-options"]["num-processors"],
         )
 
         output = [pipeline_options["pf-output"]]
 
-
-    logger.info("Done sbsp steps")
-
     return output
 
 
-def sbsp_step_accuracy(env, pipeline_options, list_pf_previous):
+def sbsp_step_compare(env, pipeline_options, list_pf_previous):
     # type: (Environment, PipelineSBSPOptions, List[str]) -> List[str]
     """
     Given a list of query and target genomes, find the set of related genes
     for each query
     """
 
-    logger.debug("Running: sbsp_step_accuracy")
-
     mkdir_p(env["pd-work"])
 
     if len(list_pf_previous) == 0:
-        raise ValueError("Cannot compute accuracy: {}".format(pipeline_options["pf-q-list"]))
+        raise ValueError("Cannot produce results: {}".format(pipeline_options["pf-q-list"]))
 
-    
+    # read data
     df = pd.concat([pd.read_csv(f, header=0) for f in list_pf_previous], ignore_index=True)
 
-    logger.info("Computing Accuracy")
+    #
     df = pipeline_step_compute_accuracy(env, df, pipeline_options)
-    logger.info("Done computing Accuracy")
+
     df.to_csv(pipeline_options["pf-output"])
 
 
     # copy labels
-    add_true_starts_to_msa_output(env, df, fn_q_labels_true=pipeline_options["fn-q-labels-true"])
+    add_true_starts_to_msa_output(env, df, fn_q_labels_true=pipeline_options["fn-q-labels-compare"])
     # add_true_starts_to_msa_output(env, df, msa_nt=True, fn_q_labels_true=pipeline_options["fn-q-labels-true"])
     separate_msa_outputs_by_stats(env, df, pipeline_options["dn-msa-output"])
-
-    logger.info("All done dear")
     return list()
 
 

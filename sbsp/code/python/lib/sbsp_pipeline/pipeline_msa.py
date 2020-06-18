@@ -3,7 +3,7 @@ import timeit
 from shutil import copyfile
 from typing import *
 
-from sbsp_alg.sbsp_steps import sbsp_step_accuracy, sbsp_steps
+from sbsp_alg.sbsp_steps import sbsp_step_compare, sbsp_steps
 from sbsp_general import Environment
 from sbsp_io.general import read_rows_to_list
 from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
@@ -48,8 +48,8 @@ class PipelineSBSP:
         elapsed_times["1-compute-steps"] = timeit.default_timer() - curr_time
 
         curr_time = timeit.default_timer()
-        self._accuracy(state)
-        elapsed_times["2-accuracy"] = timeit.default_timer() - curr_time
+        self._compare(state)
+        elapsed_times["2-compare"] = timeit.default_timer() - curr_time
 
         time_string = "\n".join([
                 "{},{}".format(key, value) for key, value in elapsed_times.items()
@@ -60,12 +60,10 @@ class PipelineSBSP:
             f.write(time_string)
             f.close()
 
-    def _accuracy(self, state):
+    def _compare(self, state):
         # type: (PipelineState) -> PipelineState
-        curr_env = self.env.duplicate({
-            "pd-work": os.path.join(self.env["pd-work"], "accuracy")
-        })
-        result = sbsp_step_accuracy(curr_env, self.pipeline_options, state.list_pf_data)
+        curr_env = self.env
+        result = sbsp_step_compare(curr_env, self.pipeline_options, state.list_pf_data)
 
         return PipelineSBSP.PipelineState(result)
 
