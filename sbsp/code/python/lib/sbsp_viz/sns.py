@@ -189,14 +189,17 @@ def tsplot(df, x, y, hue=None, figure_options=None, **kwargs):
 
 def barplot(df, x, y, hue, figure_options=None, **kwargs):
     sns_kwargs = get_value(kwargs, "sns_kwargs", dict())
+    ax = get_value(kwargs, "ax", None)
 
-    g = sns.barplot(x=x, y=y, data=df, hue=hue,  **sns_kwargs)
+    g = sns.barplot(x=x, y=y, data=df, hue=hue,  ax=ax, **sns_kwargs)
 
     if hue is not None:
         plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5))
 
     FigureOptions.set_properties_for_axis(g, figure_options)
+    plt.tight_layout()
     save_figure(figure_options)
+    # plt.tight_layout(rect=[-0.3,0,1,1.2])
     plt.show()
 
 

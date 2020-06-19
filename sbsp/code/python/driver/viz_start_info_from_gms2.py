@@ -687,34 +687,6 @@ def plot_letter_per_gc_over_position_with_alignment_per_gc(env, df, col):
         plot_letter_over_position(env, df_gc, col, f"[{lower}, {upper}]")
 
 
-def plot_candidate_codons(env, df, codons):
-    # type: (Environment, pd.DataFrame, List[str]) -> None
-
-    fig, ax = plt.subplots()
-
-    for c in sorted(codons):
-        seaborn.regplot(df["GC"].astype(float).values, df[c].astype(float).values, label=c,
-                        lowess=True, scatter_kws={"s": 5, "alpha": 0.1})
-
-    ax.set_ylim([-0.05,1.05])
-    ax.set_ylabel("Probability")
-    ax.set_xlabel("GC")
-    leg = ax.legend()
-    for lh in leg.legendHandles:
-        lh.set_alpha(1)
-
-    plt.show()
-
-def plot_candidate_starts(env, df):
-    # type: (Environment, pd.DataFrame) -> None
-    plot_candidate_codons(env, df, ["ATG", "GTG", "TTG"])
-
-def plot_candidate_stops(env, df):
-    # type: (Environment, pd.DataFrame) -> None
-    plot_candidate_codons(env, df, ["TAA", "TAG", "TGA"])
-
-
-
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
     df_bac = load_obj(args.pf_input_bac)        # type: pd.DataFrame

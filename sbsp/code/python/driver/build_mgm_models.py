@@ -27,7 +27,7 @@ from sbsp_general.MGMMotifModelV2 import MGMMotifModelV2
 from sbsp_general.general import get_value
 from sbsp_general.mgm_motif_model_all_gc import MGMMotifModelAllGC
 from sbsp_general.shelf import bin_by_gc, get_consensus_sequence, create_numpy_for_column_with_extended_motif, \
-    get_position_distributions_by_shift
+    get_position_distributions_by_shift, plot_candidate_codons, plot_candidate_starts, plot_candidate_stops
 from sbsp_io.objects import load_obj, save_obj
 from sbsp_viz.mgm_motif_model import MGMMotifModelVisualizer
 from sbsp_viz.mgm_motif_model_v2 import MGMMotifModelVisualizerV2
@@ -375,7 +375,11 @@ def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
     df = read_archaea_bacteria_inputs(args.pf_input_arc, args.pf_input_bac)
 
-    build_mgm_models(env, df, args.pf_output)
+    # build_mgm_models(env, df, args.pf_output)
+    df = df[(df["GENOME_TYPE"] != "C") | (df["GENOME_TYPE"] == "C") & (df["GC"] > 40)].copy()
+
+    plot_candidate_starts(env, df)
+    plot_candidate_stops(env, df)
 
 
 if __name__ == "__main__":

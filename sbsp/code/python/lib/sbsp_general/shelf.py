@@ -3,6 +3,8 @@ import math
 from typing import *
 from collections import Counter
 import numpy as np
+import seaborn
+from matplotlib import pyplot as plt
 
 from sbsp_alg.sbsp_steps import run_msa_on_sequences
 from sbsp_container.gms2_mod import GMS2Mod
@@ -402,3 +404,84 @@ def add_toolp_rbs_to_gms2_model(env, pf_sequence, pf_toolp, pf_gms2_mod, pf_new_
     )
 
     return
+
+
+def plot_candidate_codons(env, df, codons, cmap=None):
+    # type: (Environment, pd.DataFrame, List[str]) -> None
+
+    fig, ax = plt.subplots()
+    from sbsp_viz.colormap import ColorMap as CM
+
+    for c in sorted(codons):
+        seaborn.regplot(df["GC"].astype(float).values, df[c].astype(float).values, label=c,
+                        lowess=True, scatter_kws={"s": 5, "alpha": 0.1},
+                        color=cmap[c]
+                        )
+
+    ax.set_ylim([-0.05,1.05])
+    ax.set_ylabel("Probability")
+    ax.set_xlabel("GC")
+    leg = ax.legend()
+    for lh in leg.legendHandles:
+        lh.set_alpha(1)
+
+    plt.show()
+
+    # bacteria vs archaea
+    fig, axes = plt.subplots(1, 2, sharex="all", sharey="all")
+
+    for t, ax in zip(["Bacteria", "Archaea"], axes.ravel()):
+        df_tmp = df[df["Type"] == t]
+        for c in sorted(codons):
+            seaborn.regplot(df_tmp["GC"].astype(float).values, df_tmp[c].astype(float).values, label=c,
+                            lowess=True, scatter_kws={"s": 5, "alpha": 0.1}, ax=ax, color=cmap[c])
+
+        ax.set_ylim([-0.05, 1.05])
+        ax.set_ylabel("Probability")
+        ax.set_xlabel("GC")
+        ax.set_title(t)
+        leg = ax.legend()
+        for lh in leg.legendHandles:
+            lh.set_alpha(1)
+
+    plt.show()
+
+    # group
+    fig, axes = plt.subplots(2, 2, sharex="all", sharey="all")
+
+    for t, ax in zip(list("ABCD"), axes.ravel()):
+        df_tmp = df[df["GENOME_TYPE"] == t]
+        for c in sorted(codons):
+            seaborn.regplot(df_tmp["GC"].astype(float).values, df_tmp[c].astype(float).values, label=c,
+                            lowess=True, scatter_kws={"s": 5, "alpha": 0.1}, ax=ax, color=cmap[c])
+
+        ax.set_ylim([-0.05, 1.05])
+        ax.set_ylabel("Probability")
+        ax.set_xlabel("GC")
+        ax.set_title(t)
+        leg = ax.legend()
+        for lh in leg.legendHandles:
+            lh.set_alpha(1)
+
+    plt.show()
+
+
+def plot_candidate_starts(env, df):
+    # type: (Environment, pd.DataFrame) -> None
+    from sbsp_viz.colormap import ColorMap as CM
+    plot_candidate_codons(env, df, ["ATG", "GTG", "TTG"],
+                          CM.get_map("starts"))
+
+
+def plot_candidate_stops(env, df):
+    # type: (Environment, pd.DataFrame) -> None
+    from sbsp_viz.colormap import ColorMap as CM
+    plot_candidate_codons(env, df, ["TAA", "TAG", "TGA"],
+                          CM.get_map("stops"))
+
+
+def fix_names(r):
+    # type: (pd.Series) -> str
+    return "{}. {}".format(
+        r["Genome"][0], r["Genome"].split("_")[1]
+    )
