@@ -30,7 +30,7 @@ class PipelineSBSPOptions(Options):
         # type: () -> Union[Set[str], None]
         return {
             # output files for sbsp steps
-            "fn-orthologs", "fn-compute-features", "fn-filter", "fn-msa", "fn-compare", "pf-output",
+            "fn-compare", "pf-output",
             # input files
             "pf-q-list", "pf-t-db", "fn-q-labels"
         }
