@@ -50,7 +50,7 @@ class PipelineSBSP:
 
         # Copy genome file to local directory, and write sbsp options
         copyfile(self.pipeline_options["pf-q-list"], os_join(pd_work, "run.list"))
-        self.pipeline_options["sbsp_options"].to_file(os_join(pd_work, "sbsp_options.conf"))
+        self.pipeline_options["sbsp-options"].to_file(os_join(pd_work, "sbsp-options.conf"))
 
         state = self._run_helper()          # run compute steps
         self._compare(state)                # run comparison

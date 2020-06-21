@@ -123,7 +123,6 @@ def setup_gi_and_run(env, gi, sbsp_options, prl_options, clade_to_pf_db, **kwarg
         curr_env, pf_list, pf_t_db=pf_t_db, pf_output=pf_output, sbsp_options=sbsp_options,
         prl_options=prl_options,
     )
-
     sbsp_on_gi(gi, po)
 
 

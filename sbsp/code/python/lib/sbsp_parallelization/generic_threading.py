@@ -40,15 +40,14 @@ def wait_for_any(active_threads):
 
 
 class GenericThread(threading.Thread):
-    def __init__(self, func, data_arg_name, func_kwargs, **kwargs):
+    def __init__(self, func, func_kwargs, **kwargs):
         # type: (Callable, str, Dict[str, Any], Dict[str, Any]) -> None
         threading.Thread.__init__(self)
         self._func = func
-        self._data_arg_name = data_arg_name
         self._func_kwargs = func_kwargs
 
     def run(self):
-        self._func(data_arg_name=self._data_arg_name, **self._func_kwargs)
+        self._func(**self._func_kwargs)
 
 
 def run_one_per_thread(data, func, data_arg_name, func_kwargs, **kwargs):
@@ -61,7 +60,7 @@ def run_one_per_thread(data, func, data_arg_name, func_kwargs, **kwargs):
     for dp in data:
 
         # Create a thread for genome and run
-        thread = GenericThread(func, data_arg_name, func_kwargs)
+        thread = GenericThread(func, {data_arg_name: dp, **func_kwargs})
         thread.start()
         thread_id += 1
 
