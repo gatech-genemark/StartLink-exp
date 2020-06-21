@@ -22,8 +22,8 @@ from sbsp_general import Environment
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
-from sbsp_general.msa_2 import MSAType
-from sbsp_ml.msa_features_2 import ScoringMatrix
+from sbsp_container.msa import MSAType
+from sbsp_ml.msa_features import ScoringMatrix
 from sbsp_options.sbsp import SBSPOptions
 
 parser = argparse.ArgumentParser("Description of driver.")

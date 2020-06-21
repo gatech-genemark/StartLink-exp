@@ -2,7 +2,7 @@ import logging
 from typing import *
 
 from sbsp_general.general import get_value
-from sbsp_general.msa_2 import MSAType
+from sbsp_container.msa import MSAType
 
 logger = logging.getLogger(__name__)
 

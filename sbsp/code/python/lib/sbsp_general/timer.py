@@ -8,13 +8,13 @@ from sbsp_io.general import write_string_to_file
 
 logger = logging.getLogger(__name__)
 
-class Timer:
 
+class Timer:
     seconds_to_unit_multiplier = {
         "ms": 60.0,
         "s": 1.0,
-        "m": 1/60.0,
-        "h": 1/3600.0
+        "m": 1 / 60.0,
+        "h": 1 / 3600.0
     }
 
     def __init__(self):
@@ -57,7 +57,7 @@ class Timer:
             raise e
 
     def to_csv(self, pf_csv, **kwargs):
-        # type: (str) -> None
+        # type: (str, Dict[str, Any]) -> None
 
         out = self.to_string(**kwargs)
         write_string_to_file(out, pf_csv)
@@ -79,15 +79,6 @@ class Timer:
 
         return df.to_string(index=False)
 
-
-
-
-
-
-
-
-
-
     def _has_started(self, name):
         # type: (str) -> bool
         """Checks if a timer has already been started (whether or not it has completed)"""
@@ -98,15 +89,8 @@ class Timer:
         """Checks if a timer has already been completed"""
         return name in self._timers and self._timers[name]["end"] is not None
 
-
-
-
     @staticmethod
     def _from_seconds_to_unit(seconds, unit):
         # type: (float, str) -> float
         except_if_not_in_set(unit, Timer.seconds_to_unit_multiplier.keys())
         return seconds * Timer.seconds_to_unit_multiplier[unit]
-
-
-
-

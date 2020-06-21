@@ -1,5 +1,4 @@
 import logging
-import math
 from typing import *
 from sbsp_general.MGMMotifModelV2 import MGMMotifModelV2
 import seaborn
@@ -9,7 +8,7 @@ import pandas as pd
 from matplotlib.font_manager import FontProperties
 
 from sbsp_general.general import get_value
-from sbsp_general.msa_2 import MSAType
+from sbsp_container.msa import MSAType
 from sbsp_general.shelf import print_reduced_msa, next_name
 import logomaker as lm
 

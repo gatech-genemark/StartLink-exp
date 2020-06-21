@@ -1,11 +1,11 @@
 import logging
 import pandas as pd
 from typing import *
-from sbsp_general.msa_2 import MSAType, MultipleSeqAlignment, MSASinglePointMarker
+from sbsp_container.msa import MSAType
 from sbsp_general.general import get_value
 from sbsp_options.sbsp import SBSPOptions
 from sbsp_alg.msa_2 import get_positions_of_query_candidate_starts_in_msa_with_class
-from sbsp_ml import msa_features_2 as msa_features
+from sbsp_ml import msa_features as msa_features
 
 logger = logging.getLogger(__name__)
 

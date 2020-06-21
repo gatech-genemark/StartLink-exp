@@ -20,9 +20,9 @@ from Bio.Align import AlignInfo, MultipleSeqAlignment
 import sbsp_log  # runs init in sbsp_log and configures logger
 
 # Custom imports
-from sbsp_alg.sbsp_steps import run_msa_on_sequences
+from sbsp_alg.shelf import run_msa_on_sequences
 from sbsp_general import Environment
-from sbsp_general.msa_2 import MSAType
+from sbsp_container.msa import MSAType
 from sbsp_general.shelf import next_name, bin_by_gc, get_consensus_sequence, gather_consensus_sequences, \
     print_reduced_msa, create_numpy_for_column_with_extended_motif, get_position_distributions_by_shift
 from sbsp_io.objects import load_obj

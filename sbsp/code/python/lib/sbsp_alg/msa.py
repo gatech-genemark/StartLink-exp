@@ -13,8 +13,8 @@ from sbsp_options.sbsp import SBSPOptions
 from typing import *
 import pandas as pd
 import copy
-import sbsp_ml.msa_features_2
-from sbsp_general.msa_2 import MSAType
+import sbsp_ml.msa_features
+from sbsp_container.msa import MSAType
 
 import logging
 
@@ -151,7 +151,6 @@ def add_gaps_to_nt_based_on_aa(seq_nt, seq_aa_with_gaps):
 
 def convert_using_marked(aa_alignment, marks):
     # type: (str, str) -> str
-    import string
 
     result = ""
 
@@ -1581,7 +1580,7 @@ def find_rightmost_by_standard_aa_score(alignments, candidates, threshold=0.5):
     logger.debug("Func: find-rightmost-by-standard-aa-score")
     for i in reversed(candidates):
 
-        penalized_start_score = sbsp_ml.msa_features_2.compute_simple_saas(MSAType(alignments), i)
+        penalized_start_score = sbsp_ml.msa_features.compute_simple_saas(MSAType(alignments), i)
 
         logger.debug("Candidate {}, SAAS = {}".format(i, penalized_start_score))
 
@@ -1810,7 +1809,7 @@ def perform_msa_on_ortholog_group(env, df_group, msa_options, **kwargs):
     upstream_block_scorer_name = get_value(kwargs, "search-upstream-block-scorer", None)
     upstream_block_scorer = None
     if upstream_block_scorer_name is not None:
-        upstream_block_scorer = sbsp_ml.msa_features_2.ScoringMatrix(name=upstream_block_scorer_name)
+        upstream_block_scorer = sbsp_ml.msa_features.ScoringMatrix(name=upstream_block_scorer_name)
 
     # # add distance to upstream gene
     # sbsp_general.dataframe.df_add_distance_to_upstream_gene_DEPRECATED(env, df_group, "q",

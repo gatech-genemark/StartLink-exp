@@ -1,12 +1,13 @@
 import logging
 import math
+import os
 from typing import *
 from collections import Counter
 import numpy as np
 import seaborn
 from matplotlib import pyplot as plt
 
-from sbsp_alg.sbsp_steps import run_msa_on_sequences
+from sbsp_alg.shelf import run_msa_on_sequences
 from sbsp_container.gms2_mod import GMS2Mod
 from sbsp_general.GMS2Noncoding import GMS2Noncoding
 from sbsp_general.MotifModel import MotifModel
@@ -485,3 +486,15 @@ def fix_names(r):
     return "{}. {}".format(
         r["Genome"][0], r["Genome"].split("_")[1]
     )
+
+
+def append_data_frame_to_csv(df, pf_output):
+    # type: (pd.DataFrame, str) -> None
+    if df is not None and len(df) > 0:
+        try:
+            if not os.path.isfile(pf_output):
+                df.to_csv(pf_output, index=False)
+            else:
+                df.to_csv(pf_output, mode="a", index=False, header=False)
+        except FileNotFoundError:
+            raise ValueError(f"Could not write to file {pf_output}")

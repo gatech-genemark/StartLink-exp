@@ -29,7 +29,7 @@ from sbsp_general import Environment
 from sbsp_general.MotifModel import MotifModel
 from sbsp_general.general import os_join, get_value
 from sbsp_general.labels import Labels, Label
-from sbsp_general.shelf import compute_gc_from_file, compute_gc_from_sequences
+from sbsp_general.shelf import compute_gc_from_file, compute_gc_from_sequences, append_data_frame_to_csv
 from sbsp_io.general import remove_p
 from sbsp_io.labels import read_labels_from_file
 from sbsp_io.sequences import read_fasta_into_hash
@@ -65,18 +65,6 @@ my_env = Environment(pd_data=parsed_args.pd_data,
 # Setup logger
 logging.basicConfig(level=parsed_args.loglevel)
 logger = logging.getLogger("logger")  # type: logging.Logger
-
-
-def append_data_frame_to_csv(df, pf_output):
-    # type: (pd.DataFrame, str) -> None
-    if df is not None and len(df) > 0:
-        try:
-            if not os.path.isfile(pf_output):
-                df.to_csv(pf_output, index=False)
-            else:
-                df.to_csv(pf_output, mode="a", index=False, header=False)
-        except FileNotFoundError:
-            raise ValueError(f"Could not write to file {pf_output}")
 
 
 def extract_upstream_sequences(labels, sequences, **kwargs):

@@ -17,7 +17,7 @@ import sbsp_argparse.parallelization
 import sbsp_log  # runs init in sbsp_log and configures logger
 
 # Custom imports
-from sbsp_alg.ortholog_finder import extract_labeled_sequences_for_genome, extract_labeled_sequences_for_genomes
+from sbsp_alg.ortholog_finder import extract_labeled_sequences_for_genomes
 from sbsp_alg.sbsp_steps import duplicate_parallelization_options_with_updated_paths
 from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_general import Environment
