@@ -77,7 +77,7 @@ def plot_fix_min_move_max(df):
 
     plt.subplots_adjust(bottom=0.17)
     fig.legend(loc="lower center", labels=["Accuracy", "Coverage"], ncol=2)
-    fig.suptitle("SBSP Performance for Kimura thresholds [0.1, x]")
+    fig.suptitle("StartLink Performance for Kimura thresholds [0.1, x]")
     plt.savefig(next_name(my_env["pd-work"]))
     plt.show()
 
@@ -107,7 +107,7 @@ def plot_fix_max_move_min(df):
             ax.set_xlabel("Minimum Kimura")
 
     plt.subplots_adjust(bottom=0.17)
-    fig.suptitle("SBSP Performance for Kimura thresholds [x, 0.5]")
+    fig.suptitle("StartLink Performance for Kimura thresholds [x, 0.5]")
     fig.legend(loc="lower center", labels=["Accuracy", "Coverage"], ncol=2)
     plt.savefig(next_name(my_env["pd-work"]))
     plt.show()
@@ -149,7 +149,7 @@ def plot_move_consecutive_blocks(df):
             ax.set_xlabel("Average Kimura")
 
     plt.subplots_adjust(bottom=0.17)
-    fig.suptitle("SBSP Performance for small blocks of Kimura")
+    fig.suptitle("StartLink Performance for small blocks of Kimura")
     fig.legend(loc="lower center", labels=["Accuracy", "Coverage"], ncol=2)
     plt.savefig(next_name(my_env["pd-work"]))
     plt.show()

@@ -36,9 +36,26 @@ source install.sh
 #+end_src
 
 The first command loads all environment variables (including paths to data directories, binaries, etc...), and the second command creates an executable from all python files and stores them in =$bin= for easy access. For non-unix users, you can find the python driver files in =$driverpython=.
+** External Tools
+   {{{tool}}} and {{{tool}}}+ and their analysis rely on a handful of external tools. The following need to be installed:
+   - GeneMarkS-2
+     - Used for building {{{tool}}}+ predictions, and for analysis
+     - Link: http://exon.gatech.edu/GeneMark/license_download.cgi
+   - ClustalO:
+     - Used for constructing multiple sequence alignments
+     - Link: http://www.clustal.org/omega/#Download
+   - Diamond BLAST:
+     - Used for generating target databases and finding orthologs
+     - Link: https://github.com/bbuchfink/diamond
+   - Prodigal:
+     - Used for initial analysis of gene-start prediction status
+     - Link: https://github.com/hyattpd/Prodigal
 
 ** Data
-We provide the databases for /Enterobacterales/, /Actinobacteria/, /Archaea/, and /FCB group/, and the sequence and label files for the genomes with verified starts: /E. coli/, /H. salinarum/, /N. pharaonis/, /M. tuberculosis/. We also provide the steps to create a database with for any ancestor using data that can be downloaded from NCBI's website.
+*Note: As previously mentioned the data used is on the order of hundreds of gigabytes. As such, if one is only interested in reproducibility, we provide pre-built databases (and even raw statistics from our existing runs).*
+
+We provide the databases for /Enterobacterales/, /Actinobacteria/, /Archaea/, and /FCB group/, and the sequence and label files for the genomes with verified starts: /E. coli/, /H. salinarum/, /N. pharaonis/, /M. tuberculosis/, and /R. denitrificans/. We also provide the steps to create a database with for any ancestor using data that can be downloaded from NCBI's website.
+
 
 *** Downloading Assembly Summary File
     #+begin_src bash
@@ -215,9 +232,12 @@ Since much of the analysis is done by comparing {{{tool}}} to NCBI's PGAP, GeneM
     pf_pbs_options=$config/pbs_defaults.conf   # PBS config file
 
     # PBS options
-    toggle_pbs="--pf-pbs-options $config/$pf_pbs_options[[file:../../../../org-roam/20200530050505-taylorseries.org][taylorseries]]"  # if PBS not installed, set this option to empty: ""
+    toggle_pbs="--pf-pbs-options $config/$pf_pbs_options"  # if PBS not installed, set this option to empty: ""
     sg=8   # number of genomes to run simutaneously (low number recommended)
   #+end_src
+
+  #+RESULTS:
+
 ** Difference in 5' predictions on Representative Genomes
 *** Data download
     #+begin_src bash
@@ -260,7 +280,10 @@ Since much of the analysis is done by comparing {{{tool}}} to NCBI's PGAP, GeneM
     [[file:tools_5prime.pdf]]
 
 ** Theoretical view of Independence
-   While not technically an experimental result, we provide the code to generate this graph for convenience. 
+   While not technically an experimental result, we provide the code to generate this graph for convenience. The sensitivity of the non-random algorithms $A_1$ and $A_2$ are set to 0.9, but the user can easily change them (from within) to observe the change in behavior. What remains constant is the improvement of independent algorithms over fully dependent (and random) algorithms..
+   #+begin_src bash
+     $bin/independent_predictions_py.sh 
+   #+end_src
    [[file:figures/theory_prob_agree.pdf]]
 
 ** Genomes with genes with verified starts
@@ -283,9 +306,9 @@ Since much of the analysis is done by comparing {{{tool}}} to NCBI's PGAP, GeneM
       $bin/viz_stats_genome_level_py.sh --pf-data summary.csv
     #+end_src
 
-This will produce two files, =sensitivity.csv= and =coverage.csv= containing the following two tables.
+This will produce two files, =error.csv= and =coverage.csv= containing the following two tables.
 
-Sensitivity
+Error
 | Genome                | Verified |      SBSP |      GMS2 |  GMS2=SBSP |
 | E.      coli          |      769 | 96.204188 | 97.001304 |  99.582754 |
 | H.      salinarum     |      530 | 97.489540 | 98.679245 |  99.354839 |

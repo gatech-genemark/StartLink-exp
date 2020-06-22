@@ -41,7 +41,7 @@ def wait_for_any(active_threads):
 
 class GenericThread(threading.Thread):
     def __init__(self, func, func_kwargs, **kwargs):
-        # type: (Callable, str, Dict[str, Any], Dict[str, Any]) -> None
+        # type: (Callable, Dict[str, Any], Dict[str, Any]) -> None
         threading.Thread.__init__(self)
         self._func = func
         self._func_kwargs = func_kwargs
