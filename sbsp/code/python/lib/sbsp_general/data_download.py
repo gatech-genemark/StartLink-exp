@@ -51,7 +51,8 @@ def download_assembly_summary_entry(entry, pd_output, **kwargs):
             "assembly_accession": gcf,
             "asm_name": acc,
             "name": entry["name"],
-            "parent_id": entry["parent_id"]
+            "parent_id": entry["parent_id"],
+            "genetic_code": entry["genetic_code"]
             }
 
     ftplink = entry["ftp_path"]
@@ -259,7 +260,7 @@ def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs
     gil = GenomeInfoList([
         GenomeInfo(
             "{}_{}".format(d["assembly_accession"], d["asm_name"]),
-            11,
+            d["genetic_code"],
             attributes={
                 "name": d["name"],
                 "parent_id": d["parent_id"],
