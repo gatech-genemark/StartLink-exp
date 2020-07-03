@@ -76,14 +76,14 @@ We provide the databases for /Enterobacterales/, /Actinobacteria/, /Archaea/, an
     #+begin_src bash
       dbt=refseq     # database type
       pf_tree=$tmp/tree/tree.pkl
-      pf_ass_sum_comb=$metadata/${dbt}_assembly_summary_combined.txt
+      pf_ass_sum_comb=$metadata/${dbt}_assembly_summary.txt
 
       declare -a clades=("Enterobacterales" "Actinobacteria" "Alphaproteobacteria" "FCB group" "Archaea")
 
       # loop over clades; download data under each clade
       for cl in ${clades[@]}; do
         dn_cl=$(mk_path_friendly "$cl")
-        $bin/download_genomes_for_clade_py.sh --pf-tree $pf_tree --pf_assembly_summary $pf_ass_sum_comb --ancestor-id $cl --ancestor-id-type "name_txt" --favor-assembly-level-order --number-per-taxid 1 --pf-output-list --$lists/${dbt}_${dn_cl}.list
+        $bin/download_genomes_for_clade_py.sh --pf-tree $pf_tree --pf-assembly-summary $pf_ass_sum_comb --clade-id $cl --clade-id-type "name_txt" --favor-assembly-level-order --genomes-per-taxid 1 --pf-output-list $lists/${dbt}_${dn_cl}.list
       done
     #+end_src
 
@@ -93,15 +93,18 @@ We provide the databases for /Enterobacterales/, /Actinobacteria/, /Archaea/, an
       for cl in "${clades[@]}"; do
         dn_cl=$(mk_path_friendly "$cl")
 
+        pd_work="$tmp/extract_sequences/${dn_cl}"
+        mkdir -p $pd_work
+  
         pf_list=$lists/${dbt}_${dn_cl}.list
-        pf_faa=$lists/${dbt}_${dn_cl}.list
+        pf_faa=$pd_work/${dbt}_${dn_cl}.faa
         pf_db=$db/${dbt}_${dn_cl}.dmnd
 
         # extract sequences
-        $bin/extract_labeled_sequences_py.sh --pf-genome-list $pf_list --pf-output $pf_faa --pf-pbs-options $config/pbs_defaults.conf
+        $bin/extract_labeled_sequences_py.sh --pf-genome-list $pf_list --pf-output $pf_faa
 
         # build blast
-        $bin/build_blast_db_py.sh --pf_sequences $pf_faa --pf-db $pf_db --pf-pbs-options $config/pbs_single_node.conf
+        $bin/build_blast_db_py.sh --pf_sequences $pf_faa --pf-db $pf_db
 
         # clean up sequence file
         [[ -f $pf_faa ]] & rm $pf_faa

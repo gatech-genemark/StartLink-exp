@@ -222,8 +222,9 @@ def filter_entries_with_equal_taxid(df_assembly_summary, **kwargs):
     # for each group of entries of equal taxid
     for taxid, df_group in df_assembly_summary.groupby("taxid", as_index=False):
 
+        df_group = df_group.copy()
         # sort by latest first
-        df_group["sort-by"] = pd.to_datetime(df_group["seq_rel_date"].copy(), format="%Y/%m/%d")
+        df_group["sort-by"] = pd.to_datetime(df_group["seq_rel_date"], format="%Y/%m/%d")
         df_group.sort_values("sort-by", ascending=False, inplace=True)
         df_group.drop("sort-by", inplace=True, axis=1)
 

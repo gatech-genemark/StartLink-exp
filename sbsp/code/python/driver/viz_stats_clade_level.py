@@ -59,12 +59,12 @@ TOOLp = TOOL + "+"
 logging.basicConfig(level=parsed_args.loglevel)
 logger = logging.getLogger("logger")  # type: logging.Logger
 
+
 def get_summary_for_gcfid(df):
     # type: (pd.DataFrame) -> Dict[str, Any]
     result = dict()
 
     # expand
-
 
     first_row = df.iloc[0]
 
@@ -72,8 +72,6 @@ def get_summary_for_gcfid(df):
     result["Genome GC"] = first_row["Genome GC"]
     result["Name"] = first_row["Name"]
     result["Ancestor"] = first_row["Ancestor"]
-
-
 
     for x in ["SBSP", "GMS2", "NCBI", "Prodigal", "GMS2=SBSP", "GMS2=SBSP=NCBI",
               "GMS2=SBSP=Prodigal", "(GMS2=SBSP)!=(NCBI=Prodigal)", "(GMS2=SBSP)!=NCBI", "(GMS2=SBSP)!=Prodigal"]:
@@ -266,16 +264,13 @@ def contour_kimura_per_ancestor(env, df):
     import matplotlib.pyplot as plt
 
     ancestors = sorted(list(set(df["Ancestor"])))
-    fig, axes = plt.subplots(2, math.ceil(len(ancestors)/2), sharex=True, sharey=True, figsize=(6,6))
+    fig, axes = plt.subplots(2, math.ceil(len(ancestors) / 2), sharex=True, sharey=True, figsize=(6, 6))
 
     for anc, ax in zip(ancestors, axes.ravel()):
-
         df_group = df[df["Ancestor"] == anc]
         seaborn.kdeplot(df_group["Min-Kimura"].values, df_group["Max-Kimura"].values, ax=ax)
         ax.set_title(anc)
         # ax.set_ylim([0.45, 0.525])
-
-
 
     # fig.xlabel("Min-Kimura")
     # plt.xlabel("Min-Kimura")
@@ -312,7 +307,7 @@ def kimura_dist_plot(env, df):
     #     ax.set_title(anc)
     # plt.show()
 
-    fig, ax = plt.subplots()        # type: plt.Figure, plt.Axes
+    fig, ax = plt.subplots()  # type: plt.Figure, plt.Axes
     for anc in ancestors:
         df_group = df[df["Ancestor"] == anc]
         seaborn.distplot(df_group["Average-Kimura"], ax=ax, color=CM.get_map("ancestor")[anc],
@@ -325,7 +320,6 @@ def kimura_dist_plot(env, df):
         save_fig=next_name(env["pd-work"])
     ))
     plt.show()
-
 
 
 def heat_map_Kimura_accuracy(env, df_all, x, y, num_steps=20, balance=False,
@@ -344,7 +338,6 @@ def heat_map_Kimura_accuracy(env, df_all, x, y, num_steps=20, balance=False,
     # fig = plt.figure()
     num_rows = 2
     num_cols = math.ceil(len(ancestors) / 2)
-
 
     axis_idx = 0
     curr_row = 0
@@ -381,25 +374,24 @@ def heat_map_Kimura_accuracy(env, df_all, x, y, num_steps=20, balance=False,
         df_gms2_eq_sbsp_eq_ncbi = (df["GMS2=SBSP=NCBI"])
 
         for index in df.index:
-
             x_val = df.at[index, x]
             y_val = df.at[index, y]
 
-            x_pos = int((x_val-min_x) / ss_x)
-            y_pos = int((y_val-min_y) / ss_y)
+            x_pos = int((x_val - min_x) / ss_x)
+            y_pos = int((y_val - min_y) / ss_y)
 
             gms2_eq_sbsp_and_ncbi[x_pos][y_pos] += 1 if df.at[index, "GMS2=SBSP"] and df.at[index, "NCBI"] else 0
             gms2_eq_sbsp_eq_ncbi[x_pos][y_pos] += 1 if df.at[index, "GMS2=SBSP=NCBI"] else 0
 
-        gms2_eq_sbsp_and_ncbi [gms2_eq_sbsp_and_ncbi < 10] = 0
+        gms2_eq_sbsp_and_ncbi[gms2_eq_sbsp_and_ncbi < 10] = 0
         accuracy = 100 - 100 * np.divide(gms2_eq_sbsp_eq_ncbi, gms2_eq_sbsp_and_ncbi)
         # accuracy = np.flip(accuracy, 0)
 
         import seaborn
         import matplotlib.pyplot as plt
 
-        xticks = list(range(0, num_steps, int(num_steps/5)))
-        yticks = list(range(0, num_steps, int(num_steps/5)))
+        xticks = list(range(0, num_steps, int(num_steps / 5)))
+        yticks = list(range(0, num_steps, int(num_steps / 5)))
 
         l_x = np.arange(min_x, max_x, ss_x)
         l_y = np.arange(min_y, max_y, ss_y)
@@ -410,7 +402,7 @@ def heat_map_Kimura_accuracy(env, df_all, x, y, num_steps=20, balance=False,
             xticklabels=xticklabels, yticklabels=yticklabels, ax=ax,
             # cmap=seaborn.light_palette("green"),
             cmap="Blues",
-        cbar=False)
+            cbar=False)
         # cbar_ax=None if axis_idx != 0 else cbar_ax, cbar=axis_idx==0)
 
         # cbar=g.cbar
@@ -448,6 +440,7 @@ def heat_map_Kimura_accuracy(env, df_all, x, y, num_steps=20, balance=False,
 
     plt.show()
 
+
 def bin_data_one_d(env, df_all, feature, num_steps=20):
     # type: (Environment, pd.DataFrame, str, int) -> pd.DataFrame
     min_x = min(df_all[feature])
@@ -475,7 +468,6 @@ def bin_data_one_d(env, df_all, feature, num_steps=20):
 
         l_x = np.arange(min_x, max_x, ss_x)
         xticklabels = [round(l_x[i], 2) for i in xticks]
-
 
         curr_df = pd.DataFrame({
             feature: xticklabels,
@@ -558,11 +550,11 @@ def one_dim_Kimura_accuracy(env, df_all, num_steps=20):
     df = bin_data_one_d(env, df_all, "Average-Kimura", num_steps)
     sns.lineplot(df, "Average-Kimura", "Accuracy", hue="Ancestor", figure_options=FigureOptions(
         save_fig=next_name(pd_work),
-        ), sns_kwargs={"palette": CM.get_map("ancestor")}
+    ), sns_kwargs={"palette": CM.get_map("ancestor")}
                  )
     sns.lineplot(df, "Average-Kimura", "Number-of-queries", hue="Ancestor", figure_options=FigureOptions(
         save_fig=next_name(pd_work),
-        ), sns_kwargs={"palette": CM.get_map("ancestor")}
+    ), sns_kwargs={"palette": CM.get_map("ancestor")}
                  )
 
     total_per_ancestor = {
@@ -572,7 +564,7 @@ def one_dim_Kimura_accuracy(env, df_all, num_steps=20):
     df["Percentage-of-queries"] = 0
     df["Cumulative-percentage-of-queries"] = 0
     df.reset_index(inplace=True)
-    for ancestor, df_group in df.groupby("Ancestor", as_index=False):   # type: str, pd.DataFrame
+    for ancestor, df_group in df.groupby("Ancestor", as_index=False):  # type: str, pd.DataFrame
         df_group.sort_values("Average-Kimura", inplace=True)
         index = df_group.index
 
@@ -585,7 +577,7 @@ def one_dim_Kimura_accuracy(env, df_all, num_steps=20):
             prev = df.loc[i, "Cumulative-percentage-of-queries"]
 
     fig, ax = plt.subplots(figsize=(8, 4))
-    sns.lineplot(df, "Average-Kimura", "Percentage-of-queries", hue="Ancestor",  figure_options=FigureOptions(
+    sns.lineplot(df, "Average-Kimura", "Percentage-of-queries", hue="Ancestor", figure_options=FigureOptions(
         save_fig=next_name(pd_work),
         ylabel="Percentage of queries",
         xlabel="Average Kimura distance"
@@ -596,10 +588,10 @@ def one_dim_Kimura_accuracy(env, df_all, num_steps=20):
                  legend_title="",
                  sns_kwargs={"palette": CM.get_map("ancestor")})
 
-
     fig, ax = plt.subplots()
     import seaborn
-    seaborn.lineplot("Average-Kimura", "Percentage-of-queries", data=df, hue="Ancestor", ax=ax, palette=CM.get_map("ancestor"))
+    seaborn.lineplot("Average-Kimura", "Percentage-of-queries", data=df, hue="Ancestor", ax=ax,
+                     palette=CM.get_map("ancestor"))
 
     ax.set_ylabel("Percentage of queries")
     ax.set_xlabel("Average Kimura distance")
@@ -611,8 +603,6 @@ def one_dim_Kimura_accuracy(env, df_all, num_steps=20):
     sns.lineplot(df, "Average-Kimura", "Cumulative-percentage-of-queries", hue="Ancestor", figure_options=FigureOptions(
         save_fig=next_name(pd_work),
     ), sns_kwargs={"palette": CM.get_map("ancestor")})
-
-
 
     # standard dev
     df = bin_data_one_d(env, df_all[df_all["Support"] > 2], "Std-Kimura", num_steps)
@@ -651,10 +641,6 @@ def one_dim_Kimura_accuracy(env, df_all, num_steps=20):
         save_fig=next_name(pd_work),
     ), sns_kwargs={"palette": CM.get_map("ancestor")})
 
-
-
-
-
     # im = plt.gca().get_children()[0]
     # cax = fig.add_axes([0.8, 0.1, 0.03, 0.8])
     #
@@ -674,13 +660,6 @@ def one_dim_Kimura_accuracy(env, df_all, num_steps=20):
     # plt.show()
 
 
-
-
-
-
-
-
-
 def analyze_kimura_distances(env, df):
     # type: (Environment, pd.DataFrame) -> None
     pd_work = env["pd-work"]
@@ -689,7 +668,6 @@ def analyze_kimura_distances(env, df):
     df["Kimura-to-query"] = df["Kimura-to-query"].apply(ast.literal_eval)
     df["Average-Kimura"] = df["Kimura-to-query"].apply(np.mean)
     df["Std-Kimura"] = df["Kimura-to-query"].apply(np.std)
-
 
     # sns.lmplot(
     #     df, "Genome GC", "Average-Kimura", hue="Ancestor", sns_kwargs={
@@ -712,7 +690,7 @@ def analyze_kimura_distances(env, df):
     df["Min-Kimura"] = df["Kimura-to-query"].apply(min)
     df["Max-Kimura"] = df["Kimura-to-query"].apply(max)
 
-    #contour_kimura_per_ancestor(env, df)
+    # contour_kimura_per_ancestor(env, df)
     one_dim_Kimura_accuracy(env, df)
 
     kimura_dist_plot(env, df)
@@ -722,11 +700,11 @@ def analyze_kimura_distances(env, df):
     heat_map_Kimura_accuracy(env, df, "Average-Kimura", "Std-Kimura", balance=False)
 
 
-
 def most_frequent(items):
     # type: (Iterable[Any]) -> Any
     occurence_count = collections.Counter(items)
     return occurence_count.most_common(1)[0][0]
+
 
 def compute_consistency(distances, pivot, flexibility=0):
     # type: (List[int], int, int) -> float
@@ -736,10 +714,11 @@ def compute_consistency(distances, pivot, flexibility=0):
     else:
         numerator = 0
         for d in distances:
-            if d is not None and  d <= pivot + flexibility and d >= pivot - flexibility:
+            if d is not None and d <= pivot + flexibility and d >= pivot - flexibility:
                 numerator += 1
 
         return float(numerator) / len(distances)
+
 
 def stack_columns_as_rows(df, stack, new_col, labels, label_col="class"):
     # type: (pd.DataFrame, List[str], str, List[str], str) -> pd.DataFrame
@@ -752,7 +731,6 @@ def stack_columns_as_rows(df, stack, new_col, labels, label_col="class"):
     else:
         labels = stack
 
-
     list_df = list()
 
     for c, l in zip(stack, labels):
@@ -761,7 +739,7 @@ def stack_columns_as_rows(df, stack, new_col, labels, label_col="class"):
             continue
 
         df_curr = df.copy()
-        df_curr.rename(columns={c: new_col}, inplace=True)            # new column name
+        df_curr.rename(columns={c: new_col}, inplace=True)  # new column name
         df_curr[label_col] = l
 
         df_curr.drop(set(labels).difference({l}), inplace=True, axis=1)
@@ -769,7 +747,6 @@ def stack_columns_as_rows(df, stack, new_col, labels, label_col="class"):
         list_df.append(df_curr)
 
     return pd.concat(list_df, axis=0, sort=True)
-
 
 
 def analyze_upstream_distances(env, df):
@@ -788,7 +765,6 @@ def analyze_upstream_distances(env, df):
             lambda r: compute_consistency(r["Upstream-distance"], r["Most frequent upstream"], flexibility),
             axis=1
         )
-
 
     df = df[df["Support"] > 10].copy()
 
@@ -814,9 +790,11 @@ def analyze_upstream_distances(env, df):
 
     df_tmp = df[(df["Support"] > 10) & (df["Most frequent upstream"] < 100) & (df["Most frequent upstream"] > -50)]
     # NCBI consistency as a func
-    df = df[(df["Support"] > 10) & (df["GMS2=SBSP"]) & (df["Most frequent upstream"] < 100) & (df["Most frequent upstream"] > -50)]
+    df = df[(df["Support"] > 10) & (df["GMS2=SBSP"]) & (df["Most frequent upstream"] < 100) & (
+                df["Most frequent upstream"] > -50)]
 
-    df_tmp = stack_columns_as_rows(df_tmp[["Most frequent upstream", "DC(x,0)", "DC(x,3)", "Ancestor"]], ["DC(x,0)", "DC(x,3)"], "DC(x,f)", None, label_col="Flexibility")
+    df_tmp = stack_columns_as_rows(df_tmp[["Most frequent upstream", "DC(x,0)", "DC(x,3)", "Ancestor"]],
+                                   ["DC(x,0)", "DC(x,3)"], "DC(x,f)", None, label_col="Flexibility")
     # seaborn.lmplot("Most frequent upstream", "PC(x,f)", df_tmp,
     #                scatter=False, hue="Flexibility", lowess=True)
     # plt.show()
@@ -834,14 +812,14 @@ def analyze_upstream_distances(env, df):
             "scatter": False, "lowess": True
         },
         legend_loc="best",
-        figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-9,None], ylim=[0,1], ylabel="Distance conservation", xlabel="Most frequent distance to upstream gene")
+        figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-9, None], ylim=[0, 1],
+                                     ylabel="Distance conservation", xlabel="Most frequent distance to upstream gene")
     )
 
     # sns.distplot(df, "Most frequent upstream", figure_options=FigureOptions(
     #     save_fig=next_name(pd_work)
     # ),
     #              sns_kwargs={"kde": True})
-
 
     fig, ax = plt.subplots()
     import seaborn
@@ -852,8 +830,9 @@ def analyze_upstream_distances(env, df):
      .mul(100)
      .rename('Percentage (by clade)')
      .reset_index()
-     .pipe((seaborn.catplot, 'data'), x="Most frequent upstream", y='Percentage (by clade)', hue="Ancestor", kind='point', scale=0.5, legend=False,
-           order=range(-9,10),
+     .pipe((seaborn.catplot, 'data'), x="Most frequent upstream", y='Percentage (by clade)', hue="Ancestor",
+           kind='point', scale=0.5, legend=False,
+           order=range(-9, 10),
            palette=CM.get_map("ancestor"), aspect=1.5
            ))
 
@@ -878,7 +857,7 @@ def analyze_upstream_distances(env, df):
      .rename('Percentage (by clade)')
      .reset_index()
      .pipe((seaborn.lineplot, 'data'), x="Most frequent upstream", y='Percentage (by clade)', hue="Ancestor",
-            legend=False,
+           legend=False,
            palette=CM.get_map("ancestor"),
            ))
 
@@ -892,41 +871,40 @@ def analyze_upstream_distances(env, df):
     plt.xlabel(figure_options.xlabel)
     plt.ylabel(figure_options.ylabel)
     plt.xlim(figure_options.xlim)
-    plt.xticks(range(-8,9,2))
+    plt.xticks(range(-8, 9, 2))
 
     save_figure(figure_options)
 
     plt.show()
 
-
     fig, ax = plt.subplots()
 
-    tmp_df = df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)].groupby("Ancestor")["Most frequent upstream"].value_counts(normalize=True).mul(100).rename('Percentage (by clade)').reset_index()
+    tmp_df = df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)].groupby("Ancestor")[
+        "Most frequent upstream"].value_counts(normalize=True).mul(100).rename('Percentage (by clade)').reset_index()
 
     missing_values = set(range(-9, 10)).difference(set(df["Most frequent upstream"]))
     for m in missing_values:
         for a in set(tmp_df["Ancestor"]):
             tmp_df.append({"Most frequent upstream": m, "Percentage (by clade)": 0, "Ancestor": a}, ignore_index=True)
 
-    (tmp_df.pipe((seaborn.barplot, 'data'), x="Most frequent upstream", y='Percentage (by clade)', hue="Ancestor",order=range(-9,10),palette=CM.get_map("ancestor")))
+    (tmp_df.pipe((seaborn.barplot, 'data'), x="Most frequent upstream", y='Percentage (by clade)', hue="Ancestor",
+                 order=range(-9, 10), palette=CM.get_map("ancestor")))
 
     plt.legend(loc="best", title="Clade")
     figure_options = FigureOptions(
         save_fig=next_name(pd_work),
         xlabel="Most frequent distance to upstream gene",
         ylabel="Percentage of components (by clade)",
-        #xlim=[-9.5, 9.5]
+        # xlim=[-9.5, 9.5]
     )
     plt.xlabel(figure_options.xlabel)
     plt.ylabel(figure_options.ylabel)
-   # plt.xlim(figure_options.xlim)
-    #plt.xticks(range(-8,9,2))
+    # plt.xlim(figure_options.xlim)
+    # plt.xticks(range(-8,9,2))
 
     save_figure(figure_options)
 
     plt.show()
-
-
 
     # (df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)]
     #  .groupby("Ancestor")["Most frequent upstream"]
@@ -950,7 +928,6 @@ def analyze_upstream_distances(env, df):
     #
     # plt.show()
 
-
     # f, ax1 = plt.subplots()
     # ax2 = ax1.twinx()
     # for ancestor, df_group in df.groupby("Ancestor"):
@@ -964,7 +941,6 @@ def analyze_upstream_distances(env, df):
     # # g = seaborn.FacetGrid(df, hue="Ancestor")
     # # g = g.map(seaborn.distplot, "Most frequent upstream", hist=True)
     # plt.show()
-
 
     # print(df["Most frequent upstream"].value_counts(normalize=True))
     #
@@ -1082,9 +1058,9 @@ def analyze_upstream_distances(env, df):
     # ax.set_xlabel("Distance to upstream gene (nt)")
     # plt.show()
 
+
 def analyze_support(env, df):
     # type: (Environment, pd.DataFrame) -> None
-
 
     sns.lineplot(df, "Genome GC", "Support", hue="Ancestor")
     sns.catplot(df, "Ancestor", "Support",
@@ -1098,7 +1074,7 @@ def analyze_support(env, df):
             xlabel="Clade",
             ylabel="Average number of targets per query, per species",
             save_fig=next_name(env['pd-work'])
-            )
+        )
     )
     pass
 
@@ -1126,7 +1102,6 @@ def viz_summary_per_gcfid_per_step(env, df):
     )
 
 
-
 def viz_analysis_per_query(env, df, **kwargs):
     # type: (Environment, pd.DataFrame, Dict[str, Any]) -> None
 
@@ -1144,18 +1119,16 @@ def viz_analysis_per_query(env, df, **kwargs):
     # df.drop(df.index[df["Predicted-at-step"] == "C"], inplace=True)
     # df.loc[df["Predicted-at-step"] == "B", "Predicted-at-step"] = "C"
     # df.loc[df["Predicted-at-step"] == "U", "Predicted-at-step"] = "B"
-   # df.drop(df.index[df["Support"] < 5], inplace=True)
-   #  viz_summary_per_gcfid_per_step(env, df)
-   #
-   #
-   #  df_summary_per_gcfid = get_summary_per_gcfid(df)
-   #  viz_summary_per_gcfid(env, df_summary_per_gcfid)
-   #
-   #  analyze_upstream_distances(env, df[~df["Upstream-distance"].isnull()].copy())
+    # df.drop(df.index[df["Support"] < 5], inplace=True)
+    #  viz_summary_per_gcfid_per_step(env, df)
+    #
+    #
+    #  df_summary_per_gcfid = get_summary_per_gcfid(df)
+    #  viz_summary_per_gcfid(env, df_summary_per_gcfid)
+    #
+    #  analyze_upstream_distances(env, df[~df["Upstream-distance"].isnull()].copy())
     analyze_kimura_distances(env, df[~df["Kimura-to-query"].isnull()].copy())
     analyze_support(env, df)
-
-
 
 
 def read_analysis_per_query_to_df(pf_data):
@@ -1177,8 +1150,6 @@ def main(env, args):
     df = df[df["Ancestor"] != "Alphaproteobacteria"].copy()
     # df = df.sample(100).copy()
     viz_analysis_per_query(env, df)
-
-
 
 
 if __name__ == "__main__":

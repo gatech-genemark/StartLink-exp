@@ -10,6 +10,7 @@ from Bio.Blast import NCBIXML, Record
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from numpy import isclose
+from tqdm import tqdm
 
 import sbsp_ml
 import sbsp_ml.msa_features
@@ -75,9 +76,11 @@ def run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_opti
     while not blast_successful and attempt < max_attempts:
         attempt += 1
         try:
+            logger.info("Running Diamond Blastp")
             run_blast_on_sequence_file(env, pf_q_sequences, pf_t_db, pf_blast_output, sbsp_options=sbsp_options,
                                        block_size=block_size)
             blast_successful = True
+            logger.info("Done")
             break
         except ValueError:
             block_size = block_size / 2.0
@@ -1218,7 +1221,7 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
     curr_time = timeit.default_timer()
     df = create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwargs)
     elapsed_time = round((timeit.default_timer() - curr_time) / 60.0, 2)
-    logger.info("CDFFMSFBR ({}): {} (min) for {} orthologs".format(msa_number, elapsed_time, len(r.alignments)))
+    # logger.info("CDFFMSFBR ({}): {} (min) for {} orthologs".format(msa_number, elapsed_time, len(r.alignments)))
 
     # FIXME  REMOVE
     # if len(df) > 0 and df.iloc[0]["q-left"] == 178270:
@@ -1227,7 +1230,7 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
     #     df.drop(df.index, inplace=True)
     #     return df
 
-    logger.debug("Number of targets after filtering: {}".format(len(df)))
+    # logger.debug("Number of targets after filtering: {}".format(len(df)))
 
     # run MSA(s) and find gene-start
     curr_time = timeit.default_timer()
@@ -1239,7 +1242,7 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
         num_processors=num_processors
     )
     elapsed_time = round((timeit.default_timer() - curr_time) / 60.0, 2)
-    logger.info("PMODWSQ ({}): {} (min) for {} orthologs".format(msa_number, elapsed_time, len(df)))
+    # logger.info("PMODWSQ ({}): {} (min) for {} orthologs".format(msa_number, elapsed_time, len(df)))
 
     # for each query in blast
     if pd_msa_final is not None:
@@ -1312,7 +1315,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
     if num_processors is None or num_processors == 0:
         msa_number = 0
         # for each query, find start
-        for r in records:
+        for r in tqdm(records, total=len(records)):
             logger.info("{}".format(len(r.alignments)))
             # REMOVE
             # query_info = unpack_fasta_header(r.query)

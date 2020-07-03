@@ -17,9 +17,9 @@ class OneLineExceptionFormatter(logging.Formatter):
         return s
 
 
-handler = logging.StreamHandler()
-formatter = OneLineExceptionFormatter(logging.BASIC_FORMAT)
-handler.setFormatter(formatter)
-root = logging.getLogger()
-root.setLevel(os.environ.get("LOGLEVEL", "INFO"))
-root.addHandler(handler)
+# handler = logging.StreamHandler()
+# formatter = OneLineExceptionFormatter(logging.BASIC_FORMAT)
+# handler.setFormatter(formatter)
+# root = logging.getLogger()
+# root.setLevel(os.environ.get("LOGLEVEL", "INFO"))
+# root.addHandler(handler)
