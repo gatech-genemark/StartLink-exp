@@ -1295,7 +1295,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
     try:
         curr_time = timeit.default_timer()
         run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_options, **kwargs)
-        logger.info("Blast runtime (min): {}".format((timeit.default_timer() - curr_time) / float(60)))
+        logger.info("Blast runtime (min): {:.2f}".format((timeit.default_timer() - curr_time) / float(60)))
     except ValueError:
         remove_p(pf_blast_output)
         raise ValueError("Couldn't run blast successfully")
