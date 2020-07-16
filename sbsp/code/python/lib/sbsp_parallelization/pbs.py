@@ -4,6 +4,7 @@ import copy
 import time
 import numpy as np
 from typing import *
+import logging
 
 from sbsp_general import Environment
 from sbsp_io.general import mkdir_p, write_string_to_file
@@ -12,6 +13,8 @@ from sbsp_options.parallelization import ParallelizationOptions
 from sbsp_general.general import get_value, run_shell_cmd
 import sbsp_io.general
 from sbsp_parallelization.pbs_job_package import PBSJobPackage
+
+logger = logging.getLogger(__name__)
 
 
 class FunctionArguments:
@@ -320,13 +323,15 @@ class PBS:
             pf_job_output,
             pd_job_template
         )
-        cmd = "{} --pf-job-input {} --pf-job-output {} --pd-work {} -l DEBUG".format(
+        cmd = "{} --pf-job-input {} --pf-job-output {} --pd-work {} -l {}".format(
             "python {}".format(os.path.join(env["pd-code"], "python/driver", "run-pbs-job.py")),
             pf_job_input,
             pf_job_output,
-            pd_job_template
+            pd_job_template,
+            logging.getLevelName(logger.getEffectiveLevel())
         )
 
+        print(cmd)
         return cmd
 
     @staticmethod
