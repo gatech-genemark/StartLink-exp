@@ -4,6 +4,7 @@ import os
 from typing import *
 from collections import Counter
 import numpy as np
+import sbsp_viz
 import seaborn
 from matplotlib import pyplot as plt
 

@@ -121,7 +121,7 @@ def setup_gi_and_run(env, gi, sbsp_options, prl_options, clade_to_pf_db, **kwarg
     # create options for pipeline for current genome
     po = PipelineSBSPOptions(
         curr_env, pf_list, pf_t_db=pf_t_db, pf_output=pf_output, sbsp_options=sbsp_options,
-        prl_options=prl_options, steps=kwargs.get("steps")
+        prl_options=prl_options, **kwargs
     )
     sbsp_on_gi(gi, po)
 
@@ -168,7 +168,10 @@ def main(env, args):
         env, gil, sbsp_options, prl_options, clade_to_pf_db,
         simultaneous_genomes=args.simultaneous_genomes,
         dn_run=args.dn_run,
-        steps=args.steps
+        steps=args.steps,
+        fn_q_labels=args.fn_q_labels,
+        fn_t_labels=args.fn_t_labels,
+        fn_q_labels_compare=args.fn_q_labels_compare
     )
 
 
