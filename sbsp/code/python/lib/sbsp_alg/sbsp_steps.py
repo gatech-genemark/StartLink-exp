@@ -24,7 +24,7 @@ from sbsp_general.general import except_if_not_in_set, os_join
 from sbsp_alg.ortholog_finder import extract_labeled_sequences_for_genomes, \
     unpack_fasta_header, select_representative_hsp, create_info_for_query_target_pair, \
     compute_distance_based_on_local_alignment, run_blast_on_sequence_file, is_valid_start
-from sbsp_alg.sbsp_compute_accuracy import pipeline_step_compute_accuracy, separate_msa_outputs_by_stats
+from sbsp_alg.sbsp_compute_accuracy import pipeline_step_compute_accuracy, separate_msa_outputs_by_stats, df_print_labels
 from sbsp_general import Environment
 from sbsp_io.general import read_rows_to_list
 from sbsp_io.msa_2 import add_true_starts_to_msa_output
