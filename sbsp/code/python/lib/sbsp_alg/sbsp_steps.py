@@ -1392,6 +1392,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
 
     remove_p(pf_blast_output)
 
+
     return pf_output
 
 
@@ -1477,19 +1478,24 @@ def sbsp_step_compare(env, pipeline_options, list_pf_previous):
 
     mkdir_p(env["pd-work"])
 
+
     if len(list_pf_previous) == 0:
         raise ValueError("Cannot produce results: {}".format(pipeline_options["pf-q-list"]))
 
     # read data
     df = pd.concat([pd.read_csv(f, header=0) for f in list_pf_previous], ignore_index=True)
 
-    #
-    df = pipeline_step_compute_accuracy(env, df, pipeline_options)
+    # get labels
+    df_print_labels(env, df, "q", suffix_coordinates="sbsp",
+                                          suffix_fname="")
 
-    df.to_csv(pipeline_options["pf-output"])
+    if pipeline_options.perform_step("comparison"):
+        df = pipeline_step_compute_accuracy(env, df, pipeline_options)
 
-    # copy labels
-    add_true_starts_to_msa_output(env, df, fn_q_labels_true=pipeline_options["fn-q-labels-compare"])
-    # add_true_starts_to_msa_output(env, df, msa_nt=True, fn_q_labels_true=pipeline_options["fn-q-labels-true"])
-    separate_msa_outputs_by_stats(env, df, pipeline_options["dn-msa-output"])
+        df.to_csv(pipeline_options["pf-output"])
+
+        # copy labels
+        add_true_starts_to_msa_output(env, df, fn_q_labels_true=pipeline_options["fn-q-labels-compare"])
+        # add_true_starts_to_msa_output(env, df, msa_nt=True, fn_q_labels_true=pipeline_options["fn-q-labels-true"])
+        separate_msa_outputs_by_stats(env, df, pipeline_options["dn-msa-output"])
     return list()
