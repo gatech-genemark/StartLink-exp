@@ -31,10 +31,12 @@ def scatterplot(df, x, y, hue=None, figure_options=None, **kwargs):
     # type: (pd.DataFrame, str, str, Union[str, None], FigureOptions, Dict[str, Any]) -> None
 
     sns_kwargs = get_value(kwargs, "sns_kwargs", dict())
+    ax = get_value(kwargs, "ax", None)
 
     identity = get_value(kwargs, "identity", False)
 
-    _, ax = plt.subplots()
+    if not ax:
+        _, ax = plt.subplots()
 
     g = sns.scatterplot(x=x, y=y, hue=hue, data=df, linewidth=0, **sns_kwargs)
 
@@ -84,7 +86,7 @@ def lineplot(df, x, y, hue=None, figure_options=None, **kwargs):
         if not legend_loc:
             plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5), title=title, ncol=legend_ncol)
         else:
-            plt.legend(loc=legend_loc, ncol=legend_ncol)
+            plt.legend(loc=legend_loc, ncol=legend_ncol, title=title)
         if title is not None and len(title)  == 0:
             handles, labels = ax.get_legend_handles_labels()
             ax.legend(handles=handles[1:], labels=labels[1:], ncol=legend_ncol)
@@ -187,14 +189,17 @@ def tsplot(df, x, y, hue=None, figure_options=None, **kwargs):
 
 def barplot(df, x, y, hue, figure_options=None, **kwargs):
     sns_kwargs = get_value(kwargs, "sns_kwargs", dict())
+    ax = get_value(kwargs, "ax", None)
 
-    g = sns.barplot(x=x, y=y, data=df, hue=hue,  **sns_kwargs)
+    g = sns.barplot(x=x, y=y, data=df, hue=hue,  ax=ax, **sns_kwargs)
 
     if hue is not None:
         plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5))
 
     FigureOptions.set_properties_for_axis(g, figure_options)
+    plt.tight_layout()
     save_figure(figure_options)
+    # plt.tight_layout(rect=[-0.3,0,1,1.2])
     plt.show()
 
 

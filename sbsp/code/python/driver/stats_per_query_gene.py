@@ -25,7 +25,8 @@ from sbsp_general import Environment
 # ------------------------------ #
 from sbsp_general.general import os_join, get_value
 from sbsp_general.labels import Label
-from sbsp_general.shelf import add_q_key_3p_to_df, map_key_3p_to_label, map_key_3p_to_df_group, labels_match_5p_3p
+from sbsp_general.shelf import add_q_key_3p_to_df, map_key_3p_to_label, map_key_3p_to_df_group, labels_match_5p_3p, \
+    append_data_frame_to_csv
 from sbsp_io.general import remove_p
 from sbsp_io.labels import read_labels_from_file
 
@@ -222,17 +223,6 @@ def analysis_per_query_for_genome(env, gi, pd_sbsp, **kwargs):
         return pd.DataFrame()
 
     return pd.DataFrame(list_analysis)
-
-
-
-
-def append_data_frame_to_csv(df, pf_output):
-    # type: (pd.DataFrame, str) -> None
-    if df is not None and len(df) > 0:
-        if not os.path.isfile(pf_output):
-            df.to_csv(pf_output, index=False)
-        else:
-            df.to_csv(pf_output, mode="a", index=False, header=False)
 
 
 def analysis_per_query(env, gil, pf_output_summary, **kwargs):

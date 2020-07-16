@@ -58,7 +58,7 @@ def viz_per_genome(env, df):
     sns.catplot(df_grp, "Ancestor", "BLAST", figure_options=FigureOptions(
         save_fig=next_name(env["pd-work"]),
         xlabel="Clade",
-        ylabel="BLASTp Hits"
+        ylabel="Number of BLASTp Hits"
     ),
                 sns_kwargs={"palette": CM.get_map("ancestor")}
     )
@@ -121,7 +121,7 @@ def viz_per_genome(env, df):
 
     sns.lineplot(df_tmp, "x", "y", hue="Ancestor", figure_options=FigureOptions(
         xlabel="Number of BLASTp hits",
-        ylabel="Cumulative percent of queries (per genome)",
+        ylabel="Cumulative percentage of queries (per genome)",
         save_fig=next_name(env["pd-work"]),
     ),
                  legend_loc="best",
@@ -130,7 +130,18 @@ def viz_per_genome(env, df):
                  sns_kwargs={"ci": "sd", "palette": CM.get_map("ancestor")})
 
 
-    fig, axes = plt.subplots(2,2, sharex="all", sharey="all")
+
+    sns.lineplot(df_tmp, "y", "x", hue="Ancestor", figure_options=FigureOptions(
+        ylabel="Number of BLASTp hits",
+        xlabel="Cumulative percentage of queries (per genome)",
+        save_fig=next_name(env["pd-work"]),
+    ),
+                 legend_loc="best",
+                 legend_title="",
+                 legend_ncol=2,
+                 sns_kwargs={"ci": "sd", "palette": CM.get_map("ancestor")})
+
+    fig, axes = plt.subplots(2, 2, sharex="all", sharey="all")
 
     ancestors = sorted(set(df["Ancestor"]))
 
@@ -147,7 +158,7 @@ def viz_per_genome(env, df):
 
     figure_options = FigureOptions(
         xlabel="Number of BLASTp hits",
-        ylabel="Cumulative percent of queries (per genome)",
+        ylabel="Cumulative percentage of queries (per genome)",
         save_fig=next_name(env["pd-work"]),
     )
 

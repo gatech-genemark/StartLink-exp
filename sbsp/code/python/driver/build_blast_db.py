@@ -1,8 +1,7 @@
 # Karl Gemayel
 # Georgia Institute of Technology
 #
-# Created: 12/16/19
-
+# Created: 3/17/20
 import logging
 import argparse
 from typing import *
@@ -14,20 +13,20 @@ import pathmagic
 import sbsp_log  # runs init in sbsp_log and configures logger
 
 # Custom imports
-from sbsp_alg.filtering import filter_orthologs
 from sbsp_general import Environment
+from sbsp_general.blast import gen_cmd_create_blast_database
 
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
-from sbsp_options.sbsp import SBSPOptions
+from sbsp_general.general import run_shell_cmd
 
-parser = argparse.ArgumentParser("Description of driver.")
+parser = argparse.ArgumentParser("Build Diamond Blast database from sequences file.")
 
-parser.add_argument('--pf-data', required=True, help="CSV Data file")
-parser.add_argument('--pf-output', required=True, help="Output file containing features")
+parser.add_argument('--pf-sequences', required=True, help="Fasta file with specific header format. See "
+                                                          "documentation for more information.")
 
-parser.add_argument('--pf-msa-options', required=True, help="Configuration file containing MSA options")
+parser.add_argument('--pf-db', required=True, help="Path to output file.")
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -53,10 +52,8 @@ logger = logging.getLogger("logger")  # type: logging.Logger
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
-    msa_options = SBSPOptions.init_from_dict(env, vars(args))
 
-    filter_orthologs(env, args.pf_data, args.pf_output,
-                     msa_options=msa_options)
+    run_shell_cmd(gen_cmd_create_blast_database(args.pf_sequences, args.pf_db, "nucl", True))
 
 
 if __name__ == "__main__":

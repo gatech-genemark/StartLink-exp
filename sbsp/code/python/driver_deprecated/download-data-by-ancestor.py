@@ -20,7 +20,6 @@ from sbsp_io.assembly_summary import read_assembly_summary_into_dataframe
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
-from sbsp_options.pbs import PBSOptions
 
 parser = argparse.ArgumentParser("Description of driver.")
 
@@ -65,33 +64,6 @@ logger = logging.getLogger("logger")                    # type: logging.Logger
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
-
-    # pbs_options = PBSOptions.init_from_dict(env, vars(args))
-    #
-    # if pbs_options["use-pbs"]:
-    #
-    #     gil = get_genomes_under_ancestor_with_filters(
-    #         args.ancestor_id, args.ancestor_id_type,
-    #         args.pf_taxonomy_tree,
-    #         args.pf_assembly_summary,
-    #         valid_assembly_levels=args.valid_assembly_levels,
-    #         favor_assembly_level_order=args.favor_assembly_level_order,
-    #         number_per_taxid=args.number_per_taxid
-    #     )
-    #
-    #     pbs = PBS(
-    #         env, pbs_options,
-    #         splitter=split_dataframe,
-    #         merger=merge_genome_info_lists
-    #     )
-    #
-    #     pbs.run(
-    #         data={"gil": gil, },
-    #         func=download_data,
-    #
-    #
-    #
-    #     )
 
     taxonomy_tree = TaxonomyTree.load(args.pf_taxonomy_tree)
     df_assembly_summary = read_assembly_summary_into_dataframe(args.pf_assembly_summary)

@@ -1,34 +1,34 @@
 # Karl Gemayel
 # Georgia Institute of Technology
 #
-# Created:
-
+# Created: 3/17/20
 import logging
 import argparse
-import pandas as pd
+import urllib.request
 from typing import *
 
-# noinspection PyUnresolvedReferences
-import pathmagic                        # add path to custom library
+# noinspection All
+import pathmagic
 
-# Custom library imports
-import sbsp_general
+# noinspection PyUnresolvedReferences
+import sbsp_log  # runs init in sbsp_log and configures logger
+
+# Custom imports
+from sbsp_container.assembly_summary import AssemblySummary
+from sbsp_container.taxonomy_tree import TaxonomyTree
 from sbsp_general import Environment
-from sbsp_argparse.sbsp import add_sbsp_options
-from sbsp_options.sbsp import SBSPOptions
-import sbsp_alg.feature_generation
 
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
+from sbsp_general.data_download import download_data_by_ancestor
+from sbsp_general.general import os_join, run_shell_cmd
+from sbsp_io.assembly_summary import read_assembly_summary_into_dataframe
+from sbsp_io.general import mkdir_p
 
-parser = argparse.ArgumentParser("Description of driver.")
+parser = argparse.ArgumentParser("Download taxonomy information from NCBI.")
 
-parser.add_argument('--pf-data', required=True, help="File containing path to MSA file(s), under column pf-msa-output")
-parser.add_argument('--pf-features', required=True, help="Output file with features")
-
-add_sbsp_options(parser)
-
+parser.add_argument('--pd-output', required=True)
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
 parser.add_argument('--pd-results', required=False, default=None, help="Path to results directory")
@@ -48,19 +48,26 @@ my_env = Environment(pd_data=parsed_args.pd_data,
 
 # Setup logger
 logging.basicConfig(level=parsed_args.loglevel)
-logger = logging.getLogger("logger")                    # type: logging.Logger
+logger = logging.getLogger("logger")  # type: logging.Logger
 
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
 
-    msa_options = SBSPOptions.init_from_dict(env, vars(args))
+    # link to taxonomy dump
+    lp_taxonomy = f"https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.zip"
 
-    df_data = pd.read_csv(args.pf_data, header=0)
-    df_features = sbsp_alg.feature_generation.generate_features_for_msa_from_df(df_data, msa_options,
-                                                                                max_number_downstream=3)
+    pd_output = args.pd_output
 
-    df_features.to_csv(args.pf_features, index=False)
+    mkdir_p(pd_output)
+    pf_output = os_join(pd_output, "taxdump.zip")
+
+    logger.info(f"Downloading file: {lp_taxonomy}")
+    urllib.request.urlretrieve(lp_taxonomy, pf_output)
+
+
+    logger.info("Download complete. Unzipping")
+    run_shell_cmd(f"cd {pd_output}; unzip {pf_output}")
 
 
 if __name__ == "__main__":

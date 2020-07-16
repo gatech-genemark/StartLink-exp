@@ -178,7 +178,7 @@ def viz_summary_per_gcfid_per_step(env, df):
     sns.lineplot(df_per_gcfid_per_step, "SBSP Step", "Sen(SBSP,NCBI)", hue="GCFID", ax=ax[0],
                  sns_kwargs={"palette": CM.get_map("verified")}, legend=False,
                  figure_options=FigureOptions(
-            ylabel="Error",
+            ylabel="Error rate (\%)",
             ylim=[0,20],
 
         ))
@@ -186,7 +186,7 @@ def viz_summary_per_gcfid_per_step(env, df):
     sns.lineplot(df_per_gcfid_per_step, "SBSP Step", "Cov(SBSP,NCBI)", hue="GCFID", ax=ax[1],
                  sns_kwargs={"palette": CM.get_map("verified")},
                  legend=False, figure_options=FigureOptions(
-            ylabel="Percent of Genes",
+            ylabel="Percentage\nof Genes",
             ylim=[0, None]
         )
                  )
@@ -195,7 +195,7 @@ def viz_summary_per_gcfid_per_step(env, df):
     sns.lineplot(df_per_gcfid_per_step, "SBSP Step", "SBSP", hue="GCFID", ax=ax[2],
                  sns_kwargs={"palette": CM.get_map("verified")},
                  legend=False, figure_options=FigureOptions(
-            ylabel="Number of Genes",
+            ylabel="Number\nof Genes",
             ylim=[0, None]
         )
                  )
@@ -218,7 +218,7 @@ def viz_summary_per_gcfid_per_step(env, df):
     sns.lineplot(df_per_gcfid_per_step, "SBSP Step", "Cov(GMS2=SBSP,NCBI)", hue="GCFID", ax=ax[1],
                  sns_kwargs={"palette": CM.get_map("verified")},
                  legend=False, figure_options=FigureOptions(
-            ylabel="Percent of Genes",
+            ylabel="Percentage of Genes",
             ylim=[0, None]
         )
                  )

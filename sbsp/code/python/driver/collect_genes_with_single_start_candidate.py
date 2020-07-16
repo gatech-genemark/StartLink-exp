@@ -22,6 +22,7 @@ from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_general import Environment
 from sbsp_general.general import get_value
 from sbsp_general.labels import Label, Coordinates, Labels
+from sbsp_general.shelf import append_data_frame_to_csv
 from sbsp_io.general import mkdir_p, remove_p
 from sbsp_io.labels import read_labels_from_file, write_labels_to_file
 from sbsp_io.sequences import read_fasta_into_hash, write_fasta_hash_to_file
@@ -286,15 +287,6 @@ def get_single_candidate_genes(env, genome_info, **kwargs):
             counter += 1
 
     return result
-
-
-def append_data_frame_to_csv(df, pf_output):
-    # type: (pd.DataFrame, str) -> None
-    if df is not None and len(df) > 0:
-        if not os.path.isfile(pf_output):
-            df.to_csv(pf_output, index=False)
-        else:
-            df.to_csv(pf_output, mode="a", index=False, header=False)
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None

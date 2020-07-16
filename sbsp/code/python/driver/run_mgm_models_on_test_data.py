@@ -130,7 +130,7 @@ def _par_helper(func, func_kwargs, proc_num, output):
 
 
 def parallelize_dataframe_by_chunks(df, func, data_name, func_kwargs, **kwargs):
-    # type: (pd.DataFrame, Callable, str, Dict[str, Any], Dict[str, Any]) -> None
+    # type: (pd.DataFrame, Callable, str, Dict[str, Any], Dict[str, Any]) -> pd.DataFrame
 
     num_processors = get_value(kwargs, "num_processors", multiprocessing.cpu_count()-1)
 
@@ -214,10 +214,10 @@ def main(env, args):
     mgm_models = load_obj(args.pf_mgm_models)       # type: Dict[str, Dict[str, Dict[str, MGMMotifModelAllGC]]]
     df_test = pd.read_csv(args.pf_test)                # type: pd.DataFrame
     # df_test = df_test.head(500).copy()
-    # run_mgm_models_on_test_data(env, mgm_models, df_test, args.species_type, args.pf_output)
-    df_test = parallelize_dataframe_by_chunks(df_test, run_mgm_models_on_test_data, "df_test", {
-        "env": env, "mgm_models": mgm_models, "species_type": args.species_type, "pf_output": args.pf_output
-    })
+    run_mgm_models_on_test_data(env, mgm_models, df_test, args.species_type, args.pf_output)
+    # df_test = parallelize_dataframe_by_chunks(df_test, run_mgm_models_on_test_data, "df_test", {
+    #     "env": env, "mgm_models": mgm_models, "species_type": args.species_type, "pf_output": args.pf_output
+    # })
 
 
     # return

@@ -27,6 +27,9 @@
 * Introduction
 This document serves as a step-by-step instruction manual on how to replicate results from the {{{tool}}} paper. We note that many of the experiments are time-consuming and/or resource hungry. Therefore, we also provide raw results (from which graphs can be generated) as well as pre-constructed databases for the clades mentioned in the {{{tool}}} paper.
 
+* Order
+After installation, it is best to first try running the toy example shown at the end of this document. It goes through all the steps from generating a target database to running {{{tool}}}. Since this is still in beta version, it will also help narrow down where issues might come from.
+
 * Downloading and installing
 ** Code
 Downloading the code is fairly straightforward using =git=. The latest version can be downloaded from =WEBSITE=. To install, simply run 
@@ -36,9 +39,27 @@ source install.sh
 #+end_src
 
 The first command loads all environment variables (including paths to data directories, binaries, etc...), and the second command creates an executable from all python files and stores them in =$bin= for easy access. For non-unix users, you can find the python driver files in =$driverpython=.
+** External Tools
+   {{{tool}}} and {{{tool}}}+ and their analysis rely on a handful of external tools. The following need to be installed:
+   - GeneMarkS-2
+     - Used for building {{{tool}}}+ predictions, and for analysis
+     - Link: http://exon.gatech.edu/GeneMark/license_download.cgi
+   - ClustalO:
+     - Used for constructing multiple sequence alignments
+     - Link: http://www.clustal.org/omega/#Download
+   - Diamond BLAST:
+     - Used for generating target databases and finding orthologs
+     - Link: https://github.com/bbuchfink/diamond
+     - Install via Anaconda (recommended): =conda install -c bioconda diamond=
+   - Prodigal:
+     - Used for initial analysis of gene-start prediction status
+     - Link: https://github.com/hyattpd/Prodigal
 
 ** Data
-We provide the databases for /Enterobacterales/, /Actinobacteria/, /Archaea/, and /FCB group/, and the sequence and label files for the genomes with verified starts: /E. coli/, /H. salinarum/, /N. pharaonis/, /M. tuberculosis/. We also provide the steps to create a database with for any ancestor using data that can be downloaded from NCBI's website.
+*Note: As previously mentioned the data used is on the order of hundreds of gigabytes. As such, if one is only interested in reproducibility, we provide pre-built databases (and even raw statistics from our existing runs).*
+
+We provide the databases for /Enterobacterales/, /Actinobacteria/, /Archaea/, and /FCB group/, and the sequence and label files for the genomes with verified starts: /E. coli/, /H. salinarum/, /N. pharaonis/, /M. tuberculosis/, and /R. denitrificans/. We also provide the steps to create a database with for any ancestor using data that can be downloaded from NCBI's website.
+
 
 *** Downloading Assembly Summary File
     #+begin_src bash
@@ -57,38 +78,50 @@ We provide the databases for /Enterobacterales/, /Actinobacteria/, /Archaea/, an
 
 *** Download sequence/label files for different clades, and create Blast databases 
     #+begin_src bash
+
+      function mk_path_friendly() {
+        echo "$1" | tr " " "_" | tr [:upper:] [:lower:];
+      }
+
       dbt=refseq     # database type
       pf_tree=$tmp/tree/tree.pkl
-      pf_ass_sum_comb=$metadata/${dbt}_assembly_summary_combined.txt
+      pf_ass_sum_comb=$metadata/${dbt}_assembly_summary.txt
 
       declare -a clades=("Enterobacterales" "Actinobacteria" "Alphaproteobacteria" "FCB group" "Archaea")
 
       # loop over clades; download data under each clade
       for cl in ${clades[@]}; do
         dn_cl=$(mk_path_friendly "$cl")
-        $bin/download_genomes_for_clade_py.sh --pf-tree $pf_tree --pf_assembly_summary $pf_ass_sum_comb --ancestor-id $cl --ancestor-id-type "name_txt" --favor-assembly-level-order --number-per-taxid 1 --pf-output-list --$lists/${dbt}_${dn_cl}.list
+        $bin/download_genomes_for_clade_py.sh --pf-tree $pf_tree --pf-assembly-summary $pf_ass_sum_comb --clade-id $cl --clade-id-type "name_txt" --favor-assembly-level-order --genomes-per-taxid 1 --pf-output-list $lists/${dbt}_${dn_cl}.list
       done
     #+end_src
 
     Construct Diamond Blastp databases
     #+begin_src bash
 
-      for cl in "${clades[@]}"; do
-        dn_cl=$(mk_path_friendly "$cl")
+          for cl in "${clades[@]}"; do
+            dn_cl=$(mk_path_friendly "$cl")
 
-        pf_list=$lists/${dbt}_${dn_cl}.list
-        pf_faa=$lists/${dbt}_${dn_cl}.list
-        pf_db=$db/${dbt}_${dn_cl}.dmnd
+            pd_work="$tmp/extract_sequences/${dn_cl}"
+            mkdir -p $pd_work
 
-        # extract sequences
-        $bin/extract_labeled_sequences_py.sh --pf-genome-list $pf_list --pf-output $pf_faa --pf-pbs-options $config/pbs_defaults.conf
+            cd $pd_work
 
-        # build blast
-        $bin/build_blast_db_py.sh --pf_sequences $pf_faa --pf-db $pf_db --pf-pbs-options $config/pbs_single_node.conf
+            pf_list=$lists/${dbt}_${dn_cl}.list
+            pf_faa=$pd_work/${dbt}_${dn_cl}.faa
+            pf_db=$db/${dbt}_${dn_cl}.dmnd
 
-        # clean up sequence file
-        [[ -f $pf_faa ]] & rm $pf_faa
-      done
+            # extract sequences
+            $bin/extract_annotated_sequences_py.sh --pf-genome-list $pf_list --pf-output $pf_faa
+
+            # build blast
+            $bin/build_blast_db_py.sh --pf-sequences $pf_faa --pf-db $pf_db
+
+            # clean up sequence file
+            [[ -f $pf_faa ]] & rm $pf_faa
+          done
+
+      cd $base
     #+end_src
 *** Download query genomes from list
     #+begin_src bash
@@ -215,9 +248,12 @@ Since much of the analysis is done by comparing {{{tool}}} to NCBI's PGAP, GeneM
     pf_pbs_options=$config/pbs_defaults.conf   # PBS config file
 
     # PBS options
-    toggle_pbs="--pf-pbs-options $config/$pf_pbs_options[[file:../../../../org-roam/20200530050505-taylorseries.org][taylorseries]]"  # if PBS not installed, set this option to empty: ""
+    toggle_pbs="--pf-pbs-options $config/$pf_pbs_options"  # if PBS not installed, set this option to empty: ""
     sg=8   # number of genomes to run simutaneously (low number recommended)
   #+end_src
+
+  #+RESULTS:
+
 ** Difference in 5' predictions on Representative Genomes
 *** Data download
     #+begin_src bash
@@ -260,14 +296,17 @@ Since much of the analysis is done by comparing {{{tool}}} to NCBI's PGAP, GeneM
     [[file:tools_5prime.pdf]]
 
 ** Theoretical view of Independence
-   While not technically an experimental result, we provide the code to generate this graph for convenience. 
+   While not technically an experimental result, we provide the code to generate this graph for convenience. The sensitivity of the non-random algorithms $A_1$ and $A_2$ are set to 0.9, but the user can easily change them (from within) to observe the change in behavior. What remains constant is the improvement of independent algorithms over fully dependent (and random) algorithms..
+   #+begin_src bash
+     $bin/independent_predictions_py.sh 
+   #+end_src
    [[file:figures/theory_prob_agree.pdf]]
 
 ** Genomes with genes with verified starts
 *** Running {{{tool}}}
 #+BEGIN_SRC bash
   # set this to only run on genes with verified starts
-  opt_verif="--fn-q-labels verified.gff --fn-q-labels-true verified.gff"
+  opt_verif="--fn-q-labels verified.gff --fn-q-labels-compare verified.gff"
 
   # run SBSP
   $bin/sbsp_on_genome_list_py.sh --pf-q-list $pf_list_verified --simultaneous-genomes $sg --pd-work $pd_runs --pf-sbsp-options $pf_sbsp_options  --pf-db-index $pf_db_index $opt_verif $toggle_pbs
@@ -283,9 +322,9 @@ Since much of the analysis is done by comparing {{{tool}}} to NCBI's PGAP, GeneM
       $bin/viz_stats_genome_level_py.sh --pf-data summary.csv
     #+end_src
 
-This will produce two files, =sensitivity.csv= and =coverage.csv= containing the following two tables.
+This will produce two files, =error.csv= and =coverage.csv= containing the following two tables.
 
-Sensitivity
+Error
 | Genome                | Verified |      SBSP |      GMS2 |  GMS2=SBSP |
 | E.      coli          |      769 | 96.204188 | 97.001304 |  99.582754 |
 | H.      salinarum     |      530 | 97.489540 | 98.679245 |  99.354839 |
@@ -379,6 +418,57 @@ It also produces the per-step analysis on the verified set of genes.
 
     
 
+* Toy Example
+  This section lists a set of commands to generate a toy database and and run H. salinarum predictions on it. 
+  This is just meant for the user to test out whether the system has been installed correctly.
+
+  #+begin_src bash
+
+    # setup environment
+    source config.sh
+    source install.sh
+
+    # download assembly summary files
+    $bin/download_assembly_summary_py.sh --database refseq --pf-output $metadata/refseq_assembly_summary.txt
+
+    # construct taxonomy tree
+    pd_work=$tmp/tree
+    mkdir -p $pd_work
+
+    pf_tree=$pd_work/tree.pkl
+
+    $bin/download_taxonomy_dump_py.sh --pd-output $metadata/taxdump
+    $bin/build_taxonomy_tree_py.sh --pf-nodes-dmp $metadata/taxdump/nodes.dmp --pf-names-dmp $metadata/taxdump/names.dmp --pf-tree $pf_tree
+
+    # download genomes for clade
+    clade=Halobacterium
+    dn_cl=halobacterium
+    pf_assembly_summary=$metadata/refseq_assembly_summary.txt
+    pf_t_list=$lists/refseq_${dn_cl}.list
+
+    $bin/download_genomes_for_clade_py.sh --pf-tree $pf_tree --pf-assembly-summary $pf_assembly_summary --clade-id $clade --clade-id-type "name_txt" --favor-assembly-level-order --genomes-per-taxid 1 --pf-output-list $pf_t_list
+
+    # extract labeled sequences for targets
+    pd_work=$tmp/build_database/${dn_cl}
+
+    pf_faa=$pd_work/refseq_${dn_cl}.faa
+    pf_db=$db/refseq_${dn_cl}.dmnd
+
+    $bin/extract_annotated_sequences_py.sh --pf-genome-list $pf_t_list --pf-output $pf_faa
+
+    # build database
+    $bin/build_blast_db_py.sh --pf-sequences $pf_faa -pf-db $pf_db
+
+    [[ -f $pf_faa ]] & rm $pf_faa
+
+    cd $base
+
+    # run sbsp
+    pf_sbsp_options=$config/sbsp_0.list
+    $bin/sbsp_on_genome_list_py.sh --pf-q-list $lists/verified_hsalinarum.list --pd-work $pd_runs --pf-sbsp-options $pf_sbsp_options --pf-db-index $pf_db_index
+
+  #+end_src
+
 * COMMENT Running on verified genomes
 
 SBSP takes as input:
@@ -413,7 +503,7 @@ $bin/run_tools_on_genome_fragments_py.sh --pf-genome-list $lists/verified.list -
 * COMMENT Collecting Data
 
 * COMMENT Tables and Graphs
-*  COMMENT
+* COMMENT
 * COMMENT Experiments
 
 ** Difference in 5' predictions on Representative Genomes

@@ -1,12 +1,10 @@
 import os
 
-from Bio import AlignIO
-
 import sbsp_general
 import sbsp_general.dataframe
 from sbsp_general.general import get_value
 from sbsp_general.labels import Label
-from sbsp_general.msa_2 import MSAType, MSASinglePointMarker
+from sbsp_container.msa import MSAType, MSASinglePointMarker
 
 
 

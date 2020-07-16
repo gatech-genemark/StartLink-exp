@@ -1,4 +1,3 @@
-import os
 import yaml
 import logging
 from typing import *
@@ -46,7 +45,6 @@ class Options:
             return self[item]
         except KeyError:
             return None
-
 
     def __getitem__(self, item):
         # type: (str) -> Any
@@ -159,12 +157,3 @@ class Options:
         # type: () -> Union[Set[str], None]
         """Returns a set of required options to be set"""
         return None
-
-
-
-
-
-
-
-
-

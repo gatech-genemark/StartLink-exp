@@ -7,7 +7,6 @@ import argparse
 import math
 
 import pandas as pd
-from typing import *
 
 # noinspection All
 import pathmagic
@@ -17,14 +16,11 @@ import sbsp_log  # runs init in sbsp_log and configures logger
 
 # Custom imports
 from sbsp_general import Environment
-import sbsp_viz.sns as sns
-from sbsp_general.shelf import next_name
-from sbsp_viz.colormap import ColorMap as CM
+from sbsp_general.shelf import next_name, fix_names
 
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
-from sbsp_viz.general import FigureOptions, save_figure
 
 parser = argparse.ArgumentParser("Description of driver.")
 
@@ -77,7 +73,6 @@ def plot_for_block(df):
 def plot_for_5prime(df, bins=20):
     # type: (pd.DataFrame) -> None
     import matplotlib.pyplot as plt
-    import matplotlib.patches as patches
     import seaborn
 
     genomes = sorted(set(df["Genome"]))
@@ -126,13 +121,6 @@ def plot_for_5prime(df, bins=20):
     # )
     plt.savefig(next_name(my_env["pd-work"]))
     plt.show()
-
-
-def fix_names(r):
-    # type: (pd.Series) -> None
-    return "{}. {}".format(
-        r["Genome"][0], r["Genome"].split("_")[1]
-    )
 
 
 def main(env, args):

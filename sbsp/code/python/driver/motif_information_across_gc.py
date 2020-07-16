@@ -1,10 +1,12 @@
+
 # Karl Gemayel
 # Georgia Institute of Technology
 #
-# Created: 04/29/2020
+# Created: 3/17/20
 import logging
 import argparse
-from typing import *
+
+import pandas as pd
 
 # noinspection All
 import pathmagic
@@ -13,20 +15,21 @@ import pathmagic
 import sbsp_log  # runs init in sbsp_log and configures logger
 
 # Custom imports
-from sbsp_container.genome_list import GenomeInfoList
 from sbsp_general import Environment
 
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
+from sbsp_general.GMS2Noncoding import GMS2Noncoding
+from sbsp_general.MotifModel import MotifModel
+from sbsp_general.shelf import relative_entropy
+from sbsp_io.objects import load_obj
+import sbsp_viz.sns as sns
 
-parser = argparse.ArgumentParser("Collect result statistics per query.")
+parser = argparse.ArgumentParser("Description of driver.")
 
-parser.add_argument('--pf-genome-list', required=True, help="File containing genome list")
 
-parser.add_argument('--dn-sbsp', default="sbsp", help="Directory name for SBSP run (under genome/runs/)")
-parser.add_argument('--dn-gms2', default="gms2", help="Directory name for GMS2 run (under genome/runs/)")
-parser.add_argument('--dn-prodigal', default="prodigal", help="Directory name for Prodigal run (under genome/runs/)")
+parser.add_argument('--pf-data', required=True, help="File containing motifs")
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -52,9 +55,19 @@ logger = logging.getLogger("logger")  # type: logging.Logger
 
 def main(env, args):
     # type: (Environment, argparse.Namespace) -> None
+    df = load_obj(args.pf_data)     # type: pd.DataFrame
+    df.reset_index(inplace=True)
+    df = df[df["GENOME_TYPE"] == "group-a"].copy()
 
-    gil = GenomeInfoList.init_from_file(args.pf_genome_list)
-    gcfid_to_pd_sbsp
+    df["RE"] = df[["RBS_MAT", "NON_MAT"]].apply(
+        lambda r: relative_entropy(
+            MotifModel(r["RBS_MAT"], None),
+            GMS2Noncoding(r["NON_MAT"])
+        ), axis=1
+    )
+
+    sns.jointplot(df, "GC", "RE")
+    sns.kdeplot(df, "GC", "RE")
 
 
 if __name__ == "__main__":

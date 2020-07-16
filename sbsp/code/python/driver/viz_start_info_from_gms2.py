@@ -20,10 +20,9 @@ from Bio.Align import AlignInfo, MultipleSeqAlignment
 import sbsp_log  # runs init in sbsp_log and configures logger
 
 # Custom imports
-from sbsp_alg.sbsp_steps import run_msa_on_sequences
+from sbsp_alg.shelf import run_msa_on_sequences
 from sbsp_general import Environment
-from sbsp_general.general import os_join
-from sbsp_general.msa_2 import MSAType
+from sbsp_container.msa import MSAType
 from sbsp_general.shelf import next_name, bin_by_gc, get_consensus_sequence, gather_consensus_sequences, \
     print_reduced_msa, create_numpy_for_column_with_extended_motif, get_position_distributions_by_shift
 from sbsp_io.objects import load_obj
@@ -39,7 +38,7 @@ from matplotlib.font_manager import FontProperties
 # ------------------------------ #
 from sbsp_options.sbsp import SBSPOptions
 from sbsp_viz.general import save_figure, FigureOptions
-from sbsp_viz.shelf import loess_with_stde
+from sbsp_viz.shelf import loess_with_stde, create_mappable_for_colorbar
 
 parser = argparse.ArgumentParser("Description of driver.")
 
@@ -95,16 +94,6 @@ def create_numpy_for_column(df, col):
 
     return mat
 
-def create_mappable_for_colorbar(values, cmap):
-    import matplotlib.colors
-    import matplotlib.cm
-    vmin=min(values)
-    vmax = max(values)
-
-    norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
-    mappable = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
-    mappable.set_array(values)
-    return mappable
 
 def visualize_matrix_column(env, df, col):
     # type: (Environment, pd.DataFrame, str) -> None
@@ -696,34 +685,6 @@ def plot_letter_per_gc_over_position_with_alignment_per_gc(env, df, col):
 
         print(f"GC in [{lower}, {upper}]")
         plot_letter_over_position(env, df_gc, col, f"[{lower}, {upper}]")
-
-
-def plot_candidate_codons(env, df, codons):
-    # type: (Environment, pd.DataFrame, List[str]) -> None
-
-    fig, ax = plt.subplots()
-
-    for c in sorted(codons):
-        seaborn.regplot(df["GC"].astype(float).values, df[c].astype(float).values, label=c,
-                        lowess=True, scatter_kws={"s": 5, "alpha": 0.1})
-
-    ax.set_ylim([-0.05,1.05])
-    ax.set_ylabel("Probability")
-    ax.set_xlabel("GC")
-    leg = ax.legend()
-    for lh in leg.legendHandles:
-        lh.set_alpha(1)
-
-    plt.show()
-
-def plot_candidate_starts(env, df):
-    # type: (Environment, pd.DataFrame) -> None
-    plot_candidate_codons(env, df, ["ATG", "GTG", "TTG"])
-
-def plot_candidate_stops(env, df):
-    # type: (Environment, pd.DataFrame) -> None
-    plot_candidate_codons(env, df, ["TAA", "TAG", "TGA"])
-
 
 
 def main(env, args):

@@ -8,6 +8,9 @@ from collections import namedtuple
 import copy
 import pandas as pd
 
+logger = logging.getLogger(__name__)
+
+
 
 ENV = []
 
@@ -26,7 +29,7 @@ def get_file_dir(file):
 def run_shell_cmd(cmd, do_not_log=False):
     # type: (str, bool) -> str
     if not do_not_log:
-        logging.debug(cmd)
+        logger.debug(cmd)
 
     return subprocess.check_output(cmd, shell=True).decode("utf-8")
 

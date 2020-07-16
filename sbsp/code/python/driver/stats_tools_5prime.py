@@ -17,7 +17,7 @@ import sbsp_log  # runs init in sbsp_log and configures logger
 # Custom imports
 from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_general import Environment
-from sbsp_options.pbs import PBSOptions
+from sbsp_options.parallelization import ParallelizationOptions
 from sbsp_parallelization.pbs import PBS
 from sbsp_pbs_data.mergers import merge_identity
 from sbsp_pbs_data.splitters import split_genome_info_list
@@ -39,7 +39,7 @@ parser.add_argument('--list-names', required=True, nargs="+")
 parser.add_argument('--dn-tools', required=True, nargs="+")
 parser.add_argument('--tool-names', required=False, nargs="+")
 parser.add_argument('--pf-output', required=True)
-sbsp_argparse.parallelization.add_pbs_options(parser)
+
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -189,13 +189,13 @@ def stats_tools_5prime(env, list_gil, list_names, list_dn_tools, list_tool_names
     # type: (Environment, List[GenomeInfoList], List[str], List[str], List[str], str, Dict[str, Any]) -> None
 
     
-    pbs_options = get_value(kwargs, "pbs_options", None)
+    prl_options = get_value(kwargs, "prl_options", None)
     # for each gil
     list_df = list()
     for name, gil in zip(list_names, list_gil):
         logger.info(f"Analyzing list: {name}")
-        if pbs_options is not None:
-            pbs = PBS(env, pbs_options,
+        if prl_options is not None:
+            pbs = PBS(env, prl_options,
               splitter=split_genome_info_list,
               merger=merge_identity
               )
@@ -239,11 +239,11 @@ def main(env, args):
     if len(list_dn_tools) != len(list_tool_names):
         raise Warning(f"Tools and dirs must have the same length {len(list_dn_tools)} != {len(list_tool_names)}")
 
-    pbs_options = PBSOptions.init_from_dict(env, vars(args))
+    prl_options = ParallelizationOptions.init_from_dict(env, vars(args))
 
     
 
-    stats_tools_5prime(env, list_gil, list_names, list_dn_tools, list_tool_names, args.pf_output, pbs_options=pbs_options)
+    stats_tools_5prime(env, list_gil, list_names, list_dn_tools, list_tool_names, args.pf_output, prl_options=prl_options)
 
 
 
