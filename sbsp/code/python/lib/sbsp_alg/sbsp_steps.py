@@ -84,7 +84,7 @@ def run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_opti
             break
         except ValueError:
             block_size = block_size / 2.0
-            logger.debug("Blast failed. Trying again with block size {}".format(block_size))
+            logger.info("Blast failed. Trying again with block size {}".format(block_size))
 
     remove_p(pf_q_sequences)
 
@@ -1454,13 +1454,14 @@ def sbsp_steps(env, pipeline_options):
         pd_msa = os_join(env["pd-work"], "msa")
         mkdir_p(pd_msa)
 
-        run_sbsp_steps(
-            env, q_sequences,
-            pipeline_options["pf-t-db"], pipeline_options["pf-output"], pipeline_options["sbsp-options"],
-            clean=True,
-            pd_msa_final=pd_msa,
-            num_processors=pipeline_options["prl-options"]["num-processors"],
-        )
+        if pipeline_options.perform_step("prediction"):
+            run_sbsp_steps(
+                env, q_sequences,
+                pipeline_options["pf-t-db"], pipeline_options["pf-output"], pipeline_options["sbsp-options"],
+                clean=True,
+                pd_msa_final=pd_msa,
+                num_processors=pipeline_options["prl-options"]["num-processors"],
+            )
 
         output = [pipeline_options["pf-output"]]
 
