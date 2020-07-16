@@ -1263,7 +1263,7 @@ def process_find_start_for_multiple_query_blast_record(lock, process_number, env
     local_rng = random.Random(sbsp_options.safe_get("random-seed"))
 
     msa_number = 0
-    for r in tqdm(records, f"Process {process_number}", total=len(records)):
+    for r in records:
         df_result = find_start_for_query_blast_record(
             env, r, sbsp_options, msa_number="{}_{}".format(process_number, msa_number), rng=local_rng, **kwargs
         )
