@@ -80,7 +80,6 @@ def run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_opti
             run_blast_on_sequence_file(env, pf_q_sequences, pf_t_db, pf_blast_output, sbsp_options=sbsp_options,
                                        block_size=block_size)
             blast_successful = True
-            logger.info("Done")
             break
         except ValueError:
             block_size = block_size / 2.0
@@ -245,7 +244,7 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
         fsf = True
 
     if num_analyzed > 0:
-        logger.info("Analyzed: {}, {}".format(num_analyzed, round(acc_lengths / float(num_analyzed), 2)))
+        logger.debug("Analyzed: {}, {}".format(num_analyzed, round(acc_lengths / float(num_analyzed), 2)))
 
     return df
 
@@ -1088,7 +1087,7 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
         df.drop(df.index, inplace=True)
         return  # FIXME: implement recovery strategy
 
-    logger.info("Step {}: S5 = {}".format(predicted_at_step,
+    logger.debug("Step {}: S5 = {}".format(predicted_at_step,
                                           count_number_of_5prime_candidates_at_position(msa_t, start_position_in_msa,
                                                                                         sbsp_options) / float(
                                               msa_t.number_of_sequences())
@@ -1262,7 +1261,6 @@ def process_find_start_for_multiple_query_blast_record(lock, process_number, env
 
     # local_rng = np.random.RandomState(sbsp_options.safe_get("random-seed"))
     local_rng = random.Random(sbsp_options.safe_get("random-seed"))
-    logger.info("Using regular random")
 
     msa_number = 0
     for r in records:
@@ -1316,7 +1314,6 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
         msa_number = 0
         # for each query, find start
         for r in tqdm(records, total=len(records)):
-            logger.info("{}".format(len(r.alignments)))
             # REMOVE
             # query_info = unpack_fasta_header(r.query)
             # if  int(query_info["right"]) not in {449870}:
