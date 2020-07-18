@@ -1,0 +1,254 @@
+gcfid,genetic-code,attributes
+GCF_000762265.1_ASM76226v1,11,name=Methanobacterium formicicum;parent_id=2160.0;gc=0;num_genes=0;annotation_date=12/10/2019;ancestor=Archaea
+GCF_001889405.1_ASM188940v1,11,name=Methanohalophilus halophilus;parent_id=2175.0;gc=0;num_genes=0;annotation_date=05/09/2020;ancestor=Archaea
+GCF_001571405.1_ASM157140v1,11,name=Methanoculleus thermophilus;parent_id=45989.0;gc=0;num_genes=0;annotation_date=05/08/2020;ancestor=Archaea
+GCF_000765475.1_Mmet_Version1,11,name=Methanococcoides methylutens;parent_id=2225.0;gc=0;num_genes=0;annotation_date=05/08/2020;ancestor=Archaea
+GCF_900079115.1_SSOP1,11,name=Saccharolobus solfataricus;parent_id=2100760.0;gc=0;num_genes=0;annotation_date=06/09/2020;ancestor=Archaea
+GCF_001462395.1_ASM146239v1,11,name=Pyrodictium occultum;parent_id=2308.0;gc=0;num_genes=0;annotation_date=04/16/2020;ancestor=Archaea
+GCF_000337555.1_ASM33755v1,11,name=Natrialba asiatica DSM 12278;parent_id=64602.0;gc=0;num_genes=0;annotation_date=05/04/2020;ancestor=Archaea
+GCF_900111935.1_IMG-taxon_2617270732_annotated_assembly,11,name=Halorubrum sodomense;parent_id=56688.0;gc=0;num_genes=0;annotation_date=06/15/2020;ancestor=Archaea
+GCF_900100715.1_IMG-taxon_2642422561_annotated_assembly,11,name=Methanolobus vulcani;parent_id=2220.0;gc=0;num_genes=0;annotation_date=02/08/2020;ancestor=Archaea
+GCF_900129775.1_IMG-taxon_2695420988_annotated_assembly,11,name=Halobaculum gomorrense;parent_id=43927.0;gc=0;num_genes=0;annotation_date=01/18/2020;ancestor=Archaea
+GCF_900114025.1_IMG-taxon_2693429900_annotated_assembly,11,name=Natronobacterium gregoryi;parent_id=2256.0;gc=0;num_genes=0;annotation_date=06/15/2019;ancestor=Archaea
+GCF_001639285.1_ASM163928v1,11,name=Methanobrevibacter cuticularis;parent_id=2172.0;gc=0;num_genes=0;annotation_date=05/09/2020;ancestor=Archaea
+GCF_001639295.1_ASM163929v1,11,name=Methanobrevibacter curvatus;parent_id=2172.0;gc=0;num_genes=0;annotation_date=05/09/2020;ancestor=Archaea
+GCF_002214585.1_ASM221458v1,11,name=Thermococcus profundus;parent_id=2263.0;gc=0;num_genes=0;annotation_date=12/20/2019;ancestor=Archaea
+GCF_002214465.1_ASM221446v1,11,name=Thermococcus barossii;parent_id=2263.0;gc=0;num_genes=0;annotation_date=12/19/2019;ancestor=Archaea
+GCF_001639265.1_ASM163926v1,11,name=Methanobrevibacter filiformis;parent_id=2172.0;gc=0;num_genes=0;annotation_date=05/09/2020;ancestor=Archaea
+GCF_900188065.1_IMG-taxon_2724679803_annotated_assembly,11,name=Halorubrum vacuolatum;parent_id=56688.0;gc=0;num_genes=0;annotation_date=07/27/2019;ancestor=Archaea
+GCF_000006805.1_ASM680v1,11,name=Halobacterium salinarum NRC-1;parent_id=2242.0;gc=0;num_genes=0;annotation_date=06/13/2020;ancestor=Archaea
+GCF_001639275.1_ASM163927v1,11,name=Methanobrevibacter oralis;parent_id=2172.0;gc=0;num_genes=0;annotation_date=05/09/2020;ancestor=Archaea
+GCF_000009965.1_ASM996v1,11,name=Thermococcus kodakarensis KOD1;parent_id=311400.0;gc=0;num_genes=0;annotation_date=06/07/2020;ancestor=Archaea
+GCF_000011105.1_ASM1110v1,11,name=Pyrococcus horikoshii OT3;parent_id=53953.0;gc=0;num_genes=0;annotation_date=06/07/2020;ancestor=Archaea
+GCF_002214385.1_ASM221438v1,11,name=Thermococcus gorgonarius;parent_id=2263.0;gc=0;num_genes=0;annotation_date=12/19/2019;ancestor=Archaea
+GCF_002214485.1_ASM221448v1,11,name=Thermococcus pacificus;parent_id=2263.0;gc=0;num_genes=0;annotation_date=12/19/2019;ancestor=Archaea
+GCF_002214505.1_ASM221450v1,11,name=Thermococcus siculi;parent_id=2263.0;gc=0;num_genes=0;annotation_date=12/20/2019;ancestor=Archaea
+GCF_000145295.1_ASM14529v1,11,name=Methanothermobacter marburgensis str. Marburg;parent_id=145263.0;gc=0;num_genes=0;annotation_date=05/26/2020;ancestor=Archaea
+GCF_001006045.1_ASM100604v1,11,name=Geoglobus ahangari;parent_id=190818.0;gc=0;num_genes=0;annotation_date=05/08/2020;ancestor=Archaea
+GCF_900095295.1_MCBB,11,name=Methanobacterium congolense;parent_id=2160.0;gc=0;num_genes=0;annotation_date=05/28/2020;ancestor=Archaea
+GCF_900095385.1_L21,11,name=Methanoculleus chikugoensis;parent_id=45989.0;gc=0;num_genes=0;annotation_date=07/25/2019;ancestor=Archaea
+GCF_900095815.1_SIV6,11,name=Methanothermobacter wolfeii;parent_id=145260.0;gc=0;num_genes=0;annotation_date=08/07/2019;ancestor=Archaea
+GCF_000265525.1_ASM26552v1,11,name=Thermococcus cleftensis;parent_id=2263.0;gc=0;num_genes=0;annotation_date=08/26/2019;ancestor=Archaea
+GCF_000007305.1_ASM730v1,11,name=Pyrococcus furiosus DSM 3638;parent_id=2261.0;gc=0;num_genes=0;annotation_date=04/09/2020;ancestor=Archaea
+GCF_000008645.1_ASM864v1,11,name=Methanothermobacter thermautotrophicus str. Delta H;parent_id=145262.0;gc=0;num_genes=0;annotation_date=04/09/2020;ancestor=Archaea
+GCF_900109595.1_IMG-taxon_2654588138_annotated_assembly,11,name=Methanobrevibacter gottschalkii;parent_id=2172.0;gc=0;num_genes=0;annotation_date=07/29/2019;ancestor=Archaea
+GCF_000585495.1_ASM58549v1,11,name=Thermococcus nautili;parent_id=2263.0;gc=0;num_genes=0;annotation_date=05/07/2020;ancestor=Archaea
+GCF_000970205.1_ASM97020v1,11,name=Methanosarcina mazei S-6;parent_id=2209.0;gc=0;num_genes=0;annotation_date=12/01/2019;ancestor=Archaea
+GCF_000731985.1_ASM73198v1,11,name=Natrinema altunense;parent_id=88723.0;gc=0;num_genes=0;annotation_date=04/20/2020;ancestor=Archaea
+GCF_000008665.1_ASM866v1,11,name=Archaeoglobus fulgidus DSM 4304;parent_id=2234.0;gc=0;num_genes=0;annotation_date=04/09/2020;ancestor=Archaea
+GCF_001484195.1_ASM148419v1,11,name=Thermococcus celericrescens;parent_id=2263.0;gc=0;num_genes=0;annotation_date=05/08/2020;ancestor=Archaea
+GCF_001477655.1_ASM147765v1,11,name=Methanobrevibacter millerae;parent_id=2172.0;gc=0;num_genes=0;annotation_date=12/16/2019;ancestor=Archaea
+GCF_000091665.1_ASM9166v1,11,name=Methanocaldococcus jannaschii DSM 2661;parent_id=2190.0;gc=0;num_genes=0;annotation_date=04/09/2020;ancestor=Archaea
+GCF_002177135.1_ASM217713v1,11,name=Natronolimnobius baerhuensis;parent_id=253106.0;gc=0;num_genes=0;annotation_date=06/26/2019;ancestor=Archaea
+GCF_000013725.1_ASM1372v1,11,name=Methanococcoides burtonii DSM 6242;parent_id=29291.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_000008265.1_ASM826v1,11,name=Picrophilus torridus DSM 9790;parent_id=82076.0;gc=0;num_genes=0;annotation_date=11/04/2019;ancestor=Archaea
+GCF_000591055.1_ASM59105v1,11,name=Natronomonas moolapensis 8.8.11;parent_id=416273.0;gc=0;num_genes=0;annotation_date=06/07/2020;ancestor=Archaea
+GCF_000195935.2_ASM19593v2,11,name=Pyrococcus abyssi GE5;parent_id=29292.0;gc=0;num_genes=0;annotation_date=03/02/2020;ancestor=Archaea
+GCF_000011205.1_ASM1120v1,11,name=Sulfurisphaera tokodaii str. 7;parent_id=111955.0;gc=0;num_genes=0;annotation_date=04/14/2017;ancestor=Archaea
+GCF_000195915.1_ASM19591v1,11,name=Thermoplasma acidophilum DSM 1728;parent_id=2303.0;gc=0;num_genes=0;annotation_date=06/07/2020;ancestor=Archaea
+GCF_000011185.1_ASM1118v1,11,name=Thermoplasma volcanium GSS1;parent_id=50339.0;gc=0;num_genes=0;annotation_date=06/07/2020;ancestor=Archaea
+GCF_002214545.1_ASM221454v1,11,name=Thermococcus thioreducens;parent_id=2263.0;gc=0;num_genes=0;annotation_date=12/20/2019;ancestor=Archaea
+GCF_001563245.1_ASM156324v1,11,name=Methanobrevibacter olleyae;parent_id=2172.0;gc=0;num_genes=0;annotation_date=02/12/2020;ancestor=Archaea
+GCF_001953745.1_ASM195374v1,11,name=Haloterrigena saccharevitans;parent_id=121871.0;gc=0;num_genes=0;annotation_date=06/20/2019;ancestor=Archaea
+GCF_900156475.1_IMG-taxon_2681812919_annotated_assembly,11,name=Natronorubrum thiooxidans;parent_id=134813.0;gc=0;num_genes=0;annotation_date=01/18/2020;ancestor=Archaea
+GCF_000025685.1_ASM2568v1,11,name=Haloferax volcanii DS2;parent_id=2246.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_000013445.1_ASM1344v1,11,name=Methanospirillum hungatei JF-1;parent_id=2203.0;gc=0;num_genes=0;annotation_date=02/17/2020;ancestor=Archaea
+GCF_000012285.1_ASM1228v1,11,name=Sulfolobus acidocaldarius DSM 639;parent_id=2285.0;gc=0;num_genes=0;annotation_date=02/17/2020;ancestor=Archaea
+GCF_000152265.2_ASM15226v2,11,name=Ferroplasma acidarmanus fer1;parent_id=97393.0;gc=0;num_genes=0;annotation_date=08/26/2019;ancestor=Archaea
+GCF_000012545.1_ASM1254v1,11,name=Methanosphaera stadtmanae DSM 3091;parent_id=2317.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_000026045.1_ASM2604v1,11,name=Natronomonas pharaonis DSM 2160;parent_id=2257.0;gc=0;num_genes=0;annotation_date=02/13/2020;ancestor=Archaea
+GCF_000063445.1_ASM6344v1,11,name=Methanocella arvoryzae MRE50;parent_id=1175445.0;gc=0;num_genes=0;annotation_date=02/14/2020;ancestor=Archaea
+GCF_900110535.1_IMG-taxon_2617270915_annotated_assembly,11,name=Halobacterium jilantaiense;parent_id=2239.0;gc=0;num_genes=0;annotation_date=07/20/2019;ancestor=Archaea
+GCF_000226975.2_ASM22697v3,11,name=Halobiforma lacisalsi AJ5;parent_id=229731.0;gc=0;num_genes=0;annotation_date=02/19/2020;ancestor=Archaea
+GCF_000015825.1_ASM1582v1,11,name=Methanoculleus marisnigri JR1;parent_id=2198.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_000385565.1_ASM38556v1,11,name=Archaeoglobus sulfaticallidus PM70-1;parent_id=1316941.0;gc=0;num_genes=0;annotation_date=08/26/2019;ancestor=Archaea
+GCF_000151105.2_ASM15110v2,11,name=Thermococcus barophilus MP;parent_id=55802.0;gc=0;num_genes=0;annotation_date=03/02/2020;ancestor=Archaea
+GCF_000018305.1_ASM1830v1,11,name=Caldivirga maquilingensis IC-167;parent_id=76887.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_000016605.1_ASM1660v1,11,name=Metallosphaera sedula DSM 5348;parent_id=43687.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_000017165.1_ASM1716v1,11,name=Methanococcus vannielii SB;parent_id=2187.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_000745485.1_ASM74548v1,11,name=Methanobacterium veterum;parent_id=2160.0;gc=0;num_genes=0;annotation_date=12/15/2019;ancestor=Archaea
+GCF_000015765.1_ASM1576v1,11,name=Methanocorpusculum labreanum Z;parent_id=83984.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_000739595.1_ASM73959v1,11,name=Halorubrum halophilum;parent_id=56688.0;gc=0;num_genes=0;annotation_date=01/31/2020;ancestor=Archaea
+GCF_000015145.1_ASM1514v1,11,name=Hyperthermus butylicus DSM 5456;parent_id=54248.0;gc=0;num_genes=0;annotation_date=11/14/2019;ancestor=Archaea
+GCF_000022205.1_ASM2220v1,11,name=Halorubrum lacusprofundi ATCC 49239;parent_id=2247.0;gc=0;num_genes=0;annotation_date=11/18/2019;ancestor=Archaea
+GCF_000017185.1_ASM1718v1,11,name=Methanococcus aeolicus Nankai-3;parent_id=42879.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_000016525.1_ASM1652v1,11,name=Methanobrevibacter smithii ATCC 35061;parent_id=2173.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_000017225.1_ASM1722v1,11,name=Methanococcus maripaludis C7;parent_id=39152.0;gc=0;num_genes=0;annotation_date=12/07/2019;ancestor=Archaea
+GCF_000022385.1_ASM2238v1,11,name=Sulfolobus islandicus L.S.2.15;parent_id=43080.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_000025665.1_ASM2566v1,11,name=Aciduliprofundum boonei T469;parent_id=379547.0;gc=0;num_genes=0;annotation_date=12/07/2019;ancestor=Archaea
+GCF_000017945.1_ASM1794v1,11,name=Ignicoccus hospitalis KIN4/I;parent_id=160233.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_000006175.1_ASM617v2,11,name=Methanococcus voltae A3;parent_id=2188.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_000017625.1_ASM1762v1,11,name=Methanoregula boonei 6A8;parent_id=358766.0;gc=0;num_genes=0;annotation_date=12/19/2019;ancestor=Archaea
+GCF_000172995.2_ASM17299v2,11,name=Halogeometricum borinquense DSM 11551;parent_id=60847.0;gc=0;num_genes=0;annotation_date=08/26/2019;ancestor=Archaea
+GCF_000023965.1_ASM2396v1,11,name=Halomicrobium mukohataei DSM 12286;parent_id=57705.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_900114835.1_IMG-taxon_2642422540_annotated_assembly,11,name=Methanolobus profundi;parent_id=2220.0;gc=0;num_genes=0;annotation_date=07/21/2019;ancestor=Archaea
+GCF_001571385.1_ASM157138v1,11,name=Methanofollis ethanolicus;parent_id=81416.0;gc=0;num_genes=0;annotation_date=03/10/2020;ancestor=Archaea
+GCF_000020905.1_ASM2090v1,11,name=Desulfurococcus amylolyticus 1221n;parent_id=94694.0;gc=0;num_genes=0;annotation_date=02/13/2020;ancestor=Archaea
+GCF_001402945.1_ASM140294v1,11,name=Acidiplasma aeolicum;parent_id=507753.0;gc=0;num_genes=0;annotation_date=02/07/2020;ancestor=Archaea
+GCF_000023945.1_ASM2394v1,11,name=Halorhabdus utahensis DSM 12940;parent_id=146826.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_000021965.1_ASM2196v1,11,name=Methanosphaerula palustris E1-9c;parent_id=475088.0;gc=0;num_genes=0;annotation_date=01/05/2020;ancestor=Archaea
+GCF_000306765.2_ASM30676v2,11,name=Haloferax mediterranei ATCC 33500;parent_id=2252.0;gc=0;num_genes=0;annotation_date=04/09/2017;ancestor=Archaea
+GCF_000969885.1_ASM96988v1,11,name=Methanosarcina thermophila TM-1;parent_id=2210.0;gc=0;num_genes=0;annotation_date=12/10/2019;ancestor=Archaea
+GCF_000376965.1_ASM37696v1,11,name=Methanothermococcus thermolithotrophicus DSM 2095;parent_id=2186.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_000166095.1_ASM16609v1,11,name=Methanothermus fervidus DSM 2088;parent_id=2180.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_001316045.1_ASM131604v1,11,name=Sulfolobus metallicus DSM 6482 = JCM 9184;parent_id=47303.0;gc=0;num_genes=0;annotation_date=02/07/2020;ancestor=Archaea
+GCF_000246985.2_ASM24698v3,11,name=Thermococcus litoralis DSM 5473;parent_id=2265.0;gc=0;num_genes=0;annotation_date=08/26/2019;ancestor=Archaea
+GCF_000018365.1_ASM1836v1,11,name=Thermococcus onnurineus NA1;parent_id=342948.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_001602375.1_ASM160237v1,11,name=Methanoculleus horonobensis;parent_id=45989.0;gc=0;num_genes=0;annotation_date=02/25/2020;ancestor=Archaea
+GCF_000215995.1_ASM21599v1,11,name=Pyrococcus yayanosii CH1;parent_id=1008460.0;gc=0;num_genes=0;annotation_date=02/17/2020;ancestor=Archaea
+GCF_000025325.1_ASM2532v1,11,name=Haloterrigena turkmenica DSM 5511;parent_id=62320.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_000025865.1_ASM2586v1,11,name=Methanohalophilus mahii DSM 5219;parent_id=2176.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_000025625.1_ASM2562v1,11,name=Natrialba magadii ATCC 43099;parent_id=13769.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_900113245.1_IMG-taxon_2617270917_annotated_assembly,11,name=Halopelagius inordinatus;parent_id=1008195.0;gc=0;num_genes=0;annotation_date=07/21/2019;ancestor=Archaea
+GCF_900112175.1_IMG-taxon_2617270920_annotated_assembly,11,name=Halogeometricum rufum;parent_id=60846.0;gc=0;num_genes=0;annotation_date=07/21/2019;ancestor=Archaea
+GCF_900107665.1_IMG-taxon_2617270898_annotated_assembly,11,name=Haloplanus vescus;parent_id=376170.0;gc=0;num_genes=0;annotation_date=07/20/2019;ancestor=Archaea
+GCF_900115785.1_IMG-taxon_2617270895_annotated_assembly,11,name=Halogeometricum limi;parent_id=60846.0;gc=0;num_genes=0;annotation_date=06/15/2019;ancestor=Archaea
+GCF_000789255.1_ASM78925v1,11,name=Geoglobus acetivorans;parent_id=190818.0;gc=0;num_genes=0;annotation_date=02/10/2020;ancestor=Archaea
+GCF_000025285.1_ASM2528v1,11,name=Archaeoglobus profundus DSM 5631;parent_id=84156.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_000092305.1_ASM9230v1,11,name=Methanocaldococcus infernus ME;parent_id=67760.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_000023985.1_ASM2398v1,11,name=Methanocaldococcus fervens AG86;parent_id=83171.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_000024625.1_ASM2462v1,11,name=Methanocaldococcus vulcanius M7;parent_id=73913.0;gc=0;num_genes=0;annotation_date=11/04/2019;ancestor=Archaea
+GCF_000517445.1_ASM51744v1,11,name=Thermococcus paralvinellae;parent_id=2263.0;gc=0;num_genes=0;annotation_date=01/06/2020;ancestor=Archaea
+GCF_000966265.1_ASM96626v1,11,name=Palaeococcus ferrophilus DSM 13482;parent_id=83868.0;gc=0;num_genes=0;annotation_date=12/15/2019;ancestor=Archaea
+GCF_001971705.1_ASM197170v1,11,name=Haloterrigena daqingensis;parent_id=121871.0;gc=0;num_genes=0;annotation_date=12/15/2019;ancestor=Archaea
+GCF_000025505.1_ASM2550v1,11,name=Ferroglobus placidus DSM 10642;parent_id=54261.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_000327485.1_ASM32748v1,11,name=Methanoregula formicica SMSP;parent_id=882104.0;gc=0;num_genes=0;annotation_date=01/06/2020;ancestor=Archaea
+GCF_000022545.1_ASM2254v1,11,name=Thermococcus sibiricus MM 739;parent_id=172049.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_900116205.1_IMG-taxon_2639762563_annotated_assembly,11,name=Halostagnicola kamekurae;parent_id=353799.0;gc=0;num_genes=0;annotation_date=06/15/2019;ancestor=Archaea
+GCF_000223905.1_ASM22390v1,11,name=Haloarcula hispanica ATCC 33960;parent_id=51589.0;gc=0;num_genes=0;annotation_date=02/17/2020;ancestor=Archaea
+GCF_000024185.1_ASM2418v1,11,name=Methanobrevibacter ruminantium M1;parent_id=83816.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_000196655.1_ASM19665v1,11,name=Methanohalobium evestigatum Z-7303;parent_id=2322.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_000179575.2_ASM17957v2,11,name=Methanothermococcus okinawensis IH1;parent_id=155863.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_000243455.1_ASM24345v2,11,name=Methanotorris formicicus Mc-S-70;parent_id=213185.0;gc=0;num_genes=0;annotation_date=01/13/2020;ancestor=Archaea
+GCF_900107195.1_IMG-taxon_2617270777_annotated_assembly,11,name=Halobellus clavatus;parent_id=1073986.0;gc=0;num_genes=0;annotation_date=06/15/2019;ancestor=Archaea
+GCF_900102305.1_IMG-taxon_2651870125_annotated_assembly,11,name=Halorientalis regularis;parent_id=1073987.0;gc=0;num_genes=0;annotation_date=06/15/2019;ancestor=Archaea
+GCF_900110465.1_IMG-taxon_2617270928_annotated_assembly,11,name=Halogranum amylolyticum;parent_id=695982.0;gc=0;num_genes=0;annotation_date=06/16/2019;ancestor=Archaea
+GCF_900103715.1_IMG-taxon_2617270902_annotated_assembly,11,name=Halogranum gelatinilyticum;parent_id=695982.0;gc=0;num_genes=0;annotation_date=06/15/2019;ancestor=Archaea
+GCF_000337775.1_ASM33777v1,11,name=Haloarcula vallismortis ATCC 29715;parent_id=28442.0;gc=0;num_genes=0;annotation_date=01/20/2020;ancestor=Archaea
+GCF_000337815.1_ASM33781v1,11,name=Haloferax mucosum ATCC BAA-1512;parent_id=403181.0;gc=0;num_genes=0;annotation_date=01/30/2020;ancestor=Archaea
+GCF_000144915.1_ASM14491v1,11,name=Acidilobus saccharovorans 345-15;parent_id=242703.0;gc=0;num_genes=0;annotation_date=02/17/2020;ancestor=Archaea
+GCF_000243315.1_ASM24331v1,11,name=Metallosphaera yellowstonensis MK1;parent_id=1111107.0;gc=0;num_genes=0;annotation_date=12/07/2019;ancestor=Archaea
+GCF_000217995.1_ASM21799v1,11,name=Methanosalsum zhilinae DSM 4017;parent_id=39669.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_000147875.1_ASM14787v1,11,name=Methanolacinia petrolearia DSM 11571;parent_id=54120.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_000194625.1_ASM19462v1,11,name=Archaeoglobus veneficus SNP6;parent_id=58290.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_000223395.1_ASM22339v1,11,name=Pyrolobus fumarii 1A;parent_id=54252.0;gc=0;num_genes=0;annotation_date=04/14/2017;ancestor=Archaea
+GCF_000328685.1_ASM32868v1,11,name=Natronococcus occultus SP4;parent_id=29288.0;gc=0;num_genes=0;annotation_date=12/17/2019;ancestor=Archaea
+GCF_000711215.1_ASM71121v1,11,name=Methanomicrobium mobile BP;parent_id=2205.0;gc=0;num_genes=0;annotation_date=12/15/2019;ancestor=Archaea
+GCF_900115675.1_IMG-taxon_2663762745_annotated_assembly,11,name=Halolamina pelagica;parent_id=1075397.0;gc=0;num_genes=0;annotation_date=07/21/2019;ancestor=Archaea
+GCF_002156705.1_ASM215670v1,11,name=Natronolimnobius aegyptiacus;parent_id=253106.0;gc=0;num_genes=0;annotation_date=01/28/2020;ancestor=Archaea
+GCF_000224475.1_ASM22447v1,11,name=halophilic archaeon DL31;parent_id=2678336.0;gc=0;num_genes=0;annotation_date=12/19/2019;ancestor=Archaea
+GCF_000186365.1_ASM18636v1,11,name=Desulfurococcus mucosus DSM 2162;parent_id=2275.0;gc=0;num_genes=0;annotation_date=08/25/2019;ancestor=Archaea
+GCF_900114435.1_IMG-taxon_2667527389_annotated_assembly,11,name=Halomicrobium zhouii;parent_id=203135.0;gc=0;num_genes=0;annotation_date=07/21/2019;ancestor=Archaea
+GCF_000237865.1_ASM23786v1,11,name=Haloquadratum walsbyi C23;parent_id=293091.0;gc=0;num_genes=0;annotation_date=02/17/2020;ancestor=Archaea
+GCF_000196895.1_ASM19689v1,11,name=Halalkalicoccus jeotgali B3;parent_id=413810.0;gc=0;num_genes=0;annotation_date=02/17/2020;ancestor=Archaea
+GCF_000337455.1_ASM33745v1,11,name=Halosimplex carlsbadense 2-9-1;parent_id=171164.0;gc=0;num_genes=0;annotation_date=01/31/2020;ancestor=Archaea
+GCF_000376445.1_ASM37644v1,11,name=Haladaptatus paucihalophilus DX253;parent_id=367189.0;gc=0;num_genes=0;annotation_date=12/18/2019;ancestor=Archaea
+GCF_000217715.1_ASM21771v1,11,name=Halopiger xanaduensis SH-6;parent_id=387343.0;gc=0;num_genes=0;annotation_date=08/26/2019;ancestor=Archaea
+GCF_000517625.1_ASM51762v1,11,name=Halostagnicola larsenii XH-48;parent_id=353800.0;gc=0;num_genes=0;annotation_date=12/15/2019;ancestor=Archaea
+GCF_000230735.2_ASM23073v3,11,name=Natrinema pellirubrum DSM 15624;parent_id=69525.0;gc=0;num_genes=0;annotation_date=12/17/2019;ancestor=Archaea
+GCF_000230715.2_ASM23071v3,11,name=Natronobacterium gregoryi SP2;parent_id=44930.0;gc=0;num_genes=0;annotation_date=12/07/2019;ancestor=Archaea
+GCF_000328665.1_ASM32866v1,11,name=Methanomethylovorans hollandica DSM 15978;parent_id=101192.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_001748385.1_ASM174838v1,11,name=Vulcanisaeta thermophila;parent_id=164450.0;gc=0;num_genes=0;annotation_date=02/04/2020;ancestor=Archaea
+GCF_000214725.1_ASM21472v1,11,name=Methanobacterium paludis;parent_id=2160.0;gc=0;num_genes=0;annotation_date=02/14/2020;ancestor=Archaea
+GCF_000191585.1_ASM19158v1,11,name=Methanobacterium lacus;parent_id=2160.0;gc=0;num_genes=0;annotation_date=02/17/2020;ancestor=Archaea
+GCF_000214415.1_ASM21441v1,11,name=Methanotorris igneus Kol 5;parent_id=2189.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_900100385.1_IMG-taxon_2651870124_annotated_assembly,11,name=Halovenus aranensis;parent_id=1377992.0;gc=0;num_genes=0;annotation_date=07/20/2019;ancestor=Archaea
+GCF_000698785.1_ASM69878v1,11,name=Nitrososphaera viennensis EN76;parent_id=1034015.0;gc=0;num_genes=0;annotation_date=02/10/2020;ancestor=Archaea
+GCF_000427685.1_ASM42768v1,11,name=Haloplanus natans DSM 17983;parent_id=376171.0;gc=0;num_genes=0;annotation_date=12/15/2019;ancestor=Archaea
+GCF_000336695.1_ASM33669v1,11,name=Halococcus morrhuae DSM 1307;parent_id=2250.0;gc=0;num_genes=0;annotation_date=01/20/2020;ancestor=Archaea
+GCF_000213215.1_ASM21321v1,11,name=Acidianus hospitalis W1;parent_id=563177.0;gc=0;num_genes=0;annotation_date=08/26/2019;ancestor=Archaea
+GCF_001481685.1_ASM148168v1,11,name=Ignicoccus islandicus DSM 13165;parent_id=54259.0;gc=0;num_genes=0;annotation_date=12/16/2019;ancestor=Archaea
+GCF_000190315.1_ASM19031v1,11,name=Vulcanisaeta moutnovskia 768-28;parent_id=985052.0;gc=0;num_genes=0;annotation_date=02/17/2020;ancestor=Archaea
+GCF_000204415.1_ASM20441v1,11,name=Methanothrix soehngenii GP6;parent_id=2223.0;gc=0;num_genes=0;annotation_date=02/14/2020;ancestor=Archaea
+GCF_900103505.1_IMG-taxon_2651870127_annotated_assembly,11,name=Haloarchaeobius iranensis;parent_id=1269031.0;gc=0;num_genes=0;annotation_date=06/15/2019;ancestor=Archaea
+GCF_000204925.1_ASM20492v1,11,name=Metallosphaera cuprina Ar-4;parent_id=1006005.0;gc=0;num_genes=0;annotation_date=02/17/2020;ancestor=Archaea
+GCF_001593955.1_ASM159395v1,11,name=Halalkalicoccus paucihalophilus;parent_id=332246.0;gc=0;num_genes=0;annotation_date=12/16/2019;ancestor=Archaea
+GCF_000470655.1_HATI1,11,name=Halorhabdus tiamatea SARL4B;parent_id=430914.0;gc=0;num_genes=0;annotation_date=02/10/2020;ancestor=Archaea
+GCF_000251105.1_ASM25110v1,11,name=Methanocella conradii HZ254;parent_id=1175444.0;gc=0;num_genes=0;annotation_date=02/17/2020;ancestor=Archaea
+GCF_000220645.1_ASM22064v1,11,name=Methanococcus maripaludis X1;parent_id=39152.0;gc=0;num_genes=0;annotation_date=02/17/2020;ancestor=Archaea
+GCF_000350305.1_ASM35030v1,11,name=Thermoplasmatales archaeon BRNA1;parent_id=1919231.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_000317795.1_ASM31779v1,11,name=Caldisphaera lagunensis DSM 15908;parent_id=200415.0;gc=0;num_genes=0;annotation_date=12/14/2019;ancestor=Archaea
+GCF_000371805.1_ASM37180v1,11,name=Methanocaldococcus villosus KIN24-T80;parent_id=667126.0;gc=0;num_genes=0;annotation_date=02/05/2020;ancestor=Archaea
+GCF_000447865.2_ASM44786v2,11,name=haloarchaeon 3A1_DGR;parent_id=38063.0;gc=0;num_genes=0;annotation_date=03/03/2020;ancestor=Archaea
+GCF_900109065.1_IMG-taxon_2693429898_annotated_assembly,11,name=Halohasta litchfieldiae;parent_id=1450140.0;gc=0;num_genes=0;annotation_date=07/27/2017;ancestor=Archaea
+GCF_000504205.1_ASM50420v1,11,name=Methanolobus tindarius DSM 2278;parent_id=2221.0;gc=0;num_genes=0;annotation_date=12/15/2019;ancestor=Archaea
+GCF_000235565.1_ASM23556v1,11,name=Methanosaeta harundinacea 6Ac;parent_id=301375.0;gc=0;num_genes=0;annotation_date=08/26/2019;ancestor=Archaea
+GCF_000383975.1_ASM38397v1,11,name=Natronorubrum tibetense GA33;parent_id=63128.0;gc=0;num_genes=0;annotation_date=11/25/2019;ancestor=Archaea
+GCF_000430905.1_ASM43090v1,11,name=Methanocorpusculum bavaricum DSM 4179;parent_id=71518.0;gc=0;num_genes=0;annotation_date=02/05/2020;ancestor=Archaea
+GCF_000711905.1_ASM71190v1,11,name=Methermicoccus shengliensis DSM 18856;parent_id=660064.0;gc=0;num_genes=0;annotation_date=12/15/2019;ancestor=Archaea
+GCF_000336675.1_ASM33667v1,11,name=Halococcus hamelinensis 100A6;parent_id=332168.0;gc=0;num_genes=0;annotation_date=01/20/2020;ancestor=Archaea
+GCF_000258515.1_TheZil1.0,11,name=Thermococcus zilligii AN1;parent_id=54076.0;gc=0;num_genes=0;annotation_date=02/04/2020;ancestor=Archaea
+GCF_000308215.1_ASM30821v1,11,name=Methanomassiliicoccus luminyensis B10;parent_id=1080712.0;gc=0;num_genes=0;annotation_date=02/05/2020;ancestor=Archaea
+GCF_000264495.1_ASM26449v1,11,name=Thermogladius calderae 1633;parent_id=1200300.0;gc=0;num_genes=0;annotation_date=02/14/2020;ancestor=Archaea
+GCF_900110865.1_IMG-taxon_2639762573_annotated_assembly,11,name=Natrinema salaciae;parent_id=88723.0;gc=0;num_genes=0;annotation_date=06/15/2019;ancestor=Archaea
+GCF_001316065.1_ASM131606v1,11,name=Aeropyrum camini SY1 = JCM 12091;parent_id=229980.0;gc=0;num_genes=0;annotation_date=12/11/2019;ancestor=Archaea
+GCF_000304355.2_Mb_MS2,11,name=Methanoculleus bourgensis MS2;parent_id=83986.0;gc=0;num_genes=0;annotation_date=02/18/2020;ancestor=Archaea
+GCF_000784335.1_ASM78433v1,11,name=Halopiger salifodinae;parent_id=387342.0;gc=0;num_genes=0;annotation_date=10/30/2019;ancestor=Archaea
+GCF_000302455.1_ASM30245v1,11,name=Methanobacterium formicicum DSM 3637;parent_id=2162.0;gc=0;num_genes=0;annotation_date=12/21/2019;ancestor=Archaea
+GCF_000283335.1_162.HSB1.1,11,name=Halogranum salarium B-1;parent_id=693851.0;gc=0;num_genes=0;annotation_date=12/17/2019;ancestor=Archaea
+GCF_000320505.1_ASM32050v2,11,name=Methanobrevibacter boviskoreani JH1;parent_id=1348249.0;gc=0;num_genes=0;annotation_date=01/20/2020;ancestor=Archaea
+GCF_000337895.1_ASM33789v1,11,name=Halobiforma nitratireducens JCM 10879;parent_id=130048.0;gc=0;num_genes=0;annotation_date=01/20/2020;ancestor=Archaea
+GCF_000336915.1_ASM33691v1,11,name=Halococcus saccharolyticus DSM 5350;parent_id=62319.0;gc=0;num_genes=0;annotation_date=01/30/2020;ancestor=Archaea
+GCF_000336935.1_ASM33693v1,11,name=Halococcus salifodinae DSM 8989;parent_id=36738.0;gc=0;num_genes=0;annotation_date=02/14/2020;ancestor=Archaea
+GCF_000336715.1_ASM33671v1,11,name=Halococcus thailandensis JCM 13552;parent_id=335952.0;gc=0;num_genes=0;annotation_date=02/25/2020;ancestor=Archaea
+GCF_000336875.1_ASM33687v1,11,name=Halorubrum californiensis DSM 19288;parent_id=416585.0;gc=0;num_genes=0;annotation_date=01/20/2020;ancestor=Archaea
+GCF_000337035.1_ASM33703v1,11,name=Halorubrum coriense DSM 10284;parent_id=64713.0;gc=0;num_genes=0;annotation_date=01/31/2020;ancestor=Archaea
+GCF_000337375.1_ASM33737v1,11,name=Halorubrum lipolyticum DSM 21995;parent_id=368624.0;gc=0;num_genes=0;annotation_date=01/20/2020;ancestor=Archaea
+GCF_000337415.1_ASM33741v1,11,name=Halorubrum tebenquichense DSM 14210;parent_id=119434.0;gc=0;num_genes=0;annotation_date=02/25/2020;ancestor=Archaea
+GCF_000337095.1_ASM33709v1,11,name=Halogeometricum pallidum JCM 14848;parent_id=411361.0;gc=0;num_genes=0;annotation_date=01/22/2020;ancestor=Archaea
+GCF_000337515.1_ASM33751v1,11,name=Halovivax asiaticus JCM 14624;parent_id=332953.0;gc=0;num_genes=0;annotation_date=02/09/2020;ancestor=Archaea
+GCF_000337575.1_ASM33757v1,11,name=Natrialba hulunbeirensis JCM 10989;parent_id=123783.0;gc=0;num_genes=0;annotation_date=01/21/2020;ancestor=Archaea
+GCF_000337195.1_ASM33719v1,11,name=Natrinema versiforme JCM 10478;parent_id=88724.0;gc=0;num_genes=0;annotation_date=01/20/2020;ancestor=Archaea
+GCF_000337675.1_ASM33767v1,11,name=Natronococcus amylolyticus DSM 10524;parent_id=44470.0;gc=0;num_genes=0;annotation_date=01/22/2020;ancestor=Archaea
+GCF_000337695.1_ASM33769v1,11,name=Natronococcus jeotgali DSM 18795;parent_id=413812.0;gc=0;num_genes=0;annotation_date=01/22/2020;ancestor=Archaea
+GCF_000337215.1_ASM33721v1,11,name=Natronolimnobius innermongolicus JCM 12255;parent_id=253107.0;gc=0;num_genes=0;annotation_date=02/25/2020;ancestor=Archaea
+GCF_000337715.1_ASM33771v1,11,name=Natronorubrum bangense JCM 10635;parent_id=61858.0;gc=0;num_genes=0;annotation_date=01/31/2020;ancestor=Archaea
+GCF_000336755.1_ASM33675v1,11,name=Haloferax elongans ATCC BAA-1513;parent_id=403191.0;gc=0;num_genes=0;annotation_date=01/20/2020;ancestor=Archaea
+GCF_000336995.1_ASM33699v1,11,name=Halorubrum aidingense JCM 13560;parent_id=368623.0;gc=0;num_genes=0;annotation_date=02/14/2020;ancestor=Archaea
+GCF_000337355.1_ASM33735v1,11,name=Halorubrum kocurii JCM 14978;parent_id=478441.0;gc=0;num_genes=0;annotation_date=01/30/2020;ancestor=Archaea
+GCF_000337475.1_ASM33747v1,11,name=Haloterrigena limicola JCM 13563;parent_id=370323.0;gc=0;num_genes=0;annotation_date=01/20/2020;ancestor=Archaea
+GCF_000337735.1_ASM33773v1,11,name=Natronorubrum sulfidifaciens JCM 14089;parent_id=388259.0;gc=0;num_genes=0;annotation_date=02/09/2020;ancestor=Archaea
+GCF_000334895.1_ASM33489v1,11,name=Halococcus agarilyticus;parent_id=2249.0;gc=0;num_genes=0;annotation_date=11/18/2019;ancestor=Archaea
+GCF_900100875.1_IMG-taxon_2671180169_annotated_assembly,11,name=Halopelagius longus;parent_id=1008195.0;gc=0;num_genes=0;annotation_date=08/01/2017;ancestor=Archaea
+GCF_000474235.1_ASM47423v1,11,name=Halarchaeum acidiphilum MH1-52-1;parent_id=489138.0;gc=0;num_genes=0;annotation_date=01/13/2020;ancestor=Archaea
+GCF_000755245.1_ASM75524v1,11,name=Halococcus sediminicola;parent_id=2249.0;gc=0;num_genes=0;annotation_date=01/31/2020;ancestor=Archaea
+GCF_900108505.1_IMG-taxon_2651870118_annotated_assembly,11,name=Halopenitus malekzadehii;parent_id=1209988.0;gc=0;num_genes=0;annotation_date=07/20/2019;ancestor=Archaea
+GCF_001412615.1_ASM141261v1,11,name=Pyrodictium delaneyi;parent_id=2308.0;gc=0;num_genes=0;annotation_date=12/11/2019;ancestor=Archaea
+GCF_002214365.1_ASM221436v1,11,name=Thermococcus celer Vu 13 = JCM 8558;parent_id=2264.0;gc=0;num_genes=0;annotation_date=02/19/2020;ancestor=Archaea
+GCF_001315945.1_ASM131594v1,11,name=Methanogenium cariaci JCM 10550;parent_id=2197.0;gc=0;num_genes=0;annotation_date=12/16/2019;ancestor=Archaea
+GCF_000455365.1_HdjelfamassiliensisIIH2,11,name=Halopiger djelfimassiliensis;parent_id=387342.0;gc=0;num_genes=0;annotation_date=11/25/2019;ancestor=Archaea
+GCF_000455345.1_Halgo,11,name=Halopiger goleimassiliensis;parent_id=387342.0;gc=0;num_genes=0;annotation_date=11/25/2019;ancestor=Archaea
+GCF_000739065.1_ASM73906v1,11,name=Methanocaldococcus bathoardescens;parent_id=196118.0;gc=0;num_genes=0;annotation_date=02/14/2020;ancestor=Archaea
+GCF_000725425.1_ASM72542v1,11,name=Palaeococcus pacificus DY20341;parent_id=971279.0;gc=0;num_genes=0;annotation_date=02/10/2020;ancestor=Archaea
+GCF_900111645.1_IMG-taxon_2642422537_annotated_assembly,11,name=Methanococcoides vulcani;parent_id=2225.0;gc=0;num_genes=0;annotation_date=07/20/2019;ancestor=Archaea
+GCF_900110215.1_IMG-taxon_2654588107_annotated_assembly,11,name=Halorientalis persicus;parent_id=1073987.0;gc=0;num_genes=0;annotation_date=06/15/2019;ancestor=Archaea
+GCF_000739555.1_ASM73955v1,11,name=Halolamina rubra;parent_id=1075397.0;gc=0;num_genes=0;annotation_date=01/31/2020;ancestor=Archaea
+GCF_000513315.1_ANOR1,11,name=Methanobrevibacter arboriphilus ANOR1;parent_id=39441.0;gc=0;num_genes=0;annotation_date=12/09/2019;ancestor=Archaea
+GCF_000723185.1_APF_1883_PRJEB4650,11,name=Candidatus Nitrosotenuis uzonensis;parent_id=1825023.0;gc=0;num_genes=0;annotation_date=12/09/2019;ancestor=Archaea
+GCF_001488575.1_Halobacterium_hubeiense_JI20-1,11,name=Halobacterium hubeiense;parent_id=2239.0;gc=0;num_genes=0;annotation_date=12/12/2019;ancestor=Archaea
+GCF_000621965.1_ASM62196v1,11,name=Methanobrevibacter wolinii SH;parent_id=190977.0;gc=0;num_genes=0;annotation_date=12/15/2019;ancestor=Archaea
+GCF_000816105.1_ASM81610v1,11,name=Thermococcus guaymasensis DSM 11113;parent_id=110164.0;gc=0;num_genes=0;annotation_date=12/15/2019;ancestor=Archaea
+GCF_000970325.1_ASM97032v1,11,name=Methanococcoides methylutens MM1;parent_id=2226.0;gc=0;num_genes=0;annotation_date=12/10/2019;ancestor=Archaea
+GCF_000970305.1_ASM97030v1,11,name=Methanosarcina barkeri 3;parent_id=2208.0;gc=0;num_genes=0;annotation_date=12/01/2019;ancestor=Archaea
+GCF_000970025.1_ASM97002v1,11,name=Methanosarcina barkeri MS;parent_id=2208.0;gc=0;num_genes=0;annotation_date=12/01/2019;ancestor=Archaea
+GCF_000970285.1_ASM97028v1,11,name=Methanosarcina horonobensis HB-1 = JCM 15518;parent_id=418008.0;gc=0;num_genes=0;annotation_date=02/18/2020;ancestor=Archaea
+GCF_000970265.1_ASM97026v1,11,name=Methanosarcina lacustris Z-7289;parent_id=170861.0;gc=0;num_genes=0;annotation_date=12/16/2019;ancestor=Archaea
+GCF_000970085.1_ASM97008v1,11,name=Methanosarcina siciliae T4/M;parent_id=38027.0;gc=0;num_genes=0;annotation_date=12/10/2019;ancestor=Archaea
+GCF_000969905.1_ASM96990v1,11,name=Methanosarcina vacuolata Z-761;parent_id=2215.0;gc=0;num_genes=0;annotation_date=12/16/2019;ancestor=Archaea
+GCF_000739575.1_ASM73957v1,11,name=Halobellus rufus;parent_id=1073986.0;gc=0;num_genes=0;annotation_date=12/10/2019;ancestor=Archaea
+GCF_000710615.1_HAPD43.1,11,name=Haladaptatus cibarius D43;parent_id=453847.0;gc=0;num_genes=0;annotation_date=02/25/2020;ancestor=Archaea
+GCF_000755225.1_ASM75522v1,11,name=Halapricum salinum;parent_id=1542963.0;gc=0;num_genes=0;annotation_date=11/18/2019;ancestor=Archaea
+GCF_001282785.1_halo7,11,name=Halolamina sediminis;parent_id=1075397.0;gc=0;num_genes=0;annotation_date=02/01/2020;ancestor=Archaea
+GCF_001560915.1_ASM156091v1,11,name=methanogenic archaeon ISO4-H5;parent_id=1234666.0;gc=0;num_genes=0;annotation_date=12/20/2019;ancestor=Archaea
+GCF_000769655.1_ASM76965v1,11,name=Thermococcus eurythermalis;parent_id=2263.0;gc=0;num_genes=0;annotation_date=02/10/2020;ancestor=Archaea
+GCF_001469955.1_ASM146995v1,11,name=Haloprofundus marisrubri;parent_id=1911573.0;gc=0;num_genes=0;annotation_date=02/07/2020;ancestor=Archaea
+GCF_001017125.1_ASM101712v1,11,name=Methanoculleus sediminis;parent_id=45989.0;gc=0;num_genes=0;annotation_date=02/06/2020;ancestor=Archaea
+GCF_001011115.1_ASM101111v1,11,name=Halanaeroarchaeum sulfurireducens;parent_id=1656823.0;gc=0;num_genes=0;annotation_date=11/25/2019;ancestor=Archaea
+GCF_001577775.1_ASM157777v1,11,name=Pyrococcus kukulkanii;parent_id=2260.0;gc=0;num_genes=0;annotation_date=02/15/2020;ancestor=Archaea
+GCF_900090055.1_C.divulgatum_PM4,11,name=Cuniculiplasma divulgatum;parent_id=1747777.0;gc=0;num_genes=0;annotation_date=08/07/2019;ancestor=Archaea
+GCF_001462205.1_HalopeDYS1.0,11,name=Haloparvum sedimenti;parent_id=1820337.0;gc=0;num_genes=0;annotation_date=07/06/2019;ancestor=Archaea
+GCF_001647085.1_ASM164708v1,11,name=Thermococcus piezophilus;parent_id=2263.0;gc=0;num_genes=0;annotation_date=04/12/2017;ancestor=Archaea
+GCF_001304615.1_ASM130461v1,11,name=Methanosarcina flavescens;parent_id=2207.0;gc=0;num_genes=0;annotation_date=04/10/2017;ancestor=Archaea
+GCF_001280455.1_ASM128045v1,11,name=Halorubrum tropicale;parent_id=56688.0;gc=0;num_genes=0;annotation_date=06/10/2019;ancestor=Archaea
+GCF_001886955.1_ASM188695v1,11,name=Halodesulfurarchaeum formicicum;parent_id=1980514.0;gc=0;num_genes=0;annotation_date=01/07/2020;ancestor=Archaea
+GCF_002153915.1_ASM215391v1,11,name=Methanonatronarchaeum thermophilum;parent_id=2022711.0;gc=0;num_genes=0;annotation_date=01/28/2020;ancestor=Archaea
