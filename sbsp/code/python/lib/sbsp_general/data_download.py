@@ -252,9 +252,9 @@ def download_data_from_assembly_summary(df_assembly_summary, pd_output, **kwargs
             gcfid_info = download_assembly_summary_entry(gcfid_info, pd_output, **kwargs)
             success_downloads.append(gcfid_info)
 
-            print_progress("Download", len(success_downloads), total)
+            # print_progress("Download", len(success_downloads), total)
         except (IOError, OSError, ValueError):
-            print_progress("Download", len(success_downloads), total)
+            # print_progress("Download", len(success_downloads), total)
             pass
 
     gil = GenomeInfoList([
@@ -301,7 +301,7 @@ def filter_assembly_summary_by_ancestor(ancestor_tag, tag_type, taxonomy_tree, d
             list_rows += info_list
 
     if len(list_rows) > 0:
-        df_filtered = df_filtered.append(list_rows)
+        df_filtered = df_filtered.append(list_rows, sort=False)
 
     return df_filtered
 
