@@ -74,7 +74,7 @@ def main(env, args):
         gi = wanted_gcfids[name]        # type: GenomeInfo
         genetic_code = gi.attributes.get("genetic_code")
         df_assembly_summary.loc[i, "genetic_code"] = genetic_code
-        
+
     logger.info(f"Request {len(gil)}. Found {len(df_assembly_summary)}")
 
     logger.info("Downloading genomes")

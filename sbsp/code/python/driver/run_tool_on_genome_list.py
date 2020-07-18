@@ -31,6 +31,7 @@ parser.add_argument('--pf-genome-list', required=True, help="List of genomes")
 parser.add_argument('--type', required=True, choices=["archaea", "bacteria"], help="Is the list archaea or bacteria")
 parser.add_argument('--dn-run', required=False, help="Name of directory that will contain the run")
 parser.add_argument('--tool', choices=["gms2", "prodigal"], required=True, help="Tool used for prediction")
+parser.add_argument('--use-pbs', default=False, action="store_true", help="If set, run on PBS")
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
@@ -97,16 +98,21 @@ def run_gms2(env, gi, **kwargs):
     pe_tool = os_join(env["pd-bin-external"], "gms2", "gms2.pl")
 
     pf_sequence = os_join(pd_data, gi.name, "sequence.fasta")
+    use_pbs = get_value(kwargs, "use_pbs", False)
 
     # FIXME: put in genetic code
     cmd_run = "{} --gcode 11 --format gff --out gms2.gff --seq {}  --v --genome-type {} --fgio-dist-thresh 25".format(
             pe_tool, pf_sequence, genome_type
         )
 
-    pf_pbs = os_join(pd_work, "run.pbs")
-    create_pbs_file(env, cmd_run, pf_pbs, job_name=gi.name, **kwargs)
+    if use_pbs:
+        pf_pbs = os_join(pd_work, "run.pbs")
+        create_pbs_file(env, cmd_run, pf_pbs, job_name=gi.name, **kwargs)
 
-    run_shell_cmd("qsub {} &".format(pf_pbs))
+        run_shell_cmd("qsub {} &".format(pf_pbs))
+    else:
+        cmd_run = f"cd {pd_work}; {cmd_run}"
+        run_shell_cmd(cmd_run)
 
 
 def run_prodigal(env, gi, **kwargs):
@@ -117,14 +123,21 @@ def run_prodigal(env, gi, **kwargs):
 
     pf_sequence = os_join(pd_data, gi.name, "sequence.fasta")
 
+    use_pbs = get_value(kwargs, "use_pbs", False)
+
     # FIXME: put in genetic code
     cmd_run ="{}  -i {}  -g 11  -o prodigal.gff  -f gff  -t prodigal.parameters  -q \n".format(
             pe_tool, pf_sequence
         )
-    pf_pbs = os_join(pd_work, "run.pbs")
-    create_pbs_file(env, cmd_run, pf_pbs, job_name=gi.name, **kwargs)
 
-    run_shell_cmd("qsub {} &".format(pf_pbs))
+    if use_pbs:
+        pf_pbs = os_join(pd_work, "run.pbs")
+        create_pbs_file(env, cmd_run, pf_pbs, job_name=gi.name, **kwargs)
+
+        run_shell_cmd("qsub {} &".format(pf_pbs))
+    else:
+        cmd_run = f"cd {pd_work}; {cmd_run}"
+        run_shell_cmd(cmd_run)
 
 
 def run_tool_on_gil(env, gil, tool, **kwargs):
@@ -150,7 +163,8 @@ def main(env, args):
 
     gil = GenomeInfoList.init_from_file(args.pf_genome_list)
     
-    run_tool_on_gil(env, gil, args.tool, dn_run=args.dn_run, genome_type=args.type)
+    run_tool_on_gil(env, gil, args.tool, dn_run=args.dn_run, genome_type=args.type,
+                    use_pbs=args.use_pbs)
 
 
 if __name__ == "__main__":
