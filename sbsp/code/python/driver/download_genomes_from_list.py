@@ -14,7 +14,7 @@ import sbsp_log  # runs init in sbsp_log and configures logger
 
 # Custom imports
 from sbsp_container.assembly_summary import AssemblySummary
-from sbsp_container.genome_list import GenomeInfoList
+from sbsp_container.genome_list import GenomeInfoList, GenomeInfo
 from sbsp_container.taxonomy_tree import TaxonomyTree
 from sbsp_general import Environment
 
@@ -60,12 +60,19 @@ def main(env, args):
     gil = GenomeInfoList.init_from_file(args.pf_genome_list)
 
     # only keep assemblies that match genomes from list
-    wanted_gcfids = set(gi.name for gi in gil)
-    df_assembly_summary["GCFID"] = df_assembly_summary.apply(
+    wanted_gcfids = {gi.name: gi for gi in gil}
+    df_assembly_summary["name"] = df_assembly_summary.apply(
         lambda r: f"{r['assembly_accession']}_{r['asm_name'].replace(' ' , '_')}", axis=1
     )
 
-    df_assembly_summary = df_assembly_summary[df_assembly_summary["GCFID"].isin(wanted_gcfids)].copy()
+    for i in df_assembly_summary.index:
+        name = df_assembly_summary.at[i, "name"]
+        gi = wanted_gcfids[name]        # type: GenomeInfo
+        genetic_code = gi.attributes.get("genetic_code")
+        df_assembly_summary.loc[i, "genetic_code"] = genetic_code
+
+
+    df_assembly_summary = df_assembly_summary[df_assembly_summary["name"].isin(wanted_gcfids.keys())].copy()
     logger.info(f"Request {len(gil)}. Found {len(df_assembly_summary)}")
 
     logger.info("Downloading genomes")

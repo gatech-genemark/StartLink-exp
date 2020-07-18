@@ -51,7 +51,7 @@ def download_assembly_summary_entry(entry, pd_output, **kwargs):
             "assembly_accession": gcf,
             "asm_name": acc,
             "name": entry["name"],
-            "parent_id": entry["parent_id"],
+            "parent_id": entry["parent_id"] if "parent_id" in entry else "",
             "genetic_code": entry["genetic_code"]
             }
 
