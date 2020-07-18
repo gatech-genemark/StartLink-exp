@@ -65,14 +65,16 @@ def main(env, args):
         lambda r: f"{r['assembly_accession']}_{r['asm_name'].replace(' ' , '_')}", axis=1
     )
 
+
+
+
+    df_assembly_summary = df_assembly_summary[df_assembly_summary["name"].isin(wanted_gcfids.keys())].copy()
     for i in df_assembly_summary.index:
         name = df_assembly_summary.at[i, "name"]
         gi = wanted_gcfids[name]        # type: GenomeInfo
         genetic_code = gi.attributes.get("genetic_code")
         df_assembly_summary.loc[i, "genetic_code"] = genetic_code
-
-
-    df_assembly_summary = df_assembly_summary[df_assembly_summary["name"].isin(wanted_gcfids.keys())].copy()
+        
     logger.info(f"Request {len(gil)}. Found {len(df_assembly_summary)}")
 
     logger.info("Downloading genomes")
