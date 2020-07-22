@@ -10,7 +10,7 @@ import sbsp_io.sequences
 from sbsp_alg.phylogeny import k2p_distance, global_alignment_aa_with_gap
 from sbsp_alg.gene_distances import *
 from sbsp_general import Environment
-from sbsp_general.general import get_value, except_if_not_in_set
+from sbsp_general.general import get_value, except_if_not_in_set, os_join
 from sbsp_options.sbsp import SBSPOptions
 from typing import *
 # from memory_profiler import profile
@@ -537,6 +537,9 @@ def df_get_labels_per_genome(df, source, **kwargs):
 def df_print_labels(env, df, source, **kwargs):
     # type: (Environment, pd.DataFrame, str, **str) -> Dict[str, str]
 
+    fn_output = get_value(kwargs, "pf_output", "sbsp.gff", default_if_none=True)
+    pf_output = os_join(env["pd-work"], fn_output)
+
     labels_per_genome = df_get_labels_per_genome(df, source, **kwargs)
     suffix_fname = get_value(kwargs, "suffix_fname", "")
     if suffix_fname is None:
@@ -546,13 +549,23 @@ def df_print_labels(env, df, source, **kwargs):
 
     genome_to_file = dict()
 
+    pd_per_genome = os_join(env["pd-work"], "predictions_per_genome")
+    mkdir_p(pd_per_genome)
+
+
     for genome in labels_per_genome.keys():
 
-        pf_curr = os.path.join(env['pd-work'], "{}.gff".format(genome))
+        pf_curr = os.path.join(pd_per_genome, "{}.gff".format(genome))
 
         genome_to_file[genome] = pf_curr
 
         sbsp_io.general.write_string_to_file(labels_per_genome[genome].to_string(shift_coordinates_by=1), pf_curr)
+
+    # write all to single genome file
+    all_labels = Labels(
+        [l for labels in labels_per_genome.values() for l in labels]
+    )
+    sbsp_io.general.write_string_to_file(all_labels.to_string(shift_coordinates_by=1), pf_output)
 
     return genome_to_file
 

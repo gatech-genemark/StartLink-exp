@@ -219,13 +219,13 @@ def filter_entries_with_equal_taxid(df_assembly_summary, **kwargs):
         return final_df
 
     df_filtered = pd.DataFrame(columns=df_assembly_summary.columns)
-
     # for each group of entries of equal taxid
     for taxid, df_group in df_assembly_summary.groupby("taxid", as_index=False):
 
+        df_group = df_group.copy()
         # sort by latest first
         df_group["sort-by"] = pd.to_datetime(df_group["seq_rel_date"], format="%Y/%m/%d")
-        df_group = df_group.sort_values("sort-by", ascending=False)
+        df_group.sort_values("sort-by", ascending=False, inplace=True)
         df_group.drop("sort-by", inplace=True, axis=1)
 
         logger.debug("Filtering: {}".format(df_group["assembly_accession"]))
@@ -246,8 +246,8 @@ def filter_entries_with_equal_taxid(df_assembly_summary, **kwargs):
                     break
 
             if len(df_filtered_current) > 0:
-                df_filtered = df_filtered.append(df_filtered_current)
+                df_filtered = df_filtered.append(df_filtered_current, sort=False)
         else:
-            df_filtered = df_filtered.append(select_from_list(df_group, number_per_taxid))
+            df_filtered = df_filtered.append(select_from_list(df_group, number_per_taxid), sort=False)
 
     return df_filtered

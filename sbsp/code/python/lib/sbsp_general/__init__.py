@@ -3,6 +3,9 @@ import copy
 from typing import *
 from sbsp_general import general
 
+TOOL = "StartLink"
+TOOLp = f"{TOOL}+"
+
 
 class Environment:
     """A class representing the project environment variables, including
@@ -99,8 +102,9 @@ class Environment:
             "pd-data": pd_data,
             "pd-bin": pd_bin,
             "pd-config": pd_config,
-            "pd-work-results": pd_work_results
-
+            "pd-work-results": pd_work_results,
+            "pd-bin-external": os.path.join(pd_base, "bin_external"),
+            "pd-runs": os.path.join(pd_base, "runs") 
         }
 
         import copy

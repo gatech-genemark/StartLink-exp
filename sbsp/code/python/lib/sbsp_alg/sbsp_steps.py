@@ -1,45 +1,37 @@
 import copy
-import os
-import logging
+import random
 import time
 import timeit
-from multiprocessing import Process, Manager, Lock
+from multiprocessing import Process, Lock
 from random import shuffle
-from typing import *
 
 from Bio.Align import MultipleSeqAlignment
-from Bio.Align.Applications import ClustalwCommandline, ClustalOmegaCommandline
 from Bio.Blast import NCBIXML, Record
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio.SubsMat import MatrixInfo as matlist
 from numpy import isclose
+from tqdm import tqdm
 
-import sbsp_io
 import sbsp_ml
-import sbsp_ml.msa_features_2
-from sbsp_alg.feature_computation import compute_features
-from sbsp_alg.filtering import filter_orthologs
-from sbsp_alg.msa import run_sbsp_msa, get_files_per_key, run_sbsp_msa_from_multiple, \
-    run_sbsp_msa_from_multiple_for_multiple_queries, perform_msa_on_df, move_files_using_scp, should_count_in_neighbor, \
-    filter_by_pairwise_kimura_from_msa
-from sbsp_general.blast import run_blast
+import sbsp_ml.msa_features
+from sbsp_alg.msa import should_count_in_neighbor, filter_by_pairwise_kimura_from_msa
+from sbsp_alg.shelf import run_msa_on_sequences
 from sbsp_general.labels import Label, Coordinates
-from sbsp_general.msa_2 import MSAType, MSASinglePointMarker
-from sbsp_io.general import mkdir_p, remove_p, write_string_to_file
-from sbsp_general.general import get_value, except_if_not_in_set
-from sbsp_alg.ortholog_finder import get_orthologs_from_files, extract_labeled_sequences_for_genomes, \
+from sbsp_container.msa import MSAType, MSASinglePointMarker
+from sbsp_general.shelf import append_data_frame_to_csv
+from sbsp_io.general import mkdir_p, remove_p
+from sbsp_general.general import except_if_not_in_set, os_join
+from sbsp_alg.ortholog_finder import extract_labeled_sequences_for_genomes, \
     unpack_fasta_header, select_representative_hsp, create_info_for_query_target_pair, \
-    compute_distance_based_on_local_alignment, compute_distance_based_on_global_alignment_from_sequences, \
-    run_blast_on_sequence_file, is_valid_start
-from sbsp_alg.sbsp_compute_accuracy import pipeline_step_compute_accuracy, separate_msa_outputs_by_stats
+    compute_distance_based_on_local_alignment, run_blast_on_sequence_file, is_valid_start
+from sbsp_alg.sbsp_compute_accuracy import pipeline_step_compute_accuracy, separate_msa_outputs_by_stats, df_print_labels
 from sbsp_general import Environment
 from sbsp_io.general import read_rows_to_list
 from sbsp_io.msa_2 import add_true_starts_to_msa_output
 from sbsp_io.sequences import read_fasta_into_hash, write_fasta_hash_to_file
-from sbsp_ml.msa_features_2 import ScoringMatrix
+from sbsp_ml.msa_features import ScoringMatrix
+from sbsp_options.parallelization import ParallelizationOptions
 from sbsp_options.sbsp import SBSPOptions
-from sbsp_options.pbs import PBSOptions
 from sbsp_options.pipeline_sbsp import PipelineSBSPOptions
 from sbsp_parallelization.pbs import PBS
 from sbsp_pbs_data.mergers import merge_identity
@@ -48,261 +40,19 @@ from sbsp_pbs_data.splitters import *
 logger = logging.getLogger(__name__)
 
 
-def duplicate_pbs_options_with_updated_paths(env, pbs_options, **kwargs):
-    # type: (Environment, PBSOptions, Dict[str, Any]) -> PBSOptions
+def duplicate_parallelization_options_with_updated_paths(env, prl_options, **kwargs):
+    # type: (Environment, ParallelizationOptions, Dict[str, Any]) -> ParallelizationOptions
     keep_on_head = get_value(kwargs, "keep_on_head", False, default_if_none=True)
 
-    pbs_options = copy.deepcopy(pbs_options)
-    pbs_options["pd-head"] = os.path.abspath(env["pd-work"])
+    prl_options = copy.deepcopy(prl_options)
+    prl_options["pbs-pd-head"] = os.path.abspath(env["pd-work"])
 
     if keep_on_head:
-        pbs_options["pd-root-compute"] = os.path.abspath(env["pd-work"])
-    elif pbs_options["pd-root-compute"] is None:
-        pbs_options["pd-root-compute"] = os.path.abspath(env["pd-work"])
+        prl_options["pbs-pd-root-compute"] = os.path.abspath(env["pd-work"])
+    elif prl_options["pbs-pd-root-compute"] is None:
+        prl_options["pbs-pd-root-compute"] = os.path.abspath(env["pd-work"])
 
-    return pbs_options
-
-
-def run_step_generic(env, pipeline_options, step_name, splitter, merger, data, func, func_kwargs, **kwargs):
-    # type: (Environment, PipelineSBSPOptions, str, Callable, Callable, Dict[str, Any], Callable, Dict[str, Any], Dict[str, Any]) -> Dict[str, Any]
-
-    output = {
-        "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
-    }
-
-    if pipeline_options.use_pbs():
-        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
-
-        if pbs_options.safe_get("pd-data-compute"):
-            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
-
-        pbs = PBS(env, pbs_options,
-                  splitter=splitter,
-                  merger=merger
-                  )
-
-        if pipeline_options.perform_step(step_name):
-
-            output = pbs.run(
-                data=data,
-                func=func,
-                func_kwargs=func_kwargs
-            )
-        else:
-            # read data from file
-            list_pf_output_packages = read_rows_to_list(os.path.join(env["pd-work"], "pbs-summary.txt"))
-            output = pbs.merge_output_package_files(list_pf_output_packages)
-
-    return output
-
-
-
-
-def sbsp_step_get_orthologs(env, pipeline_options):
-    # type: (Environment, PipelineSBSPOptions) -> Dict[str, Any]
-    """
-    Given a list of query and target genomes, find the set of related genes
-    for each query
-    """
-
-    logger.debug("Running: sbsp_step_get_orthologs")
-
-    output = {
-        "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
-    }
-
-    if pipeline_options.use_pbs():
-
-        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
-
-        if pbs_options.safe_get("pd-data-compute"):
-            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
-
-        pbs = PBS(env, pbs_options,
-                  splitter=split_query_genomes_target_genomes_one_vs_group,
-                  merger=merge_identity
-        )
-
-        if pipeline_options.perform_step("get-orthologs"):
-            output = pbs.run(
-                data={"pf_q_list": pipeline_options["pf-q-list"],
-                      "pf_output_template": os.path.join(pbs_options["pd-head"], pipeline_options["fn-orthologs"] + "_{}")},
-                func=get_orthologs_from_files,
-                func_kwargs={
-                    "env": env,
-                    "pf_t_db": pipeline_options["pf-t-db"],
-                    "fn_q_labels": pipeline_options["fn-q-labels"], "fn_t_labels": pipeline_options["fn-t-labels"],
-                    "max_evalue": pipeline_options.safe_get("max-evalue"),
-                    "clean": True,
-                    "sbsp_options": pipeline_options.safe_get("msa-options")
-                }
-            )
-        else:
-            # read data from file
-            list_pf_output_packages = read_rows_to_list(os.path.join(env["pd-work"], "pbs-summary.txt"))
-            output = pbs.merge_output_package_files(list_pf_output_packages)
-
-
-    return output
-
-
-def sbsp_step_compute_features(env, pipeline_options, list_pf_previous):
-    # type: (Environment, PipelineSBSPOptions, List[str]) -> Dict[str, Any]
-    """
-    Given a list of query and target genomes, find the set of related genes
-    for each query
-    """
-
-    logger.debug("Running: sbsp_step_compute_features")
-
-    output = {
-        "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
-    }
-
-    if pipeline_options.use_pbs():
-
-        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
-
-        if pbs_options.safe_get("pd-data-compute"):
-            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
-
-        pbs = PBS(env, pbs_options,
-                  splitter=split_list,
-                  merger=merge_identity
-                  )
-
-        if pipeline_options.perform_step("compute-features"):
-
-            output = pbs.run(
-                data={"list_pf_data": list_pf_previous,
-                      "pf_output_template": os.path.join(pbs_options["pd-head"],
-                                                         pipeline_options["fn-compute-features"] + "_{}")},
-                func=compute_features,
-                func_kwargs={
-                    "env": env,
-                    "clean": True
-                }
-            )
-        else:
-            # read data from file
-            list_pf_output_packages = read_rows_to_list(os.path.join(env["pd-work"], "pbs-summary.txt"))
-            output = pbs.merge_output_package_files(list_pf_output_packages)
-
-    return output
-
-def sbsp_step_filter(env, pipeline_options, list_pf_previous):
-    # type: (Environment, PipelineSBSPOptions, List[str]) -> Dict[str, Any]
-    """
-    Given a list of query and target genomes, find the set of related genes
-    for each query
-    """
-
-    logger.debug("Running: sbsp_step_filter")
-
-    output = {
-        "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
-    }
-
-    if pipeline_options.use_pbs():
-        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"])
-
-        if pbs_options.safe_get("pd-data-compute"):
-            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
-
-        pbs = PBS(env, pbs_options,
-                  splitter=split_list,
-                  merger=merge_identity
-                  )
-
-
-        if pipeline_options.perform_step("filter"):
-
-            output = pbs.run(
-                data={"list_pf_data": list_pf_previous,
-                      "pf_output_template": os.path.join(pbs_options["pd-head"],
-                                                         pipeline_options["fn-filter"] + "_{}")},
-                func=filter_orthologs,
-                func_kwargs={
-                    "env": env,
-                    "msa_options": pipeline_options["msa-options"],
-                    "clean": True
-                }
-            )
-        else:
-            # read data from file
-            list_pf_output_packages = read_rows_to_list(os.path.join(env["pd-work"], "pbs-summary.txt"))
-            output = pbs.merge_output_package_files(list_pf_output_packages)
-
-    return output
-
-
-def sbsp_step_msa(env, pipeline_options, list_pf_previous):
-    # type: (Environment, PipelineSBSPOptions, List[str]) -> Dict[str, Any]
-    """
-    Given a list of query and target genomes, find the set of related genes
-    for each query
-    """
-
-    logger.debug("Running: sbsp_step_msa")
-
-    output = {
-        "pf-list-output": os.path.join(env["pd-work"], "pbs-summary.txt")
-    }
-
-    if pipeline_options.use_pbs():
-        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"], keep_on_head=False)
-
-        if pbs_options.safe_get("pd-data-compute"):
-            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
-
-        # pbs = PBS(env, pbs_options,
-        #           splitter=split_list_and_remerge_by_key,
-        #           merger=merge_identity
-        #           )
-
-        pbs = PBS(env, pbs_options,
-                  splitter=split_q3prime_to_list_of_data_files,
-                  merger=merge_identity
-                  )
-
-        if pipeline_options.perform_step("build-msa"):
-
-            # get files per 3prime key
-            q3prime_to_list_pf = get_files_per_key(list_pf_previous)
-            pd_msa = os.path.join(pbs_options["pd-head"], "msa")
-            mkdir_p(pd_msa)
-
-
-            output = pbs.run(
-                data={"q3prime_to_list_pf": q3prime_to_list_pf,
-                      "pf_output_template": os.path.join(pbs_options["pd-head"],
-                                                         pipeline_options["fn-msa"] + "_{}")},
-                func=run_sbsp_msa_from_multiple_for_multiple_queries,
-                func_kwargs={
-                    "env": env,
-                    "msa_options": pipeline_options["msa-options"],
-                    "clean": True,
-                    "pd_msa_final": pd_msa
-                }
-            )
-
-
-            # output = pbs.run(
-            #     data={"list_pf_data": list_pf_previous, "group_key": "q-3prime",
-            #           "pf_output_template": os.path.join(pbs_options["pd-head"],
-            #                                              pipeline_options["fn-msa"] + "_{}")},
-            #     func=run_sbsp_msa,
-            #     func_kwargs={
-            #         "env": env,
-            #         "msa_options": pipeline_options["msa-options"]
-            #     }
-            # )
-        else:
-            # read data from file
-            list_pf_output_packages = read_rows_to_list(os.path.join(env["pd-work"], "pbs-summary.txt"))
-            output = pbs.merge_output_package_files(list_pf_output_packages)
-
-    return output
+    return prl_options
 
 
 def run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_options, **kwargs):
@@ -326,13 +76,14 @@ def run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_opti
     while not blast_successful and attempt < max_attempts:
         attempt += 1
         try:
+            logger.info("Running Diamond Blastp")
             run_blast_on_sequence_file(env, pf_q_sequences, pf_t_db, pf_blast_output, sbsp_options=sbsp_options,
-                                   block_size=block_size)
+                                       block_size=block_size)
             blast_successful = True
             break
         except ValueError:
             block_size = block_size / 2.0
-            logger.debug("Blast failed. Trying again with block size {}".format(block_size))
+            logger.info("Blast failed. Trying again with block size {}".format(block_size))
 
     remove_p(pf_q_sequences)
 
@@ -349,7 +100,6 @@ def quick_filter_alignments(list_alignments, query_info, **kwargs):
     threshold_int = int(threshold * 10)
     # binary search your way
     original_q_nt = query_info["lorf_nt"]
-
 
     begin = 0
     end = len(list_alignments) - 1
@@ -388,22 +138,12 @@ def quick_filter_alignments(list_alignments, query_info, **kwargs):
             index_closest = mid
             break
 
-
         if distance_int > threshold_int:
             end = mid
         elif distance_int < threshold_int:
             begin = mid
 
-
     return list_alignments[:index_closest]
-
-
-
-
-
-
-
-
 
 
 def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwargs):
@@ -418,12 +158,13 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
 
     distance_min = sbsp_options.safe_get("distance-min")
     distance_max = sbsp_options.safe_get("distance-max")
-    max_targets = 50
+    rng = get_value(kwargs, "rng", None)
+    max_targets = sbsp_options.safe_get("filter-max-number-orthologs")
 
     filter_orthologs_with_equal_kimura_to_query = sbsp_options.safe_get("filter-orthologs-with-equal-kimura")
     set_target_kimuras = set()
 
-    fsf = False     # filter source found?
+    fsf = False  # filter source found?
     if len(r.alignments) == 0:
         logger.debug("Query Filtered: No blast hits")
         fsf = True
@@ -435,7 +176,7 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
     # shuffled_alignments = [a for a in r.alignments]
     before = len(r.alignments)
     shuffled_alignments = quick_filter_alignments(r.alignments, query_info, **kwargs)
-    shuffle(shuffled_alignments)
+    shuffle(shuffled_alignments, random=rng.random)
     logger.debug("Quick filter: {} -> {}".format(before, len(shuffled_alignments)))
 
     if not fsf and len(shuffled_alignments) == 0:
@@ -449,7 +190,7 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
 
     for alignment in shuffled_alignments:
         if len(list_entries) > max_targets:
-            logger.debug("Reached limit on number of targets: {} from {}".format(max_targets, len(r.alignments)))
+            logger.debug("Reached limit on number of targets: {} from {}".format(max_targets, len(shuffled_alignments)))
             break
 
         target_info = unpack_fasta_header(alignment.title)
@@ -466,10 +207,9 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
                                                              original_t_nt_offset=target_info["offset"],
                                                              **kwargs)
 
-
         acc_lengths += len(original_q_nt)
         num_analyzed += 1
-#        logger.debug("{}, {}".format(round(distance, 2), len(original_q_nt)))
+        #        logger.debug("{}, {}".format(round(distance, 2), len(original_q_nt)))
 
         if distance > distance_min and distance < distance_max:
             if filter_orthologs_with_equal_kimura_to_query is not None:
@@ -479,7 +219,6 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
                     continue
                 else:
                     set_target_kimuras.add(rounded)
-
 
             output_info = create_info_for_query_target_pair(
                 query_info, target_info, hsp,
@@ -505,10 +244,10 @@ def create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwarg
         fsf = True
 
     if num_analyzed > 0:
-        logger.info("Analyzed: {}, {}".format(num_analyzed, round(acc_lengths/float(num_analyzed),2)))
-
+        logger.debug("Analyzed: {}, {}".format(num_analyzed, round(acc_lengths / float(num_analyzed), 2)))
 
     return df
+
 
 def extract_sequences_from_df_for_msa(df):
     # type: (pd.DataFrame) -> List[Seq]
@@ -527,67 +266,6 @@ def extract_sequences_from_df_for_msa(df):
     return list_sequences
 
 
-def write_sequence_list_to_fasta_file(sequences, pf_sequences):
-    # type: (List[Seq], str) -> None
-
-    data = ""
-    for i in range(len(sequences)):
-        data += ">{}\n{}\n".format(i, sequences[i])
-
-    write_string_to_file(data, pf_sequences)
-
-
-def run_msa_on_sequence_file(pf_fasta, sbsp_options, pf_msa, **kwargs):
-    # type: (str, SBSPOptions, str, Dict[str, Any]) -> None
-
-    gapopen = sbsp_options.safe_get("msa-gapopen")
-    gapext = sbsp_options.safe_get("msa-gapext")
-
-    num_processors = get_value(kwargs, "num_processors", None)
-
-    # clustalw_cline = ClustalwCommandline(
-    #     "clustalw2", infile=pf_fasta, outfile=pf_msa,
-    #     gapopen=gapopen,
-    #     gapext=gapext,
-    #     outorder="input"
-    # )
-
-    logger.debug("Number of processors for MSA: {}".format(num_processors))
-    clustalw_cline = ClustalOmegaCommandline(
-        "clustalo", infile=pf_fasta, outfile=pf_msa,
-        #gapopen=gapopen,
-        #gapext=gapext,
-        outputorder="input-order",
-        force=True,
-        outfmt="clustal",
-        threads=num_processors
-    )
-
-    clustalw_cline()
-
-
-def run_msa_on_sequences(env, sequences, sbsp_options, **kwargs):
-    # type: (Environment, List[Seq], SBSPOptions, Dict[str, Any]) -> MSAType
-
-    pd_work = env["pd-work"]
-    fn_tmp_prefix = get_value(kwargs, "fn_tmp_prefix", "", default_if_none=True)
-
-    # write sequences to file
-    pf_fasta = os.path.join(pd_work, "{}tmp_sequences.fasta".format(fn_tmp_prefix))
-    remove_p(pf_fasta)
-    write_sequence_list_to_fasta_file(sequences, pf_fasta)
-
-    # run msa
-    pf_msa = os.path.join(pd_work, "{}tmp_msa.txt".format(fn_tmp_prefix))
-    run_msa_on_sequence_file(pf_fasta, sbsp_options, pf_msa, **kwargs)
-
-    msa_t = MSAType.init_from_file(pf_msa)
-
-    remove_p(pf_msa, pf_fasta)
-
-    return msa_t
-
-
 def convert_gapped_aa_to_gapped_nt(seq_aa, seq_nt_no_gaps):
     # type: (Seq, str) -> Seq
 
@@ -597,7 +275,7 @@ def convert_gapped_aa_to_gapped_nt(seq_aa, seq_nt_no_gaps):
         if seq_aa[i] == "-":
             seq_nt_with_gaps += "---"
         else:
-            seq_nt_with_gaps += seq_nt_no_gaps[pos_no_gaps:pos_no_gaps+3]
+            seq_nt_with_gaps += seq_nt_no_gaps[pos_no_gaps:pos_no_gaps + 3]
             pos_no_gaps += 3
 
     return Seq(seq_nt_with_gaps)
@@ -612,7 +290,7 @@ def convert_msa_aa_to_nt(msa_t_aa, df):
 
     # targets
     for i in range(1, msa_t_aa.number_of_sequences()):
-        row = df.iloc[i-1]          # -1 to account for query as first sequence
+        row = df.iloc[i - 1]  # -1 to account for query as first sequence
         seq_record_list.append(SeqRecord(convert_gapped_aa_to_gapped_nt(msa_t_aa[i].seq, row["t-lorf_nt"])))
 
     return MSAType(MultipleSeqAlignment(seq_record_list))
@@ -629,7 +307,7 @@ def lower_case_non_5prime_in_msa(msa_t_aa, msa_t_nt):
         for j_aa in range(msa_t_aa.alignment_length()):
             j_nt = j_aa * 3
 
-            if is_valid_start(msa_t_nt[i].seq._data[j_nt:j_nt+3], "+"):
+            if is_valid_start(msa_t_nt[i].seq._data[j_nt:j_nt + 3], "+"):
                 new_seq_aa += msa_t_aa[i].seq._data[j_aa].upper()
             else:
                 new_seq_aa += msa_t_aa[i].seq._data[j_aa].lower()
@@ -637,8 +315,6 @@ def lower_case_non_5prime_in_msa(msa_t_aa, msa_t_nt):
         seq_record_list.append(SeqRecord(Seq(new_seq_aa), id=msa_t_aa[i].id))
 
     return MSAType(MultipleSeqAlignment(seq_record_list))
-
-
 
 
 def construct_msa_from_df(env, df, sbsp_options, **kwargs):
@@ -658,6 +334,7 @@ def construct_msa_from_df(env, df, sbsp_options, **kwargs):
 
     return msa_t_aa, msa_t_nt
 
+
 def number_of_sequences_with_gap_in_position(msa_t, pos):
     # type: (MSAType, int) -> int
 
@@ -665,6 +342,7 @@ def number_of_sequences_with_gap_in_position(msa_t, pos):
         return 0
 
     return sum(1 for i in range(msa_t.number_of_sequences()) if msa_t[i][pos] == "-")
+
 
 def get_position_from_which_to_start_gap_filtering(msa_t):
     # type: (MSAType) -> int
@@ -706,12 +384,11 @@ def filter_df_based_on_msa(df, msa_t, msa_t_nt, sbsp_options, inplace=False, mul
 
         indices_in_msa_to_remove = set(range(msa_t_nt.number_of_sequences())).difference(indices_to_keep)
         for i in indices_in_msa_to_remove:
-            row_numbers_to_drop.add(i-1)
+            row_numbers_to_drop.add(i - 1)
 
         if not fsf and len(row_numbers_to_drop) == len(df):
             logger.debug("Query Filtered: Pairwise Kimura")
             fsf = True
-
 
     params = sbsp_options.safe_get("filter-remove-sequences-that-introduce-gaps")
     gap_width = params[0]
@@ -722,8 +399,6 @@ def filter_df_based_on_msa(df, msa_t, msa_t_nt, sbsp_options, inplace=False, mul
 
     # get to first start codon in the query and make sure most targets have reached that point
     first_start_codon_position = get_position_from_which_to_start_gap_filtering(msa_t)
-
-
 
     end_search = int(alignment_length / 2.0) - gap_width
     for i in range(first_start_codon_position, end_search):
@@ -738,7 +413,7 @@ def filter_df_based_on_msa(df, msa_t, msa_t_nt, sbsp_options, inplace=False, mul
             # find sequences that have no gaps in that region
             for j in range(1, num_sequences_aligned):
                 if msa_t[j][i:i + gap_width].seq._data.count("-") == 0:
-                    sequences_that_contribute_to_block.append(j-1)
+                    sequences_that_contribute_to_block.append(j - 1)
 
             # compute fraction of these sequences
             num_sequences_that_contribute_to_block = len(sequences_that_contribute_to_block)
@@ -761,6 +436,7 @@ def filter_df_based_on_msa(df, msa_t, msa_t_nt, sbsp_options, inplace=False, mul
         fsf = True
 
     return df
+
 
 def get_next_position_in_msa(l_curr_pos, l_msa_t, l_direction, l_skip_gaps_in_query=False):
     # type: (int, MSAType, str, bool) -> Union[int, None]
@@ -786,6 +462,7 @@ def get_next_position_in_msa(l_curr_pos, l_msa_t, l_direction, l_skip_gaps_in_qu
             break
     return new_pos
 
+
 def check_each_column_below_gap_allowance(msa_t, start, end, max_frac_allowed_gaps, **kwargs):
     # type: (MSAType, int, int, ScoringMatrix, Dict[str, Any]) -> float
     """
@@ -804,7 +481,8 @@ def check_each_column_below_gap_allowance(msa_t, start, end, max_frac_allowed_ga
     if start < 0 or start >= msa_t.alignment_length():
         raise ValueError("Start of region out of bounds: {} not in [{},{}]".format(start, 0, msa_t.alignment_length()))
     if end < start or end > msa_t.alignment_length():
-        raise ValueError("Start of region out of bounds: {} not in [{},{})".format(end, start, msa_t.alignment_length()))
+        raise ValueError(
+            "Start of region out of bounds: {} not in [{},{})".format(end, start, msa_t.alignment_length()))
 
     num_positions_to_analyze = end - start
 
@@ -829,6 +507,7 @@ def check_each_column_below_gap_allowance(msa_t, start, end, max_frac_allowed_ga
 
     return True
 
+
 def compute_conservation_in_region(msa_t, start, end, scorer, **kwargs):
     # type: (MSAType, int, int, ScoringMatrix, Dict[str, Any]) -> float
     """
@@ -842,15 +521,14 @@ def compute_conservation_in_region(msa_t, start, end, scorer, **kwargs):
     """
 
     direction = get_value(kwargs, "direction", choices=["upstream", "downstream"], default="downstream")
-    score_on_all_pairs = True #get_value(kwargs, "score_on_all_pairs", False) #FIXME
+    score_on_all_pairs = True  # get_value(kwargs, "score_on_all_pairs", False) #FIXME
     skip_gaps_in_query = get_value(kwargs, "skip_gaps_in_query", False)
 
     if start < 0 or start >= msa_t.alignment_length():
         raise ValueError("Start of region out of bounds: {} not in [{},{}]".format(start, 0, msa_t.alignment_length()))
     if end < start or end > msa_t.alignment_length():
-        raise ValueError("Start of region out of bounds: {} not in [{},{})".format(end, start, msa_t.alignment_length()))
-
-
+        raise ValueError(
+            "Start of region out of bounds: {} not in [{},{})".format(end, start, msa_t.alignment_length()))
 
     num_positions_to_analyze = end - start
 
@@ -867,7 +545,7 @@ def compute_conservation_in_region(msa_t, start, end, scorer, **kwargs):
         if score_on_all_pairs:
             for i in range(num_sequences):
                 element_i = msa_t[i][curr_pos]
-                for j in range(i+1, num_sequences):
+                for j in range(i + 1, num_sequences):
                     element_j = msa_t[j][curr_pos]
 
                     pos_score += scorer.score(element_i, element_j)
@@ -882,32 +560,31 @@ def compute_conservation_in_region(msa_t, start, end, scorer, **kwargs):
     return pos_score / float(total_number_of_computations)
 
 
-
-
 def get_all_candidates_before_conserved_block(msa_t, sbsp_options, at_least_until=0):
     # type: (MSAType, SBSPOptions, int) -> List[int]
 
     logger.debug("Func: get-candidates-without-upstream-conservation")
 
-    region_length = sbsp_options["block-region-length-aa"]     # get_value(kwargs, "region_length", 10)
-    threshold = 0.5         # FIXME
-    score_on_all_pairs = False      # get_value(kwargs, "score_on_all_pairs", False)
+    region_length = sbsp_options["block-region-length-aa"]  # get_value(kwargs, "region_length", 10)
+    threshold = 0.5  # FIXME
+    score_on_all_pairs = False  # get_value(kwargs, "score_on_all_pairs", False)
 
     if at_least_until is None:
         at_least_until = 0
 
-    scorer = ScoringMatrix("identity")          # FIXME: get from sbsp options
+    scorer = ScoringMatrix("identity")  # FIXME: get from sbsp options
 
     # find the positions of the first two candidate starts in the query
     start = 0
     end = msa_t.alignment_length() - region_length
 
-    candidates = list()             # type: List[int]
+    candidates = list()  # type: List[int]
     passed_column_of_no_gaps = False
     for i in range(start, end):
 
         if not passed_column_of_no_gaps:
-            if sum([1 for k in range(msa_t.number_of_sequences()) if msa_t[k][i] != "-"]) == msa_t.number_of_sequences():
+            if sum([1 for k in range(msa_t.number_of_sequences()) if
+                    msa_t[k][i] != "-"]) == msa_t.number_of_sequences():
                 passed_column_of_no_gaps = True
 
         if msa_t[0][i].isupper():
@@ -916,25 +593,24 @@ def get_all_candidates_before_conserved_block(msa_t, sbsp_options, at_least_unti
             # compute conservation of block upstream of candidate
             try:
                 conservation = compute_conservation_in_region(
-                    msa_t, i, i+region_length,
+                    msa_t, i, i + region_length,
                     scorer=scorer,
                     direction="downstream",
                     skip_gaps_in_query=True,
                     score_on_all_pairs=score_on_all_pairs,
                 )
 
-                columns_saturated = check_each_column_below_gap_allowance(msa_t, i, i+region_length, 0.2,
-                    direction="downstream",
-                    skip_gaps_in_query=True
-                )
+                columns_saturated = check_each_column_below_gap_allowance(msa_t, i, i + region_length, 0.2,
+                                                                          direction="downstream",
+                                                                          skip_gaps_in_query=True
+                                                                          )
                 first_column_conservation = compute_conservation_in_region(
-                    msa_t, i, i+1,
+                    msa_t, i, i + 1,
                     scorer=scorer,
                     direction="downstream",
                     skip_gaps_in_query=False,
                     score_on_all_pairs=score_on_all_pairs,
                 )
-
 
                 # if block not conserved, add candidate
                 if conservation > threshold and columns_saturated and first_column_conservation > threshold:
@@ -943,54 +619,6 @@ def get_all_candidates_before_conserved_block(msa_t, sbsp_options, at_least_unti
                 pass
 
     return candidates
-
-
-
-# def get_all_candidates_before_conserved_block(msa_t, sbsp_options, at_least_until=0):
-#     # type: (MSAType, SBSPOptions, int) -> List[int]
-#
-#     logger.debug("Func: get-candidates-without-upstream-conservation")
-#
-#     region_length = sbsp_options["block-region-length-aa"]     # get_value(kwargs, "region_length", 10)
-#     threshold = 0.5         # FIXME
-#     score_on_all_pairs = False      # get_value(kwargs, "score_on_all_pairs", False)
-#
-#     if at_least_until is None:
-#         at_least_until = 0
-#
-#     scorer = ScoringMatrix("identity")          # FIXME: get from sbsp options
-#
-#     # find the positions of the first two candidate starts in the query
-#     start = 0
-#     end = msa_t.alignment_length()
-#
-#     candidates = list()             # type: List[int]
-#     for i in range(start, end):
-#
-#         if msa_t[0][i].isupper():
-#
-#             if i < region_length or i <= at_least_until:
-#                 candidates.append(i)
-#             else:
-#                 # compute conservation of block upstream of candidate
-#                 try:
-#                     conservation = compute_conservation_in_region(
-#                         msa_t, i - region_length, i,
-#                         scorer=scorer,
-#                         direction="upstream",
-#                         skip_gaps_in_query=True,
-#                         score_on_all_pairs=score_on_all_pairs,
-#                     )
-#
-#                     # if block not conserved, add candidate
-#                     if conservation < threshold:
-#                         candidates.append(i)
-#                     else:
-#                         break
-#                 except ValueError:
-#                     candidates.append(i)
-#
-#     return candidates
 
 
 def step_a_check_if_at_lorf(candidate_positions):
@@ -1004,15 +632,12 @@ def step_a_check_if_at_lorf(candidate_positions):
     return None
 
 
-
-
 def count_number_of_5prime_candidates_at_position(msa_t, curr_pos, sbsp_options):
     # type: (MSAType, int, SBSPOptions) -> int
 
     i = curr_pos
     num_upper = 0
     q_curr_type = msa_t[0][i]
-
 
     for j in range(msa_t.number_of_sequences()):
 
@@ -1055,12 +680,12 @@ def count_number_of_5prime_candidates_at_position(msa_t, curr_pos, sbsp_options)
     return num_upper
 
 
-
-def find_first_5prime_that_satisfies_5prime_threshold(msa_t, sbsp_options, begin, radius_aa, direction, skip_gaps_in_query):
+def find_first_5prime_that_satisfies_5prime_threshold(msa_t, sbsp_options, begin, radius_aa, direction,
+                                                      skip_gaps_in_query):
     # type: (MSAType, SBSPOptions, int, int, str, bool) -> Union[int, None]
 
     start_position_in_msa = None
-    threshold = 0.5     # FIXME
+    threshold = 0.5  # FIXME
     num_sequences = msa_t.number_of_sequences()
 
     curr_pos = begin
@@ -1083,6 +708,7 @@ def find_first_5prime_that_satisfies_5prime_threshold(msa_t, sbsp_options, begin
 
     return start_position_in_msa
 
+
 def select_by_upstream_1_4_rule(msa_t, sbsp_options, pos_of_upstream_in_msa):
     # type: (MSAType, SBSPOptions, int) -> Union[int, None]
 
@@ -1092,13 +718,13 @@ def select_by_upstream_1_4_rule(msa_t, sbsp_options, pos_of_upstream_in_msa):
     if pos_of_upstream_in_msa is not None and pos_of_upstream_in_msa >= 0:
         # check upstream of position
         start_position_in_msa = find_first_5prime_that_satisfies_5prime_threshold(
-            msa_t, sbsp_options, pos_of_upstream_in_msa, radius_aa+1, "upstream", True
+            msa_t, sbsp_options, pos_of_upstream_in_msa, radius_aa + 1, "upstream", True
         )
 
         # if not found, try downstream of position
-        if start_position_in_msa is None and pos_of_upstream_in_msa < msa_t.alignment_length()-1:
+        if start_position_in_msa is None and pos_of_upstream_in_msa < msa_t.alignment_length() - 1:
             start_position_in_msa = find_first_5prime_that_satisfies_5prime_threshold(
-                msa_t, sbsp_options, pos_of_upstream_in_msa+1, radius_aa, "downstream", True
+                msa_t, sbsp_options, pos_of_upstream_in_msa + 1, radius_aa, "downstream", True
             )
 
     return start_position_in_msa
@@ -1109,10 +735,10 @@ def region_between_two_positions_is_conserved(msa_t, sbsp_options, pos_a, pos_b,
     # compute conservation of block upstream of candidate
     scorer = ScoringMatrix()
     score_on_all_pairs = sbsp_options.safe_get("score-on-all-pairs")
-    threshold = get_value(kwargs, "threshold", 0.5, default_if_none=True)     # FIXME
+    threshold = get_value(kwargs, "threshold", 0.5, default_if_none=True)  # FIXME
 
     conservation = compute_conservation_in_region(
-        msa_t, pos_a, pos_b+1,
+        msa_t, pos_a, pos_b + 1,
         scorer=scorer,
         direction="downstream",
         skip_gaps_in_query=False,
@@ -1155,9 +781,6 @@ def candidate_b_has_better_support(msa_t, sbsp_options, pos_a, pos_b, by_at_leas
         return support_b > support_a
 
 
-
-
-
 def select_from_two_neighboring_candidates(msa_t, sbsp_options, pos_a,
                                            pos_b):
     # type: (MSAType, SBSPOptions, int, int) -> int
@@ -1191,16 +814,14 @@ def select_from_two_neighboring_candidates(msa_t, sbsp_options, pos_a,
             else:
                 selected = pos_a
 
-
     return selected
-
 
 
 def step_b_find_first_candidate_with_strong_5prime_score(msa_t, candidate_positions, sbsp_options,
                                                          pos_of_upstream_in_msa):
     # type: (MSAType, List[int], SBSPOptions, int) -> Union[int, None]
 
-    threshold = 0.5         # FIXME
+    threshold = 0.5  # FIXME
 
     # skip over
     begin = 0
@@ -1212,7 +833,8 @@ def step_b_find_first_candidate_with_strong_5prime_score(msa_t, candidate_positi
     start_position_in_msa = None
 
     # skip over all candidates up until 'begin' position
-    while idx_first_valid_candidate < len(candidate_positions) and candidate_positions[idx_first_valid_candidate] < begin:
+    while idx_first_valid_candidate < len(candidate_positions) and candidate_positions[
+        idx_first_valid_candidate] < begin:
         idx_first_valid_candidate += 1
 
     for i in range(idx_first_valid_candidate, len(candidate_positions)):
@@ -1229,10 +851,9 @@ def step_b_find_first_candidate_with_strong_5prime_score(msa_t, candidate_positi
     if start_position_in_msa is not None:
         region_begin = start_position_in_msa + 1
         region_end = min(region_begin + sbsp_options["search-better-downstream-aa"], msa_t.alignment_length())
-        region_len = region_end-region_begin
+        region_len = region_end - region_begin
         remaining_region = region_len
         cursor = region_begin
-
 
         pos_a = curr_pos
         pos_b = find_first_5prime_that_satisfies_5prime_threshold(
@@ -1278,14 +899,14 @@ def step_b_find_first_candidate_with_strong_5prime_score(msa_t, candidate_positi
 
 def step_c_find_rightmost_by_standard_aa_score(msa_t, candidate_positions, sbsp_options, pos_of_upstream_in_msa):
     # type: (MSAType, List[int], SBSPOptions, int) -> Union[int, None]
-    threshold = sbsp_options["search-skip-by-standard-aa-score"]        # type: float
+    threshold = sbsp_options["search-skip-by-standard-aa-score"]  # type: float
 
     start_position_in_msa = None
 
     logger.debug("Func: find-rightmost-by-standard-aa-score")
     for i in reversed(candidate_positions):
 
-        penalized_start_score = sbsp_ml.msa_features_2.compute_simple_saas(msa_t, i)
+        penalized_start_score = sbsp_ml.msa_features.compute_simple_saas(msa_t, i)
 
         logger.debug("Candidate {}, SAAS = {}".format(i, penalized_start_score))
 
@@ -1355,6 +976,7 @@ def convert_ungapped_position_to_gapped(ungapped_position, seq):
 
     return curr_pos
 
+
 def convert_gapped_position_to_ungapped(gapped_position, seq):
     # type: (int, Seq) -> Union[int, None]
 
@@ -1373,7 +995,7 @@ def compute_position_of_upstream_in_msa_for_query(df, msa_t):
     if pos_of_upstream_in_lorf_nt is None or pos_of_upstream_in_lorf_nt < 0:
         return None
 
-    pos_of_upstream_in_lorf_aa = int(pos_of_upstream_in_lorf_nt / 3)        # approximate to nearest AA
+    pos_of_upstream_in_lorf_aa = int(pos_of_upstream_in_lorf_nt / 3)  # approximate to nearest AA
 
     return convert_ungapped_position_to_gapped(pos_of_upstream_in_lorf_aa, msa_t[0].seq)
 
@@ -1403,8 +1025,6 @@ def get_label_from_start_position_in_msa(series, msa_t, start_position_in_msa, s
         ),
         seqname=series["{}-accession".format(s)]
     )
-
-
 
 
 def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
@@ -1437,7 +1057,7 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
 
             if start_position_in_msa is None:
                 # Step C:
-                #start_position_in_msa = step_c_find_rightmost_by_standard_aa_score(
+                # start_position_in_msa = step_c_find_rightmost_by_standard_aa_score(
                 #    msa_t, candidate_positions, sbsp_options, pos_of_upstream_in_msa=pos_of_upstream_in_msa
                 # #)
                 # copy_sbsp_options = copy.deepcopy(sbsp_options)
@@ -1463,12 +1083,15 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
 
     # if all steps failed
     if start_position_in_msa is None:
-
         logger.debug("Search could not find start. Support: {}".format(len(df)))
         df.drop(df.index, inplace=True)
         return  # FIXME: implement recovery strategy
 
-
+    logger.debug("Step {}: S5 = {}".format(predicted_at_step,
+                                          count_number_of_5prime_candidates_at_position(msa_t, start_position_in_msa,
+                                                                                        sbsp_options) / float(
+                                              msa_t.number_of_sequences())
+                                          ))
 
     # get label of new start in genome
     q_label_sbsp = get_label_from_start_position_in_msa(
@@ -1476,7 +1099,7 @@ def search_for_start_for_msa_and_update_df(df, msa_t, sbsp_options):
         msa_t,
         start_position_in_msa,
         s="q"
-    )       # type: Label
+    )  # type: Label
 
     msa_t.add_marker(MSASinglePointMarker(start_position_in_msa, msa_t.alignment_length(), name="selected"))
     msa_t.add_marker(MSASinglePointMarker(pos_of_upstream_in_msa, msa_t.alignment_length(), name="q-3prime", mark="*"))
@@ -1518,7 +1141,7 @@ def perform_msa_on_df_with_single_query(env, df, sbsp_options, **kwargs):
         curr_time = timeit.default_timer()
         msa_t_aa, msa_t_nt = construct_msa_from_df(env, df, sbsp_options, **kwargs)
         logger.debug("MSA: Time (min): {}, Support: {}, Key: {}".format(
-            round((timeit.default_timer() - curr_time)/60.0, 2), len(df), qkey
+            round((timeit.default_timer() - curr_time) / 60.0, 2), len(df), qkey
         ))
 
         # pairwise kimura filter
@@ -1548,9 +1171,9 @@ def perform_msa_on_df_with_single_query(env, df, sbsp_options, **kwargs):
 
     return df
 
+
 def write_msa_to_directory(df, pd_msa, **kwargs):
     # type: (pd.DataFrame, str, Dict[str, Any]) -> None
-    from shutil import copyfile
 
     msa_number = get_value(kwargs, "msa_number", 0)
     fn_tmp_prefix = get_value(kwargs, "fn_tmp_prefix", 0)
@@ -1563,7 +1186,7 @@ def write_msa_to_directory(df, pd_msa, **kwargs):
 
         # add distance
         for i in range(1, msa_t.number_of_sequences()):
-            msa_t[i].id = "{};{}".format(msa_t[i].id, round(df_group.iloc[i-1]["distance"], 4))
+            msa_t[i].id = "{};{}".format(msa_t[i].id, round(df_group.iloc[i - 1]["distance"], 4))
 
         msa_t.to_file(pf_msa)
         df.loc[df_group.index, "pf-msa-output"] = pf_msa
@@ -1589,15 +1212,15 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
     stats = get_value(kwargs, "stats", init=dict)
     fn_tmp_prefix = get_value(kwargs, "msa_output_start", None)
     num_processors = get_value(kwargs, "num_processors", None)
+    rng = get_value(kwargs, "rng", None)
 
     pd_msa_final = get_value(kwargs, "pd_msa_final", None)
-
 
     # read targets and filter out what isn't needed - construct data frame ready for MSA
     curr_time = timeit.default_timer()
     df = create_data_frame_for_msa_search_from_blast_results(r, sbsp_options, **kwargs)
     elapsed_time = round((timeit.default_timer() - curr_time) / 60.0, 2)
-    logger.info("CDFFMSFBR ({}): {} (min) for {} orthologs".format(msa_number, elapsed_time, len(r.alignments)))
+    # logger.info("CDFFMSFBR ({}): {} (min) for {} orthologs".format(msa_number, elapsed_time, len(r.alignments)))
 
     # FIXME  REMOVE
     # if len(df) > 0 and df.iloc[0]["q-left"] == 178270:
@@ -1606,7 +1229,7 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
     #     df.drop(df.index, inplace=True)
     #     return df
 
-    logger.debug("Number of targets after filtering: {}".format(len(df)))
+    # logger.debug("Number of targets after filtering: {}".format(len(df)))
 
     # run MSA(s) and find gene-start
     curr_time = timeit.default_timer()
@@ -1618,7 +1241,7 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
         num_processors=num_processors
     )
     elapsed_time = round((timeit.default_timer() - curr_time) / 60.0, 2)
-    logger.info("PMODWSQ ({}): {} (min) for {} orthologs".format(msa_number, elapsed_time, len(df)))
+    # logger.info("PMODWSQ ({}): {} (min) for {} orthologs".format(msa_number, elapsed_time, len(df)))
 
     # for each query in blast
     if pd_msa_final is not None:
@@ -1632,28 +1255,18 @@ def find_start_for_query_blast_record(env, r, sbsp_options, **kwargs):
     return df
 
 
-def append_data_frame_to_csv(df, pf_output):
-    # type: (pd.DataFrame, str) -> None
-    if df is not None and len(df) > 0:
-        if not os.path.isfile(pf_output):
-            df.to_csv(pf_output, index=False)
-        else:
-            df.to_csv(pf_output, mode="a", index=False, header=False)
-
-
-def thread_safe_find_start_and_save_to_csv(env, r, sbsp_options, msa_number, pf_output, lock, **kwargs):
-    # type: (Environment, Record, SBSPOptions, int, str, , Dict[str, Any]) -> None
-    df_result = find_start_for_query_blast_record(env, r, sbsp_options, msa_number=msa_number, **kwargs)
-
-    append_data_frame_to_csv(df_result, pf_output)
-
-
-def process_find_start_for_multiple_query_blast_record(lock, process_number, env, records, sbsp_options, pf_output, **kwargs):
+def process_find_start_for_multiple_query_blast_record(lock, process_number, env, records, sbsp_options, pf_output,
+                                                       **kwargs):
     # type: (Lock, int, Environment, List[Record], SBSPOptions, str, Dict[str, Any]) -> None
+
+    # local_rng = np.random.RandomState(sbsp_options.safe_get("random-seed"))
+    local_rng = random.Random(sbsp_options.safe_get("random-seed"))
 
     msa_number = 0
     for r in records:
-        df_result = find_start_for_query_blast_record(env, r, sbsp_options, msa_number="{}_{}".format(process_number, msa_number), **kwargs)
+        df_result = find_start_for_query_blast_record(
+            env, r, sbsp_options, msa_number="{}_{}".format(process_number, msa_number), rng=local_rng, **kwargs
+        )
 
         lock.acquire()
         try:
@@ -1664,31 +1277,6 @@ def process_find_start_for_multiple_query_blast_record(lock, process_number, env
         msa_number += 1
 
 
-def debug_filter_queries(q_sequences):
-    # type: (Dict[str, Any]) -> None
-    keys = {"1810240;1811058;+"}
-    strand_to_3prime_pos = {"+": 1, "-": 0}
-
-    keys_3prime = {"{};{}".format(k.split(";")[strand_to_3prime_pos[k.split(";")[2]]], k.split(";")[2]) for k in keys }
-
-    new_sequences = dict()
-
-    for k, v in q_sequences.items():
-        info = unpack_fasta_header(k)
-
-
-        l = info["left"]
-        r = info["right"]
-        s = info["strand"]
-
-        curr_key_3prime = "{};{}".format(r, s) if s == "+" else "{};{}".format(l, s)
-
-        if curr_key_3prime in keys_3prime:
-            new_sequences[k] = v
-
-    return new_sequences
-
-
 def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
     # type: (Environment, Dict[str, Seq], str, str, SBSPOptions, Dict[str, Any]) -> str
 
@@ -1696,10 +1284,10 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
 
     q_sequences = data
     # REMOVE
-    #q_sequences = debug_filter_queries(q_sequences)
-    #num_processors = None
+    # q_sequences = debug_filter_queries(q_sequences)
+    # num_processors = None
 
-    remove_p(pf_output)                     # start clean
+    remove_p(pf_output)  # start clean
 
     # Run blast
     pf_blast_output = os.path.join(env["pd-work"], "blast_output.xml")
@@ -1707,7 +1295,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
     try:
         curr_time = timeit.default_timer()
         run_blast_on_sequences(env, q_sequences, pf_t_db, pf_blast_output, sbsp_options, **kwargs)
-        logger.info("Blast runtime (min): {}".format((timeit.default_timer() - curr_time)/float(60)))
+        logger.info("Blast runtime (min): {:.2f}".format((timeit.default_timer() - curr_time) / float(60)))
     except ValueError:
         remove_p(pf_blast_output)
         raise ValueError("Couldn't run blast successfully")
@@ -1725,11 +1313,10 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
     if num_processors is None or num_processors == 0:
         msa_number = 0
         # for each query, find start
-        for r in records:
-            logger.info("{}".format(len(r.alignments)))
+        for r in tqdm(records, total=len(records)):
             # REMOVE
-            #query_info = unpack_fasta_header(r.query)
-            #if  int(query_info["right"]) not in {449870}:
+            # query_info = unpack_fasta_header(r.query)
+            # if  int(query_info["right"]) not in {449870}:
             #    logger.debug("Skipping: {}".format(query_info["right"]))
             #    continue
 
@@ -1754,7 +1341,7 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
             no_more_records = False
 
             while len(active_processes) < num_processors:
-                list_records = list()           # type: List[Record]
+                list_records = list()  # type: List[Record]
 
                 for r in records:
                     list_records.append(r)
@@ -1800,243 +1387,8 @@ def run_sbsp_steps(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
         for p in active_processes.values():
             p.join()
 
-
-
-
-
-        # active_processes = set()
-        # msa_number = 0
-        # parsed_all_records = False
-        # manager = Manager()
-        # return_dict = manager.dict()
-        #
-        # # for each query, find start
-        # while True:
-        #
-        #     while not parsed_all_records and len(active_processes) < num_processors:
-        #         r = next(records)
-        #         if not r:
-        #             parsed_all_records = True
-        #             break
-        #
-        #         # create new process
-        #         p = Process(target=process_find_start_for_query_blast_record, args=(msa_number, return_dict),
-        #                 kwargs={"env": env, "r": r, "sbsp_options": sbsp_options,
-        #                         "msa_number": msa_number, **kwargs})
-        #         active_processes.add(p)
-        #         msa_number += 1
-        #
-        #     while len(active_processes) > 0:
-        #         completed_threads = set()
-        #         for p in active_processes:
-        #             if not p.is_alive():
-        #                 df_result = return_dict[p.]
-        #                 completed_threads.add(p)
-
-
     remove_p(pf_blast_output)
 
-    return pf_output
-
-
-def run_sbsp_steps_DEPRECATED(env, data, pf_t_db, pf_output, sbsp_options, **kwargs):
-    # type: (Environment, Dict[str, Seq], str, str, SBSPOptions, Dict[str, Any]) -> str
-
-    hsp_criteria = get_value(kwargs, "hsp_criteria", None)
-    msa_output_start = get_value(kwargs, "msa_output_start", 0)
-    pd_msa_final = get_value(kwargs, "pd_msa_final", env["pd-work"])
-
-    distance_min = sbsp_options.safe_get("distance-min")
-    distance_max = sbsp_options.safe_get("distance-max")
-
-    sequences = data
-
-    elapsed_times = dict()
-    stats = dict()
-
-    # write sequences to a file
-    pf_q_sequences = os.path.join(env["pd-work"], "query_sequences_{}.fasta".format(msa_output_start))
-    write_fasta_hash_to_file(sequences, pf_q_sequences)
-
-    # run blast
-    curr_time = timeit.default_timer()
-    pf_blast_output = os.path.join(env["pd-work"], "blast_output.xml")
-
-    # start clean
-    remove_p(pf_blast_output)
-
-    try:
-        run_blast_on_sequence_file(env, pf_q_sequences, pf_t_db, pf_blast_output, sbsp_options=sbsp_options)
-    except ValueError:
-        raise ValueError("Couldn't run blast")
-
-    elapsed_times["1-blastp"] = timeit.default_timer() - curr_time
-
-    # open blast stream
-    try:
-        f_blast_results = open(pf_blast_output, "r")
-    except OSError:
-        raise ValueError("Could not open blast results file: {}".format(pf_blast_output))
-
-    # start clean
-    remove_p(pf_output)
-
-    matrix = matlist.blosum62
-    import sbsp_alg.phylogeny
-    sbsp_alg.phylogeny.add_stop_codon_to_blosum(matrix)
-
-    records = NCBIXML.parse(f_blast_results)
-
-    elapsed_times["2-read-filter-per-query"] = 0
-    elapsed_times["3-msa-per-query"] = 0
-    num_queries = 0
-    msa_number = 0
-    stats["num-queries-with-support-before-filtering"] = 0
-    stats["num-queries-with-support-after-filtering"] = 0
-    stats["num-queries-with-support-after-msa"] = 0
-    stats["num-queries-with-support-before-pairwise-filtering"] = 0
-    stats["num-queries-with-support-after-pairwise-filtering"] = 0
-    stats["num-queries-with-support-before-gaps-filtering"] = 0
-    stats["num-queries-with-support-after-gaps-filtering"] = 0
-
-    stats_per_query = dict()
-    lost_query_at_step = {
-            x: 0 for x in ["blast", "kimura", "pairwise-kimura", "msa-gaps", "start-search"]
-    }
-
-    # for each blast query
-    for r in records:
-
-        query_info = unpack_fasta_header(r.query)
-
-        list_entries = list()
-        num_queries += 1
-        stats_per_query[num_queries] = 0
-
-        curr_time = timeit.default_timer()
-        one_if_one_target = 0
-
-        if len(r.alignments) == 0:
-            lost_query_at_step["blast"] += 1
-
-        # for each alignment to a target protein for the current query
-        for alignment in r.alignments:
-
-            stats_per_query[num_queries] += 1
-            one_if_one_target = 1
-            hsp = select_representative_hsp(alignment, hsp_criteria)
-
-            target_info = unpack_fasta_header(alignment.title)
-
-            # get nucleotide sequence that corresponds to protein
-            original_q_nt = Seq(query_info["lorf_nt"][query_info["offset"]:])
-            original_t_nt = Seq(target_info["lorf_nt"][target_info["offset"]:])
-
-            distance = compute_distance_based_on_local_alignment(query_info, target_info, hsp,
-                                                                 original_q_nt=original_q_nt,
-                                                                 original_t_nt=original_t_nt,
-                                                                 **kwargs)
-
-            original_q_aa = original_q_nt.translate()
-            original_t_aa = original_t_nt.translate()
-
-            #global_distance, global_length, global_length_without_gaps = compute_distance_based_on_global_alignment_from_sequences(
-            #    original_q_aa, original_t_aa, original_q_nt, original_t_nt, matrix
-            #)
-            global_distance = global_length = global_length_without_gaps = 0
-
-            # FIXME: thresholds should be from input configuration files
-            if distance > distance_min and distance < distance_max:
-            #if True:
-
-                output_info = create_info_for_query_target_pair(
-                    query_info, target_info, hsp,
-                    distance_blast=distance,
-                    distance=distance,
-                    global_distance=global_distance,
-                    global_length=global_length,
-                    global_length_without_gaps=global_length_without_gaps,
-                    local_distance=distance,
-                    local_length=hsp.align_length,
-                    local_length_without_gaps=sum([
-                        1 for i in range(len(hsp.query)) if hsp.query[i] != "-" and hsp.sbjct[i] != "-"
-                    ])
-                )
-
-                # clean up
-                output_info["q-prot-pos-5prime-in-frag-msa"] = query_info["offset"] / 3
-                output_info["q-nucl-pos-5prime-in-frag-msa"] = query_info["offset"]
-                output_info["q-prot-position-of-5prime-in-msa-fragment-no-gaps"] = query_info["offset"] / 3
-                output_info["q-nucl-position-of-5prime-in-msa-fragment-no-gaps"] = query_info["offset"]
-                output_info["t-prot-pos-5prime-in-frag-msa"] = target_info["offset"] / 3
-                output_info["t-nucl-pos-5prime-in-frag-msa"] = target_info["offset"]
-                output_info["t-prot-position-of-5prime-in-msa-fragment-no-gaps"] = target_info["offset"] / 3
-                output_info["t-nucl-position-of-5prime-in-msa-fragment-no-gaps"] = target_info["offset"]
-
-                output_info["q-prot-msa"] = Seq(query_info["lorf_nt"]).translate()._data
-                output_info["t-prot-msa"] = Seq(target_info["lorf_nt"]).translate()._data
-
-                output_info["q-nucl-msa"] = Seq(query_info["lorf_nt"])._data
-                output_info["t-nucl-msa"] = Seq(target_info["lorf_nt"])._data
-
-                list_entries.append(output_info)
-
-
-        stats["num-queries-with-support-before-filtering"] += one_if_one_target
-        elapsed_times["2-read-filter-per-query"] += timeit.default_timer() - curr_time
-        # run MSA on remaining targets
-
-        if len(list_entries) == 0:
-            if one_if_one_target != 0:
-                lost_query_at_step["kimura"] += 1
-
-            continue
-
-        stats["num-queries-with-support-after-filtering"] += 1
-
-        print("{};{};{};{}".format(query_info["accession"], query_info["left"], query_info["right"], query_info["strand"]))
-
-        curr_time = timeit.default_timer()
-
-        df_entries = pd.DataFrame(list_entries)
-        df_results = perform_msa_on_df(env, df_entries, msa_options=sbsp_options, msa_output_start=msa_output_start,
-                                       msa_number=msa_number, stats=stats)
-        elapsed_times["3-msa-per-query"] += timeit.default_timer() - curr_time
-        msa_number += 1
-
-
-        if stats["num-queries-with-support-before-pairwise-filtering"] > stats["num-queries-with-support-after-pairwise-filtering"]:
-            lost_query_at_step["pairwise-kimura"] += 1
-        if stats["num-queries-with-support-before-gaps-filtering"] > stats["num-queries-with-support-after-gaps-filtering"]:
-            lost_query_at_step["msa-gaps"] += 1
-
-        # for each query in blast
-        if pd_msa_final is not None:
-            try:
-                move_files_using_scp(df_results, pd_msa_final)
-            except Exception:
-                pass
-
-        # write/append result to file
-        if df_results is not None and len(df_results) > 0:
-            stats["num-queries-with-support-after-msa"] += 1
-            if not os.path.isfile(pf_output):
-                df_results.to_csv(pf_output, index=False)
-            else:
-                df_results.to_csv(pf_output, mode="a", index=False, header=False)
-
-    for key in sorted(elapsed_times.keys()):
-        logging.critical("Timer: {},{}".format(key, elapsed_times[key] / 60))
-
-    for key in sorted(stats.keys()):
-        logging.critical("Stats: {},{}".format(key, stats[key]))
-
-    for key in sorted(stats_per_query.keys()):
-        logging.critical("Stats per query: {},{}".format(key, stats_per_query[key]))
-
-
-    for key in lost_query_at_step.keys():
-        logging.critical("Lost-query: {},{}".format(key, lost_query_at_step[key]))
 
     return pf_output
 
@@ -2054,29 +1406,32 @@ def sbsp_steps(env, pipeline_options):
 
     mkdir_p(env["pd-work"])
     pf_aa = os.path.join(env["pd-work"], "query.faa")
+    fn_labels = pipeline_options["fn-q-labels"]
     extract_labeled_sequences_for_genomes(env, q_gil, pf_aa,
-                                          ignore_frameshifted=True, reverse_complement=True, ignore_partial=True)
+                                          ignore_frameshifted=True, reverse_complement=True, ignore_partial=True,
+                                          fn_labels=fn_labels)
     q_sequences = read_fasta_into_hash(pf_aa, stop_at_first_space=False)
 
     if pipeline_options.use_pbs():
-        pbs_options = duplicate_pbs_options_with_updated_paths(env, pipeline_options["pbs-options"], keep_on_head=False)
+        prl_options = duplicate_parallelization_options_with_updated_paths(env, pipeline_options["prl-options"],
+                                                                           keep_on_head=False)
 
-        if pbs_options.safe_get("pd-data-compute"):
-            env = env.duplicate({"pd-data": pbs_options["pd-data-compute"]})
+        if prl_options.safe_get("pd-data-compute"):
+            env = env.duplicate({"pd-data": prl_options["pd-data-compute"]})
 
-        pbs = PBS(env, pbs_options,
+        pbs = PBS(env, prl_options,
                   splitter=split_dict,
                   merger=merge_identity
                   )
 
-        if pipeline_options.perform_step("build-msa"):
+        if pipeline_options.perform_step("prediction"):
 
-            pd_msa = os.path.join(pbs_options["pd-head"], "msa")
+            pd_msa = os.path.join(prl_options["pbs-pd-head"], "msa")
             mkdir_p(pd_msa)
 
             output = pbs.run(
                 data={"dict": q_sequences,
-                      "pf_output_template": os.path.join(pbs_options["pd-head"],
+                      "pf_output_template": os.path.join(prl_options["pbs-pd-head"],
                                                          pipeline_options["fn-msa"] + "_{}")},
                 func=run_sbsp_steps,
                 func_kwargs={
@@ -2085,7 +1440,7 @@ def sbsp_steps(env, pipeline_options):
                     "sbsp_options": pipeline_options["sbsp-options"],
                     "clean": True,
                     "pd_msa_final": pd_msa,
-                    "num_processors": pbs_options["num-processors"]
+                    "num_processors": prl_options["pbs-ppn"]
                 }
             )
 
@@ -2094,39 +1449,50 @@ def sbsp_steps(env, pipeline_options):
             list_pf_output_packages = read_rows_to_list(os.path.join(env["pd-work"], "pbs-summary.txt"))
             output = pbs.merge_output_package_files(list_pf_output_packages)
     else:
-        raise NotImplementedError("Only PBS version supported.s")
+        pd_msa = os_join(env["pd-work"], "msa")
+        mkdir_p(pd_msa)
+
+        if pipeline_options.perform_step("prediction"):
+            run_sbsp_steps(
+                env, q_sequences,
+                pipeline_options["pf-t-db"], pipeline_options["pf-output"], pipeline_options["sbsp-options"],
+                clean=True,
+                pd_msa_final=pd_msa,
+                num_processors=pipeline_options["prl-options"]["num-processors"],
+            )
+
+        output = [pipeline_options["pf-output"]]
 
     return output
 
 
-def sbsp_step_accuracy(env, pipeline_options, list_pf_previous):
+def sbsp_step_compare(env, pipeline_options, list_pf_previous):
     # type: (Environment, PipelineSBSPOptions, List[str]) -> List[str]
     """
     Given a list of query and target genomes, find the set of related genes
     for each query
     """
 
-    logger.debug("Running: sbsp_step_accuracy")
-
     mkdir_p(env["pd-work"])
 
-    if len(list_pf_previous) == 0:
-        raise ValueError("Cannot compute accuracy: {}".format(pipeline_options["pf-q-list"]))
 
+    if len(list_pf_previous) == 0:
+        raise ValueError("Cannot produce results: {}".format(pipeline_options["pf-q-list"]))
+
+    # read data
     df = pd.concat([pd.read_csv(f, header=0) for f in list_pf_previous], ignore_index=True)
 
-    df = pipeline_step_compute_accuracy(env, df, pipeline_options)
+    # get labels
+    df_print_labels(env, df, "q", suffix_coordinates="sbsp",
+                                          suffix_fname="")
 
-    df.to_csv(pipeline_options["pf-output"])
+    if pipeline_options.perform_step("comparison"):
+        df = pipeline_step_compute_accuracy(env, df, pipeline_options)
 
+        df.to_csv(pipeline_options["pf-output"])
 
-    # copy labels
-    add_true_starts_to_msa_output(env, df, fn_q_labels_true=pipeline_options["fn-q-labels-true"])
-    # add_true_starts_to_msa_output(env, df, msa_nt=True, fn_q_labels_true=pipeline_options["fn-q-labels-true"])
-    separate_msa_outputs_by_stats(env, df, pipeline_options["dn-msa-output"])
-
+        # copy labels
+        add_true_starts_to_msa_output(env, df, fn_q_labels_true=pipeline_options["fn-q-labels-compare"])
+        # add_true_starts_to_msa_output(env, df, msa_nt=True, fn_q_labels_true=pipeline_options["fn-q-labels-true"])
+        separate_msa_outputs_by_stats(env, df, pipeline_options["dn-msa-output"])
     return list()
-
-
-
-

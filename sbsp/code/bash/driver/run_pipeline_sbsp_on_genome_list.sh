@@ -138,10 +138,14 @@ function run_sbsp_on_genome_list_entry() {
         tag_option="--tag $tag"
     fi
 
-    $bin/run_pipeline_sbsp_sh.sh  -q tmp_$gcfid -t genbank_${ancestor_valid}  -s ${sbsp_conf} -p ${pbs_conf} --q-labels ncbi.gff --q-labels-true ${fn_q_labels_true} ${tag_option} $steps
+    $bin/run_pipeline_sbsp_sh.sh  -q tmp_$gcfid -t genbank_${ancestor_valid}  -s ${sbsp_conf} -p ${pbs_conf} --q-labels ${fn_q_labels} --q-labels-true ${fn_q_labels_true} ${tag_option} $steps
     rm $pf_list
 }
 
+function num_jobs_running() {
+    num_jobs=$(qstat -u karl | grep -c " H ")
+    echo "${num_jobs}"
+}
 
 function run_sbsp_on_genome_list() {
     local pf_genome_list="$1"
@@ -149,12 +153,28 @@ function run_sbsp_on_genome_list() {
     
     local total=$(wc -l $pf_genome_list | awk '{print $1-1}')
     local current=1
+    local counter=0
     awk -F "," '{if (NR > 1) print }' $pf_genome_list | while read -r line; do
         local gcfid=$(parse_entry_for_gcfid "$line")
         echo -e "Progress: $current/$total. GCFID=$gcfid"
         
         run_sbsp_on_genome_list_entry "$line" &
-        sleep 5
+
+        num_jobs=$(num_jobs_running)
+        echo "Number of jobs running: $num_jobs"
+        while [ ${num_jobs} -gt 10 ]; do
+            sleep 1800
+            num_jobs=$(num_jobs_running)
+        done
+        sleep 10
+
+        # if [[ $counter -gt 5 ]]; then
+        #     sleep 3600
+        #     counter=0
+        # else
+        #     sleep 10
+        # fi
+        counter=$((counter + 1))
         current=$((current + 1))
     done
 }

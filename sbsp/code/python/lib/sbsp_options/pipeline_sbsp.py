@@ -30,14 +30,14 @@ class PipelineSBSPOptions(Options):
         # type: () -> Union[Set[str], None]
         return {
             # output files for sbsp steps
-            "fn-orthologs", "fn-compute-features", "fn-filter", "fn-msa", "fn-accuracy", "pf-output",
+            "fn-compare", "pf-output",
             # input files
             "pf-q-list", "pf-t-db", "fn-q-labels"
         }
 
     def use_pbs(self):
         # type: () -> bool
-        return "pbs-options" in self and self["pbs-options"]["use-pbs"]
+        return "prl-options" in self and self["prl-options"]["use-pbs"]
 
     @staticmethod
     def init_from_dict(env, dict_options):

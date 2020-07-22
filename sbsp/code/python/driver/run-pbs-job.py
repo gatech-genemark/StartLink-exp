@@ -14,6 +14,8 @@ import pathmagic                        # add path to custom library
 # Custom library imports
 from sbsp_general import Environment
 import sbsp_general
+from sbsp_general.general import run_shell_cmd
+from sbsp_io.general import mkdir_p
 from sbsp_parallelization.pbs import PBSJobPackage
 
 # ------------------------------ #
@@ -72,6 +74,13 @@ def main(env, args):
         if args.pd_work is not None:
             func_args["env"] = func_args["env"].duplicate({"pd-work": args.pd_work})
             logger.critical("{}".format(func_args["env"]["pd-work"]))
+
+    # Update pd-work to create a tmp directory
+
+    mkdir_p(func_args["env"]["pd-work"])
+    func_args["env"]["pd-work"] = run_shell_cmd(
+        "mktemp --tmpdir={} -d".format(func_args["env"]["pd-work"])
+    ).strip()
 
     # logger.critical("{}\n{}".format(func, func_args))
     output = {

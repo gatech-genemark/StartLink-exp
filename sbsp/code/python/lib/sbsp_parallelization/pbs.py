@@ -4,14 +4,17 @@ import copy
 import time
 import numpy as np
 from typing import *
+import logging
 
 from sbsp_general import Environment
 from sbsp_io.general import mkdir_p, write_string_to_file
-from sbsp_options.pbs import PBSOptions
+from sbsp_options.parallelization import ParallelizationOptions
 
 from sbsp_general.general import get_value, run_shell_cmd
 import sbsp_io.general
 from sbsp_parallelization.pbs_job_package import PBSJobPackage
+
+logger = logging.getLogger(__name__)
 
 
 class FunctionArguments:
@@ -31,11 +34,11 @@ class FunctionArguments:
 class PBS:
     """Runs any function on input data using PBS scheduler"""
 
-    def __init__(self, env, pbs_options, splitter, merger, **kwargs):
-        # type: (Environment, PBSOptions, Callable, Callable, Dict[str, Any]) -> None
+    def __init__(self, env, prl_options, splitter, merger, **kwargs):
+        # type: (Environment, ParallelizationOptions, Callable, Callable, Dict[str, Any]) -> None
         """Create a PBS instance that can run a function on
         :param env:
-        :param pbs_options:
+        :param prl_options:
         :param data_kind:
         :param data_format:
         :param kwargs:
@@ -46,19 +49,15 @@ class PBS:
         self._dry_run = get_value(kwargs, "dry_run", False)
         self._env = env
 
-        if pbs_options is None:
-            raise ValueError("PBSOptions cannot be None")
+        if prl_options is None:
+            raise ValueError("prl_options cannot be None")
 
-        self._pbs_options = copy.deepcopy(pbs_options)
-        self._pbs_options["pd-head"] = os.path.abspath(self._pbs_options["pd-head"])
-        self._pbs_options["pd-root-compute"] = os.path.abspath(self._pbs_options["pd-root-compute"])
-
+        self._prl_options = copy.deepcopy(prl_options)
         self._splitter = splitter
         self._merger = merger
 
     def _setup_pbs_run(self):
-
-        mkdir_p(self._pbs_options["pd-head"])
+        mkdir_p(self._prl_options["pbs-pd-head"])
 
     def run(self, data, func, func_kwargs, **kwargs):
         # type: (Dict[str, Any], Callable, Dict[str, Any], Dict[str, Any]) -> Any
@@ -73,10 +72,10 @@ class PBS:
 
         job_name = get_value(kwargs, "job_name", "JOBNAME")
         pf_input_package_template_formatted = os.path.join(
-            os.path.abspath(self._pbs_options["pd-head"]), "input_package_{}"
+            os.path.abspath(self._prl_options["pbs-pd-head"]), "input_package_{}"
         )
 
-        num_jobs = self._pbs_options["num-jobs"]
+        num_jobs = self._prl_options["pbs-jobs"]
 
         # 1) Parse all PBS arguments
         self._setup_pbs_run()
@@ -121,7 +120,7 @@ class PBS:
         :rtype: List[str]
         """
 
-        pd_work_pbs = self._pbs_options["pd-head"]
+        pd_work_pbs = self._prl_options["pbs-pd-head"]
 
         pf_package_template_formatted = get_value(
             kwargs, "pf_package_template_formatted", os.path.join(pd_work_pbs, "input_package_{}")
@@ -147,9 +146,9 @@ class PBS:
         :rtype: str
         """
 
-        pd_head = self._pbs_options["pd-head"]
+        pd_head = self._prl_options["pbs-pd-head"]
 
-        pf_pbs = os.path.join(self._pbs_options["pd-head"], "run.pbs")
+        pf_pbs = os.path.join(self._prl_options["pbs-pd-head"], "run.pbs")
         pf_input_package_template = pf_input_package_template_formatted.format("${PBS_ARRAYID}")
 
         # create pbs file
@@ -166,7 +165,7 @@ class PBS:
         # write summary file
         list_pf_outputs = [PBS.create_concrete_from_template(pf_output_package_template, x) for x in range(1,num_jobs+1)
                            if os.path.isfile(PBS.create_concrete_from_template(pf_output_package_template + ".pkl", x))]
-        pf_pbs_summary = os.path.join(self._pbs_options["pd-head"], self._pbs_options["fn-pbs-summary"])
+        pf_pbs_summary = os.path.join(self._prl_options["pbs-pd-head"], self._prl_options["pbs-fn-summary"])
         sbsp_io.general.write_string_to_file("\n".join(list_pf_outputs), pf_pbs_summary)
 
         return list_pf_outputs
@@ -233,13 +232,17 @@ class PBS:
         :return:
         """
 
-        pbs_text = PBS._generate_pbs_header_array(num_jobs, jobname, self._pbs_options)
+        # create unique compute directory
+        pd_compute = None #run_shell_cmd("mktemp --tmpdir={}".format(self._prl_options["pbs-pd-root-compute"]))
+
+        pbs_text = PBS._generate_pbs_header_array(num_jobs, jobname, self._prl_options, pd_compute=pd_compute)
 
         pbs_text += "\n{}\n".format(
             PBS._generate_call_command(self._env,
                                        pf_input_package_template,
                                        pf_output_package_template,
-                                       self._pbs_options
+                                       self._prl_options,
+                                       pd_compute=pd_compute
             )
         )
 
@@ -248,28 +251,28 @@ class PBS:
         write_string_to_file(pbs_text, pf_pbs)
 
     @staticmethod
-    def _generate_pbs_header_array(num_jobs, job_name, pbs_options):
+    def _generate_pbs_header_array(num_jobs, job_name, prl_options, pd_compute):
         """
 
         :param num_jobs:
         :param job_name:
-        :param pbs_options:
-        :type pbs_options: PBSOptions
+        :param prl_options:
+        :type prl_options: ParallelizationOptions
         :return:
         """
 
-        num_nodes = pbs_options["num-nodes-per-job"]
-        ppn = pbs_options["num-processors"]
-        walltime = pbs_options["walltime"]
+        num_nodes = prl_options["pbs-nodes"]
+        ppn = prl_options["pbs-ppn"]
+        walltime = prl_options["pbs-walltime"]
 
-        pd_compute = os.path.abspath(os.path.join(pbs_options["pd-root-compute"], pbs_options["dn-compute"]))
+        pd_compute = os.path.abspath(os.path.join(prl_options["pbs-pd-root-compute"], prl_options["pbs-dn-compute"]))
 
         pd_job_template = os.path.join(pd_compute, "job_${PBS_ARRAYID}")
 
-        pd_pbs_logs = os.path.join(pbs_options["pd-head"], "pbs_logs")
+        pd_pbs_logs = os.path.join(prl_options["pbs-pd-head"], "pbs_logs")
         mkdir_p(pd_pbs_logs)
 
-        node_property = pbs_options.safe_get("node-property")
+        node_property = prl_options.safe_get("pbs-node-property")
         if node_property is not None:
             node_property = ":" + node_property
         else:
@@ -283,17 +286,17 @@ class PBS:
         pbs_text += "#PBS -l nodes=" + str(num_nodes) + ":ppn=" + str(ppn) + "{}\n".format(node_property)
         pbs_text += "#PBS -l walltime=" + str(walltime) + "\n"
 
-        if pbs_options:
+        if prl_options:
             array_param = "1-{}".format(num_jobs)
-            if pbs_options["max-concurrent-nodes"]:
-                total_concurrent_jobs = pbs_options["max-concurrent-nodes"] * int(8 / ppn)
+            if prl_options["pbs-concurrent-nodes"]:
+                total_concurrent_jobs = prl_options["pbs-concurrent-nodes"] * int(8 / ppn)
                 array_param = "{}%{}".format(array_param, total_concurrent_jobs)
 
             pbs_text += "#PBS -t {}".format(array_param) + "\n"
 
         pbs_text += "#PBS -W umask=002" + "\n"
 
-        pbs_text += "export PATH=\"/home/karl/anaconda/envs/sbsp/bin:$PATH\"\n"
+        pbs_text += "export PATH=\"/home/karl/anaconda/envs/biogem_sbsp/bin:$PATH\"\n"
 
         pbs_text += "mkdir -p {}".format(pd_job_template) + "\n"
 
@@ -308,10 +311,10 @@ class PBS:
         return pbs_text
 
     @staticmethod
-    def _generate_call_command(env, pf_job_input, pf_job_output, pbs_options):
+    def _generate_call_command(env, pf_job_input, pf_job_output, prl_options, pd_compute):
 
 
-        pd_compute = os.path.abspath(os.path.join(pbs_options["pd-root-compute"], pbs_options["dn-compute"]))
+        pd_compute = os.path.abspath(os.path.join(prl_options["pbs-pd-root-compute"], prl_options["pbs-dn-compute"]))
         pd_job_template = os.path.join(pd_compute, "job_${PBS_ARRAYID}")
 
         cmd = "{} --pf-job-input {} --pf-job-output {} --pd-work {}".format(
@@ -320,13 +323,15 @@ class PBS:
             pf_job_output,
             pd_job_template
         )
-        cmd = "{} --pf-job-input {} --pf-job-output {} --pd-work {} -l DEBUG".format(
+        cmd = "{} --pf-job-input {} --pf-job-output {} --pd-work {} -l {}".format(
             "python {}".format(os.path.join(env["pd-code"], "python/driver", "run-pbs-job.py")),
             pf_job_input,
             pf_job_output,
-            pd_job_template
+            pd_job_template,
+            logging.getLevelName(logger.getEffectiveLevel())
         )
 
+        print(cmd)
         return cmd
 
     @staticmethod

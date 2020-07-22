@@ -16,6 +16,7 @@ export bin_external=$base/bin_external
 export data_root=$base/data
 export data=${data_root}/all
 export data_verified=${data_root}/verified
+export db=$base/db
 
 export metadata=$base/metadata
 
@@ -26,6 +27,7 @@ export lists=$base/lists
 export tmp=$base/tmp               # it is suggested that runs be performed in tmp directory (under some subdirectory)
 export config=$base/config
 export exp=$base/experiments
+export runs=$base/runs
 
 export code=$base/code
 

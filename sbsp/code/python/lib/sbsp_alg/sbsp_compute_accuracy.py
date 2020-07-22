@@ -119,12 +119,10 @@ def df_add_distance_between_predicted_and_true(df, true_labels, source, suffix_d
 def pipeline_step_compute_accuracy(env, df, pipeline_options):
     # type: (Environment, pd.DataFrame, PipelineSBSPOptions) -> pd.DataFrame
 
-    log.info("Pipeline Step: Compute accuracy...")
-
     from sbsp_io.labels import read_labels_from_file
 
     for genome in set(df["q-genome"]):
-        pf_q_labels_true = os.path.join(env["pd-data"], genome, pipeline_options["fn-q-labels-true"])
+        pf_q_labels_true = os.path.join(env["pd-data"], genome, pipeline_options["fn-q-labels-compare"])
 
         labels = read_labels_from_file(pf_q_labels_true, shift=0)
 
@@ -144,7 +142,7 @@ def pipeline_step_compute_accuracy(env, df, pipeline_options):
     genome_to_comparison = dict()
 
     for genome in genome_to_pf_labels:
-        pf_q_labels_true = os.path.join(env["pd-data"], genome, pipeline_options["fn-q-labels-true"])
+        pf_q_labels_true = os.path.join(env["pd-data"], genome, pipeline_options["fn-q-labels-compare"])
 
         genome_to_comparison[genome] = LabelsComparison(env, pf_q_labels_true, genome_to_pf_labels[genome])
 
@@ -152,16 +150,16 @@ def pipeline_step_compute_accuracy(env, df, pipeline_options):
         labels_b = read_labels_from_file(genome_to_pf_labels[genome])
 
         lcd = LabelsComparisonDetailed(labels_a, labels_b,
-                                       name_a="Verified",
+                                       name_a="Reference",
                                        name_b="SBSP",
                                        tag=genome,
                                        split_on_attributes=["predicted-at-step"])
 
-        LabelsComparisonDetailedViz(lcd).run(env["pd-work"])
+        # LabelsComparisonDetailedViz(lcd).run(env["pd-work"])
 
     accuracy = LabelsComparison.stringify_genome_accuracies(genome_to_comparison, ",")
     import sbsp_io.general
-    pf_accuracy = os.path.join(env["pd-work"], pipeline_options["fn-accuracy"])
+    pf_accuracy = os.path.join(env["pd-work"], pipeline_options["fn-compare"])
     sbsp_io.general.write_string_to_file(accuracy, pf_accuracy)
 
     return df
@@ -174,8 +172,8 @@ def separate_msa_outputs_by_stats(env, df, dn_msa_output):
     if dn_msa_output is None:
         dn_msa_output = "msa_output"
 
-    pd_msa_output_true = os.path.join(env['pd-work'], "{}_true".format(dn_msa_output))
-    pd_msa_output_false = os.path.join(env['pd-work'], "{}_false".format(dn_msa_output))
+    pd_msa_output_true = os.path.join(env['pd-work'], "{}_match".format(dn_msa_output))
+    pd_msa_output_false = os.path.join(env['pd-work'], "{}_mismatch".format(dn_msa_output))
 
 
     if not os.path.exists(pd_msa_output_true):

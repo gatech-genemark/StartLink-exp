@@ -223,7 +223,22 @@ def analyze_independent_predictions(max_candidates, sen_a, sen_b):
         legend_loc="best",
         figure_options=FigureOptions(
             save_fig=next_name("."),
-            ylabel=r"$P(y=s|x_1=y, x_2=y)$"
+            ylabel=r"$P(y=s|x_1=y, x_2=y)$",
+            # xlim=[None, 40]
+
+        )
+    )
+    # error
+    df["1 - Probability"] = 1 - df["Probability"]
+    sns.lineplot(
+        df[(df["Sensitivity A"] == 0.9) & (df["Sensitivity B"] == 0.9)],
+        "Number of candidates", "1 - Probability", hue="Condition",
+        sns_kwargs={"palette": CM.get_map("independence-conditions")},
+        legend_loc="best",
+        figure_options=FigureOptions(
+            save_fig=next_name("."),
+            ylabel=r"$P(y\neq s|x_1=y, x_2=y)$",
+            # xlim=[None, 40]
 
         )
     )

@@ -10,6 +10,7 @@ from Bio.Blast.Applications import NcbiblastpCommandline
 from Bio.Blast.Record import Alignment, HSP
 from Bio.Seq import Seq
 from Bio.SubsMat import MatrixInfo as matlist
+from tqdm import tqdm
 
 from sbsp_alg.feature_computation import add_gaps_to_nt_based_on_aa
 from sbsp_alg.phylogeny import k2p_distance, global_alignment_aa_with_gap
@@ -629,7 +630,7 @@ def extract_labeled_sequences_for_genome(env, gi, **kwargs):
     # type: (Environment, GenomeInfo, Dict[str, Any]) -> Dict[str, Seq]
 
     pf_sequences = get_pf_sequences_for_genome(env, gi)
-    pf_labels = get_pf_labels_for_genome(env, gi)
+    pf_labels = get_pf_labels_for_genome(env, gi, **kwargs)
 
     try:
         sequences = read_fasta_into_hash(pf_sequences)
@@ -681,7 +682,7 @@ def extract_labeled_sequences_for_genomes(env, gil, pf_output, **kwargs):
     try:
         f_aa = open(pf_output, "w")
 
-        for gi in gil:
+        for gi in tqdm(gil, total=len(gil)):
             func_fasta_header_creator = pack_fasta_header
             kwargs_fasta_header_creator = {"gi": gi}
             try:

@@ -31,10 +31,12 @@ def scatterplot(df, x, y, hue=None, figure_options=None, **kwargs):
     # type: (pd.DataFrame, str, str, Union[str, None], FigureOptions, Dict[str, Any]) -> None
 
     sns_kwargs = get_value(kwargs, "sns_kwargs", dict())
+    ax = get_value(kwargs, "ax", None)
 
     identity = get_value(kwargs, "identity", False)
 
-    _, ax = plt.subplots()
+    if not ax:
+        _, ax = plt.subplots()
 
     g = sns.scatterplot(x=x, y=y, hue=hue, data=df, linewidth=0, **sns_kwargs)
 
@@ -64,6 +66,7 @@ def lineplot(df, x, y, hue=None, figure_options=None, **kwargs):
     show = get_value(kwargs, "show", ax is None)
     legend = get_value(kwargs, "legend", "full")
     legend_loc = get_value(kwargs, "legend_loc", None)
+    legend_ncol = get_value(kwargs, "legend_ncol", 1)
 
     identity = get_value(kwargs, "identity", False)
 
@@ -81,9 +84,12 @@ def lineplot(df, x, y, hue=None, figure_options=None, **kwargs):
     if hue is not None and legend:
         title = get_value(kwargs, "legend_title", None)
         if not legend_loc:
-            plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5), title=title)
+            plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5), title=title, ncol=legend_ncol)
         else:
-            plt.legend(loc=legend_loc)
+            plt.legend(loc=legend_loc, ncol=legend_ncol, title=title)
+        if title is not None and len(title)  == 0:
+            handles, labels = ax.get_legend_handles_labels()
+            ax.legend(handles=handles[1:], labels=labels[1:], ncol=legend_ncol)
 
     if show:
         save_figure(figure_options, fig)
@@ -91,7 +97,7 @@ def lineplot(df, x, y, hue=None, figure_options=None, **kwargs):
 
 
 
-def catplot(df, x, y, hue=None, kind=None, figure_options=None, **kwargs):
+def catplot(df, x, y, hue=None, kind="box", figure_options=None, **kwargs):
     # type: (pd.DataFrame, str, str, str, Union[str, None], FigureOptions, Dict[str, Any]) -> None
     sns_kwargs = get_value(kwargs, "sns_kwargs", dict())
 
@@ -158,7 +164,7 @@ def jointplot(df, x, y, hue=None, figure_options=None, **kwargs):
     _, ax = plt.subplots()
     sns_kwargs = get_value(kwargs, "sns_kwargs", dict())
     # g = sns.lmplot(x=x, y=y, hue=hue, data=df, aspect=2, legend=False, ci=None)
-    g = sns.jointplot(x, y, data=df, ax=ax, **sns_kwargs)
+    g = sns.jointplot(x, y, data=df, **sns_kwargs)
 
     if hue is not None:
         plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5))
@@ -168,11 +174,11 @@ def jointplot(df, x, y, hue=None, figure_options=None, **kwargs):
     plt.show()
 
 
-def tsplot(df, x, y, hue=None, figure_options=None):
+def tsplot(df, x, y, hue=None, figure_options=None, **kwargs):
     _, ax = plt.subplots()
-
+    sns_kwargs = get_value(kwargs, "sns_kwargs", dict())
     # g = sns.lmplot(x=x, y=y, hue=hue, data=df, aspect=2, legend=False, ci=None)
-    sns.tsplot(df[y].values, df[x].values)
+    sns.tsplot(df[y].values, df[x].values, **sns_kwargs)
 
     if hue is not None:
         plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5))
@@ -183,14 +189,17 @@ def tsplot(df, x, y, hue=None, figure_options=None):
 
 def barplot(df, x, y, hue, figure_options=None, **kwargs):
     sns_kwargs = get_value(kwargs, "sns_kwargs", dict())
+    ax = get_value(kwargs, "ax", None)
 
-    g = sns.barplot(x=x, y=y, data=df, hue=hue,  **sns_kwargs)
+    g = sns.barplot(x=x, y=y, data=df, hue=hue,  ax=ax, **sns_kwargs)
 
     if hue is not None:
         plt.legend(loc='center left', bbox_to_anchor=(1.05, 0.5))
 
     FigureOptions.set_properties_for_axis(g, figure_options)
+    plt.tight_layout()
     save_figure(figure_options)
+    # plt.tight_layout(rect=[-0.3,0,1,1.2])
     plt.show()
 
 

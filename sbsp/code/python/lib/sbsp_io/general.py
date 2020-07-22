@@ -2,10 +2,15 @@ from __future__ import print_function
 import os
 import errno
 import random
+import re
 import string
 import json
 import sys
 from typing import *
+
+from Bio import SeqIO
+
+from sbsp_general.general import os_join
 
 
 def generate_random_non_existing_filename(pd_work):
@@ -267,3 +272,215 @@ def print_progress(name, numer, denom=None):
     sys.stdout.write("\r")
 
     sys.stdout.flush()
+
+
+def read_fasta_into_hash(fnsequences, stop_at_first_space=True):
+    # type: (str) -> dict[str, Bio.Seq.Seq]
+    # read all sequences
+    sequences = {}  # will contain all protein sequences from file
+    try:
+        for record in SeqIO.parse(fnsequences, "fasta"):
+            if stop_at_first_space:
+                sequences[record.name.strip().split()[0]] = record.seq
+            else:
+                sequences[record.description.strip()] = record.seq
+
+    except Exception:
+        pass
+
+    return sequences
+
+
+def create_attribute_dict(attribute_string, delimiter=";"):
+    # type: (str, str) -> Dict[str, Any]
+
+    attributes = dict()
+
+    for current in attribute_string.strip().split(sep=delimiter):
+        if len(current.strip().split(maxsplit=1)) == 2:
+            k, v = current.strip().split(maxsplit=1)
+            attributes[k] = v
+
+    return attributes
+
+
+def read_gff(pf_labels, shift=-1):
+    # type: (str, int) -> Dict[str, List[Dict[str, Any]]]
+
+
+    labels = dict() # type: Dict[str, List[Dict[str, Any]]]
+
+    pattern = re.compile(r"([^\t]+)\t([^\t]+)\t(CDS)\t(\d+)\t(\d+)\t([^\t]+)\t([+-])\t([^\t]+)\t([^\t]+)")
+
+    with open(pf_labels, "r") as f:
+
+        for line in f:
+
+            line = line.strip()
+
+            m = pattern.match(line)
+            if m:
+
+                attributes = create_attribute_dict(m.group(9))
+                seqname = m.group(1).strip()
+
+                label = {
+                    "left" : int(m.group(4)) + shift,
+                    "right" : int(m.group(5)) + shift,
+                    "strand" : m.group(7),
+                    "seqname" : m.group(1),
+                    "attributes": attributes
+                }
+
+                if seqname not in labels.keys():
+                    labels[seqname] = list()
+
+                labels[seqname].append(label)
+    return labels
+
+def read_lst(pf_labels, shift=-1):
+    # type: (str, int) -> Dict[str, List[Dict[str, Any]]]
+
+
+    labels = dict() # type: Dict[str, List[Dict[str, Any]]]
+
+    # pattern = re.compile(r"([^\t]+)\t([^\t]+)\t(CDS)\t(\d+)\t(\d+)\t([^\t]+)\t([+-])\t([^\t]+)\t([^\t]+)")
+    pattern = re.compile(r"([^\s]+)\s+([+-])\s+(\d+)\s+(\d+)\s+(\d+)\s+(.+)$")
+
+    # out = str(counter)
+    # out += " " + str(l["strand"])
+    # out += " " + str(l["left"] + shift)
+    # out += " " + str(l["right"] + shift)
+    # out += " " + str(l["right"] - l["left"] + 1)
+    # out += " " "nativebac" + " AGGAGG 6 1"
+    # out += " " + l["attributes"]["gene_type"]
+
+    seqname = None
+
+    with open(pf_labels, "r") as f:
+
+        for line in f:
+
+            line = line.strip()
+
+            if line.startswith("SequenceID:"):
+                seqname = line.split(":", maxsplit=1)[1].strip()
+                continue
+            elif len(line.strip()) == 0 or seqname is None:
+                continue
+
+            m = pattern.match(line)
+            if m:
+
+                attributes = m.group(6)
+
+                label = {
+                    "left" : int(m.group(3)) + shift,
+                    "right" : int(m.group(4)) + shift,
+                    "strand" : m.group(2),
+                    "seqname" : seqname,
+                    "attributes": attributes
+                }
+
+                if seqname not in labels.keys():
+                    labels[seqname] = list()
+
+                labels[seqname].append(label)
+    return labels
+
+def convert_multi_fasta_into_single_fasta(sequences, labels, new_seqname):
+    # type: (Dict[str, str], Dict[str, List[Dict[str, Any]]], str) -> [Dict[str, str], Dict[str, List[Dict[str, Any]]]]
+
+    sorted_seqnames = sorted(sequences.keys())
+
+    joined_seq = {new_seqname: ""}
+    joined_labels = {new_seqname: list()}
+
+    curr_offset = 0
+
+    for seqname in sorted_seqnames:
+
+        if seqname not in labels.keys():
+            continue
+
+        seqname_sequence = sequences[seqname]
+        seqname_labels = labels[seqname]
+
+        for l in seqname_labels:
+            new_l = l.copy()
+            new_l["left"] += curr_offset
+            new_l["right"] += curr_offset
+            new_l["seqname"] = new_seqname
+
+            joined_labels[new_seqname].append(new_l)
+
+
+        joined_seq[new_seqname] += seqname_sequence
+        curr_offset += len(seqname_sequence)
+
+    return [joined_seq, joined_labels]
+
+
+def write_lst(labels, pf_output, shift=+1):
+    # type: (Dict[str, List[Dict[str, Any]]], str, int) -> None
+
+    # seqname, source, feature, left, right, score, strand, frame, attributes
+    with open(pf_output, "w") as f:
+        f.write("# GeneMark.hmm-2 LST format\n"
+"# GeneMark.hmm-2 prokaryotic version: 1.14\n"
+"# File with sequence: tmpseq.fna\n"
+"# File with native parameters: itr_1.mod\n"
+"# Native species name and build: gms2-training\n"
+"# File with MetaGeneMark parameters: /storage4/karl/sbsp/biogem/sbsp/bin_external/gms2/mgm_11.mod\n"
+"# translation table: 11\n"
+"# output date start: Mon Jun  8 09:26:44 2020\n\n")
+        for seqname, seqname_labels in labels.items():
+            f.write(f"SequenceID: {seqname}\n")
+            counter = 1
+
+            for counter, l in enumerate(seqname_labels):
+
+                out = str(counter)
+                out += " " + str(l["strand"])
+                out += " " + str(l["left"] + shift)
+                out += " " + str(l["right"] + shift)
+                out += " " + str(l["right"] - l["left"] + 1)
+                out += " " "nativebac" + " AGGAGG 6 1"
+                out += " " + l["attributes"]["gene_type"] if "gene-type" in l["attributes"] else " ."
+
+
+                f.write(out + "\n")
+
+
+def write_fasta_hash_to_file(fasta, pf_output):
+    # type: (Dict[str, Any], str) -> None
+
+    output = ""
+    for header in fasta.keys():
+        output += ">{}\n{}\n".format(
+            header, fasta[header]
+        )
+
+    write_string_to_file(output, pf_output)
+
+
+
+def convert_multi_fasta_to_single(env, pf_sequences, pf_labels):
+    # pf_sequence = sys.argv[1]
+    # pf_labels = sys.argv[2]
+    # pd_work = sys.argv[3]
+
+    org_seq = read_fasta_into_hash(pf_sequences)
+    org_labels = read_gff(pf_labels, shift=0)
+
+    new_seq, new_labels = convert_multi_fasta_into_single_fasta(org_seq, org_labels, "anydef")
+    pd_work = env["pd-work"]
+
+    pf_new_seq = os_join(pd_work, "sequence_joined")
+    pf_new_labels = os_join(pd_work, "labels_joined_lst")
+    import os
+    # write_gff(new_labels, os.path.join(pd_work, "labels_joined"), shift=0)
+    write_lst(new_labels, pf_new_labels, shift=0)
+    write_fasta_hash_to_file(new_seq, pf_new_seq)
+
+    return pf_new_seq, pf_new_labels
