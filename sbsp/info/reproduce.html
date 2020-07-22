@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2020-07-22 Wed 13:30 -->
+<!-- 2020-07-22 Wed 13:35 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Reproducing Analysis of StartLink</title>
@@ -269,39 +269,39 @@ for the JavaScript code in this tag.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#orgcbd686b">1. Introduction</a></li>
-<li><a href="#orgbcdcbb4">2. Downloading</a></li>
-<li><a href="#org1fb1850">3. Installation</a>
+<li><a href="#orgadf0f2e">1. Introduction</a></li>
+<li><a href="#orge52c55c">2. Downloading</a></li>
+<li><a href="#org18a7722">3. Installation</a>
 <ul>
-<li><a href="#org9a32db4">3.1. StartLink</a></li>
-<li><a href="#orgf3a4404">3.2. External Tools</a></li>
+<li><a href="#org4622055">3.1. StartLink</a></li>
+<li><a href="#org4a48421">3.2. External Tools</a></li>
 </ul>
 </li>
-<li><a href="#org20dc248">4. How to continue and tips on running experiments!</a></li>
-<li><a href="#org7d5b1f6">5. Downloading and installing</a>
+<li><a href="#org23d1290">4. How to continue and tips on running experiments!</a></li>
+<li><a href="#orge7076e7">5. Downloading and installing</a>
 <ul>
-<li><a href="#orgde9a550">5.1. Data</a></li>
+<li><a href="#org7a6c6f5">5.1. Data</a></li>
 </ul>
 </li>
-<li><a href="#org9906481">6. Code and data structure</a></li>
-<li><a href="#org6720767">7. Setting up</a></li>
-<li><a href="#org6136b46">8. Experiments</a>
+<li><a href="#org4247879">6. Code and data structure</a></li>
+<li><a href="#org3d08c70">7. Setting up</a></li>
+<li><a href="#orgd029e01">8. Experiments</a>
 <ul>
-<li><a href="#org8173b15">8.1. Difference in 5&rsquo; predictions on Representative Genomes</a></li>
-<li><a href="#org3832e3d">8.2. Theoretical view of Independence</a></li>
-<li><a href="#org1e97bf0">8.3. Genomes with genes with verified starts</a></li>
-<li><a href="#orgbe79136">8.4. Larger set of query genomes</a></li>
+<li><a href="#org133886e">8.1. Difference in 5&rsquo; predictions on Representative Genomes</a></li>
+<li><a href="#org85998d7">8.2. Theoretical view of Independence</a></li>
+<li><a href="#orgfa4b196">8.3. Genomes with genes with verified starts</a></li>
+<li><a href="#orge2c6bc1">8.4. Larger set of query genomes</a></li>
 </ul>
 </li>
-<li><a href="#org229532a">9. Toy Example</a></li>
-<li><a href="#orgfcaace7">10. Using existing databases</a></li>
+<li><a href="#org3936e27">9. Toy Example</a></li>
+<li><a href="#org1c0dc15">10. Using existing databases</a></li>
 </ul>
 </div>
 </div>
 
 
-<div id="outline-container-orgcbd686b" class="outline-2">
-<h2 id="orgcbd686b"><span class="section-number-2">1</span> Introduction</h2>
+<div id="outline-container-orgadf0f2e" class="outline-2">
+<h2 id="orgadf0f2e"><span class="section-number-2">1</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 This document serves as a step-by-step instruction manual on how to replicate results from the StartLink paper. We note that many of the experiments are time-consuming and/or resource hungry. Therefore, we also provide raw results (from which graphs can be generated) as well as pre-constructed databases for the clades mentioned in the StartLink paper.
@@ -309,8 +309,8 @@ This document serves as a step-by-step instruction manual on how to replicate re
 </div>
 </div>
 
-<div id="outline-container-orgbcdcbb4" class="outline-2">
-<h2 id="orgbcdcbb4"><span class="section-number-2">2</span> Downloading</h2>
+<div id="outline-container-orge52c55c" class="outline-2">
+<h2 id="orge52c55c"><span class="section-number-2">2</span> Downloading</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 To download, simply clone the git repository
@@ -322,12 +322,12 @@ To download, simply clone the git repository
 </div>
 </div>
 
-<div id="outline-container-org1fb1850" class="outline-2">
-<h2 id="org1fb1850"><span class="section-number-2">3</span> Installation</h2>
+<div id="outline-container-org18a7722" class="outline-2">
+<h2 id="org18a7722"><span class="section-number-2">3</span> Installation</h2>
 <div class="outline-text-2" id="text-3">
 </div>
-<div id="outline-container-org9a32db4" class="outline-3">
-<h3 id="org9a32db4"><span class="section-number-3">3.1</span> StartLink</h3>
+<div id="outline-container-org4622055" class="outline-3">
+<h3 id="org4622055"><span class="section-number-3">3.1</span> StartLink</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 Once downloaded, binaries can be &ldquo;installed&rdquo; by running 
@@ -355,8 +355,8 @@ where <code>$driverpython</code> is loaded by the <code>config.sh</code> script.
 </p>
 </div>
 
-<div id="outline-container-org2e2eaca" class="outline-4">
-<h4 id="org2e2eaca"><span class="section-number-4">3.1.1</span> Loading Python Libraries</h4>
+<div id="outline-container-org62afa2f" class="outline-4">
+<h4 id="org62afa2f"><span class="section-number-4">3.1.1</span> Loading Python Libraries</h4>
 <div class="outline-text-4" id="text-3-1-1">
 <p>
 Most of StartLink is built in Python. We use <code>conda</code> to manage package installations. Simply run
@@ -369,8 +369,8 @@ conda activate biogem_sbsp                   <span style="color: #93a1a1;"># </s
 </div>
 </div>
 </div>
-<div id="outline-container-orgf3a4404" class="outline-3">
-<h3 id="orgf3a4404"><span class="section-number-3">3.2</span> External Tools</h3>
+<div id="outline-container-org4a48421" class="outline-3">
+<h3 id="org4a48421"><span class="section-number-3">3.2</span> External Tools</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 StartLink and StartLink+ and their analysis rely on a handful of external tools. The following need to be installed:
@@ -408,8 +408,8 @@ StartLink and StartLink+ and their analysis rely on a handful of external tools.
 </div>
 
 
-<div id="outline-container-org20dc248" class="outline-2">
-<h2 id="org20dc248"><span class="section-number-2">4</span> How to continue and tips on running experiments!</h2>
+<div id="outline-container-org23d1290" class="outline-2">
+<h2 id="org23d1290"><span class="section-number-2">4</span> How to continue and tips on running experiments!</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 After installation, it is best to first try running the toy example shown at the end of this document. It goes through all the steps from generating a target database to running StartLink. Since this is still in beta version, it will also help narrow down where issues might come from. Running commands with <code>-l INFO</code> should give enough information about what is going on. For debugging information, run with <code>-l DEBUG</code>.
@@ -424,19 +424,19 @@ Note: StartLink requires significant computational power and time. You can reduc
 </p>
 
 <p>
-If you are interested in reproducing the results from scratch, then follow the document as is. If you are interested in testing out StartLink, then we recommend you start by running <i>H. salinarum</i> on the <i>Archaea</i> database. Start by downloading the data for genomes with verified start (see <a href="#orgfa7218d">5.1.1</a>). If you already have the <i>Archaea</i> database downloaded, then move to <a href="#orgabcf6ed">10</a>. Otherwise, first construct the database using the instructions in <a href="#org6a53761">5.1</a>. 
+If you are interested in reproducing the results from scratch, then follow the document as is. If you are interested in testing out StartLink, then we recommend you start by running <i>H. salinarum</i> on the <i>Archaea</i> database. Start by downloading the data for genomes with verified start (see <a href="#org2b27ea8">5.1.1</a>). If you already have the <i>Archaea</i> database downloaded, then move to <a href="#org70cf608">10</a>. Otherwise, first construct the database using the instructions in <a href="#org2e86eb6">5.1</a>. 
 </p>
 </div>
 </div>
-<div id="outline-container-org7d5b1f6" class="outline-2">
-<h2 id="org7d5b1f6"><span class="section-number-2">5</span> Downloading and installing</h2>
+<div id="outline-container-orge7076e7" class="outline-2">
+<h2 id="orge7076e7"><span class="section-number-2">5</span> Downloading and installing</h2>
 <div class="outline-text-2" id="text-5">
 </div>
-<div id="outline-container-orgde9a550" class="outline-3">
-<h3 id="orgde9a550"><span class="section-number-3">5.1</span> Data</h3>
+<div id="outline-container-org7a6c6f5" class="outline-3">
+<h3 id="org7a6c6f5"><span class="section-number-3">5.1</span> Data</h3>
 <div class="outline-text-3" id="text-5-1">
 <p>
-<a id="org6a53761"></a>
+<a id="org2e86eb6"></a>
 <b>Note: As previously mentioned the data used is on the order of hundreds of gigabytes. As such, if one is only interested in reproducibility, we provide pre-built databases (and even raw statistics from our existing runs).</b>
 </p>
 
@@ -445,11 +445,11 @@ We provide the databases for <i>Enterobacterales</i>, <i>Actinobacteria</i>, <i>
 </p>
 </div>
 
-<div id="outline-container-org0f04568" class="outline-4">
-<h4 id="org0f04568"><span class="section-number-4">5.1.1</span> &ldquo;Downloading&rdquo; data for verified genomes</h4>
+<div id="outline-container-org24e566d" class="outline-4">
+<h4 id="org24e566d"><span class="section-number-4">5.1.1</span> &ldquo;Downloading&rdquo; data for verified genomes</h4>
 <div class="outline-text-4" id="text-5-1-1">
 <p>
-<a id="orgfa7218d"></a>
+<a id="org2b27ea8"></a>
 This data is already provided with this installation in <code>$data/../verified</code>. It should be copied or linked to the <code>$data</code> directory. The following command links it 
 </p>
 <div class="org-src-container">
@@ -461,8 +461,8 @@ This data is already provided with this installation in <code>$data/../verified<
 </div>
 </div>
 
-<div id="outline-container-orge01670c" class="outline-4">
-<h4 id="orge01670c"><span class="section-number-4">5.1.2</span> Downloading Assembly Summary File</h4>
+<div id="outline-container-orgabbbfb8" class="outline-4">
+<h4 id="orgabbbfb8"><span class="section-number-4">5.1.2</span> Downloading Assembly Summary File</h4>
 <div class="outline-text-4" id="text-5-1-2">
 <div class="org-src-container">
 <pre class="src src-bash">$<span style="color: #268bd2;">bin</span>/download_assembly_summary_py.sh --database refseq --pf-output $<span style="color: #268bd2;">metadata</span>/refseq_assembly_summary.txt
@@ -470,8 +470,8 @@ This data is already provided with this installation in <code>$data/../verified<
 </div>
 </div>
 </div>
-<div id="outline-container-org1df4d6c" class="outline-4">
-<h4 id="org1df4d6c"><span class="section-number-4">5.1.3</span> Representative Genomes</h4>
+<div id="outline-container-org165516c" class="outline-4">
+<h4 id="org165516c"><span class="section-number-4">5.1.3</span> Representative Genomes</h4>
 <div class="outline-text-4" id="text-5-1-3">
 <div class="org-src-container">
 <pre class="src src-bash"><span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">These lists are provided for reproducibility, since NCBI frequently updates them.</span>
@@ -485,8 +485,8 @@ $<span style="color: #268bd2;">bin</span>/download_genomes_from_list_py.sh --pf-
 </div>
 </div>
 </div>
-<div id="outline-container-org40f83ea" class="outline-4">
-<h4 id="org40f83ea"><span class="section-number-4">5.1.4</span> Constructing Taxonomy Tree</h4>
+<div id="outline-container-orgb4aaebb" class="outline-4">
+<h4 id="orgb4aaebb"><span class="section-number-4">5.1.4</span> Constructing Taxonomy Tree</h4>
 <div class="outline-text-4" id="text-5-1-4">
 <p>
 To easily download genomes by clade, we first construct a taxonomy tree form NCBI&rsquo;s taxonomy information.
@@ -503,8 +503,8 @@ $<span style="color: #268bd2;">bin</span>/build_taxonomy_tree_py.sh --pf-nodes-d
 </div>
 </div>
 
-<div id="outline-container-orgcab646c" class="outline-4">
-<h4 id="orgcab646c"><span class="section-number-4">5.1.5</span> Download sequence/label files for different clades, and create Blast databases</h4>
+<div id="outline-container-orge82e248" class="outline-4">
+<h4 id="orge82e248"><span class="section-number-4">5.1.5</span> Download sequence/label files for different clades, and create Blast databases</h4>
 <div class="outline-text-4" id="text-5-1-5">
 <p>
 Now, we can download genomes from different clades. In the paper, 5 clades are referenced (4 of which are used for the large scale analysis). If you want to change which clade is downloaded, simply change the array <code>clades</code> in the below script. The names are defined by NCBI&rsquo;s <code>name_txt</code> variable in it&rsquo;s assembly summaries.
@@ -564,8 +564,8 @@ Construct Diamond Blastp databases
 </div>
 </div>
 </div>
-<div id="outline-container-orgd4f516c" class="outline-4">
-<h4 id="orgd4f516c"><span class="section-number-4">5.1.6</span> Download query genomes from list</h4>
+<div id="outline-container-orga880ff8" class="outline-4">
+<h4 id="orga880ff8"><span class="section-number-4">5.1.6</span> Download query genomes from list</h4>
 <div class="outline-text-4" id="text-5-1-6">
 <div class="org-src-container">
 <pre class="src src-bash"><span style="color: #268bd2;">pf_query_large</span>=$<span style="color: #268bd2;">lists</span>/selected_query.list
@@ -579,8 +579,8 @@ $<span style="color: #268bd2;">bin</span>/download_genomes_from_list_py.sh --pf-
 </div>
 
 
-<div id="outline-container-org9906481" class="outline-2">
-<h2 id="org9906481"><span class="section-number-2">6</span> Code and data structure</h2>
+<div id="outline-container-org4247879" class="outline-2">
+<h2 id="org4247879"><span class="section-number-2">6</span> Code and data structure</h2>
 <div class="outline-text-2" id="text-6">
 <p>
 After installing StartLink, you will have the following structure:
@@ -613,8 +613,8 @@ Finally the <code>runs</code> directory will contain runs of different tools, su
 </div>
 </div>
 
-<div id="outline-container-org6720767" class="outline-2">
-<h2 id="org6720767"><span class="section-number-2">7</span> Setting up</h2>
+<div id="outline-container-org3d08c70" class="outline-2">
+<h2 id="org3d08c70"><span class="section-number-2">7</span> Setting up</h2>
 <div class="outline-text-2" id="text-7">
 <p>
 Since much of the analysis is done by comparing StartLink to NCBI&rsquo;s PGAP, GeneMarkS-2, and/or Prodigal, we first need to run these tools and add the results to the run directory. The following script is capable of doing that (note, depending on which analysis you want to reproduce, you may not need to run the tools on all lists):
@@ -667,8 +667,8 @@ run_tools_on_bacteria $<span style="color: #268bd2;">pf_list_qncbi_bac</span>
 </div>
 
 
-<div id="outline-container-org6136b46" class="outline-2">
-<h2 id="org6136b46"><span class="section-number-2">8</span> Experiments</h2>
+<div id="outline-container-orgd029e01" class="outline-2">
+<h2 id="orgd029e01"><span class="section-number-2">8</span> Experiments</h2>
 <div class="outline-text-2" id="text-8">
 <p>
 Unless otherwise noted, these variables (when applicable) will have the following values
@@ -690,12 +690,12 @@ Unless otherwise noted, these variables (when applicable) will have the followin
 </div>
 </div>
 
-<div id="outline-container-org8173b15" class="outline-3">
-<h3 id="org8173b15"><span class="section-number-3">8.1</span> Difference in 5&rsquo; predictions on Representative Genomes</h3>
+<div id="outline-container-org133886e" class="outline-3">
+<h3 id="org133886e"><span class="section-number-3">8.1</span> Difference in 5&rsquo; predictions on Representative Genomes</h3>
 <div class="outline-text-3" id="text-8-1">
 </div>
-<div id="outline-container-orgefb585f" class="outline-4">
-<h4 id="orgefb585f"><span class="section-number-4">8.1.1</span> Data download</h4>
+<div id="outline-container-orga3d0602" class="outline-4">
+<h4 id="orga3d0602"><span class="section-number-4">8.1.1</span> Data download</h4>
 <div class="outline-text-4" id="text-8-1-1">
 <div class="org-src-container">
 <pre class="src src-bash"><span style="color: #268bd2;">pf_rep_bac</span>=$<span style="color: #268bd2;">lists</span>/refseq_representative_bacteria.list
@@ -713,8 +713,8 @@ cat $<span style="color: #268bd2;">pf_rep_bac</span> $<span style="color: #268bd
 </div>
 </div>
 
-<div id="outline-container-org3e96928" class="outline-4">
-<h4 id="org3e96928"><span class="section-number-4">8.1.2</span> Run GMS2 and Prodigal</h4>
+<div id="outline-container-org5bc4e4e" class="outline-4">
+<h4 id="org5bc4e4e"><span class="section-number-4">8.1.2</span> Run GMS2 and Prodigal</h4>
 <div class="outline-text-4" id="text-8-1-2">
 <div class="org-src-container">
 <pre class="src src-bash">
@@ -730,8 +730,8 @@ $<span style="color: #268bd2;">bin</span>/run_tool_on_genome_list_py.sh --tool p
 </div>
 </div>
 
-<div id="outline-container-orgaf5534d" class="outline-4">
-<h4 id="orgaf5534d"><span class="section-number-4">8.1.3</span> Collect statistics</h4>
+<div id="outline-container-org3c93ed9" class="outline-4">
+<h4 id="org3c93ed9"><span class="section-number-4">8.1.3</span> Collect statistics</h4>
 <div class="outline-text-4" id="text-8-1-3">
 <p>
 We can now collect the statistics and create the figures to compare GMS2, Prodigal, and NCBI predictions.
@@ -754,8 +754,8 @@ This should now create a file containing the following image
 </div>
 </div>
 
-<div id="outline-container-org3832e3d" class="outline-3">
-<h3 id="org3832e3d"><span class="section-number-3">8.2</span> Theoretical view of Independence</h3>
+<div id="outline-container-org85998d7" class="outline-3">
+<h3 id="org85998d7"><span class="section-number-3">8.2</span> Theoretical view of Independence</h3>
 <div class="outline-text-3" id="text-8-2">
 <p>
 While not technically an experimental result, we provide the code to generate this graph for convenience. The sensitivity of the non-random algorithms \(A_1\) and \(A_2\) are set to 0.9, but the user can easily change them (from within) to observe the change in behavior. What remains constant is the improvement of independent algorithms over fully dependent (and random) algorithms..
@@ -770,12 +770,12 @@ While not technically an experimental result, we provide the code to generate th
 </div>
 </div>
 
-<div id="outline-container-org1e97bf0" class="outline-3">
-<h3 id="org1e97bf0"><span class="section-number-3">8.3</span> Genomes with genes with verified starts</h3>
+<div id="outline-container-orgfa4b196" class="outline-3">
+<h3 id="orgfa4b196"><span class="section-number-3">8.3</span> Genomes with genes with verified starts</h3>
 <div class="outline-text-3" id="text-8-3">
 </div>
-<div id="outline-container-org352b655" class="outline-4">
-<h4 id="org352b655"><span class="section-number-4">8.3.1</span> Running StartLink</h4>
+<div id="outline-container-orgd4fea5f" class="outline-4">
+<h4 id="orgd4fea5f"><span class="section-number-4">8.3.1</span> Running StartLink</h4>
 <div class="outline-text-4" id="text-8-3-1">
 <div class="org-src-container">
 <pre class="src src-bash"><span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">set this to only run on genes with verified starts</span>
@@ -788,8 +788,8 @@ $<span style="color: #268bd2;">bin</span>/sbsp_on_genome_list_py.sh --pf-q-list 
 </div>
 </div>
 
-<div id="outline-container-org045dfd5" class="outline-4">
-<h4 id="org045dfd5"><span class="section-number-4">8.3.2</span> Collecting statistics</h4>
+<div id="outline-container-org56ab3da" class="outline-4">
+<h4 id="org56ab3da"><span class="section-number-4">8.3.2</span> Collecting statistics</h4>
 <div class="outline-text-4" id="text-8-3-2">
 <div class="org-src-container">
 <pre class="src src-bash"><span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">collect statistics per query gene (comparing SBSP, GMS2, and verified genes)</span>
@@ -798,8 +798,8 @@ $<span style="color: #268bd2;">bin</span>/stats_per_query_gene_py.sh --pf-genome
 </div>
 </div>
 </div>
-<div id="outline-container-orgf81fabb" class="outline-4">
-<h4 id="orgf81fabb"><span class="section-number-4">8.3.3</span> Visualizing</h4>
+<div id="outline-container-orgd65ac2f" class="outline-4">
+<h4 id="orgd65ac2f"><span class="section-number-4">8.3.3</span> Visualizing</h4>
 <div class="outline-text-4" id="text-8-3-3">
 <div class="org-src-container">
 <pre class="src src-bash">$<span style="color: #268bd2;">bin</span>/viz_stats_genome_level_py.sh --pf-data summary.csv
@@ -955,12 +955,12 @@ It also produces the per-step analysis on the verified set of genes.
 </div>
 </div>
 
-<div id="outline-container-orgbe79136" class="outline-3">
-<h3 id="orgbe79136"><span class="section-number-3">8.4</span> Larger set of query genomes</h3>
+<div id="outline-container-orge2c6bc1" class="outline-3">
+<h3 id="orge2c6bc1"><span class="section-number-3">8.4</span> Larger set of query genomes</h3>
 <div class="outline-text-3" id="text-8-4">
 </div>
-<div id="outline-container-orgab79769" class="outline-4">
-<h4 id="orgab79769"><span class="section-number-4">8.4.1</span> Running StartLink</h4>
+<div id="outline-container-orgd5eee64" class="outline-4">
+<h4 id="orgd5eee64"><span class="section-number-4">8.4.1</span> Running StartLink</h4>
 <div class="outline-text-4" id="text-8-4-1">
 <p>
 Prewarning, running this analysis can take a long time. Our estimate is roughly 5 days on 20 compute nodes with 8 processors each, though that number can vary based on how databases are setup, where they are located, and the cost of accessing them (e.g. databases can be copied to each node beforehand, making access much cheaper and prevent bottlenecks).
@@ -979,8 +979,8 @@ $<span style="color: #268bd2;">bin</span>/sbsp_on_genome_list_py.sh --pf-q-list 
 </div>
 </div>
 </div>
-<div id="outline-container-org544f3da" class="outline-4">
-<h4 id="org544f3da"><span class="section-number-4">8.4.2</span> Collecting statistics</h4>
+<div id="outline-container-org06686c4" class="outline-4">
+<h4 id="org06686c4"><span class="section-number-4">8.4.2</span> Collecting statistics</h4>
 <div class="outline-text-4" id="text-8-4-2">
 <div class="org-src-container">
 <pre class="src src-bash"><span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">collect statistics per query gene (comparing SBSP, GMS2, and verified genes)</span>
@@ -989,8 +989,8 @@ $<span style="color: #268bd2;">bin</span>/stats_per_query_gene_py.sh --pf-genome
 </div>
 </div>
 </div>
-<div id="outline-container-org7b10912" class="outline-4">
-<h4 id="org7b10912"><span class="section-number-4">8.4.3</span> Visualizing</h4>
+<div id="outline-container-org7119253" class="outline-4">
+<h4 id="org7119253"><span class="section-number-4">8.4.3</span> Visualizing</h4>
 <div class="outline-text-4" id="text-8-4-3">
 <p>
 All images regarding the large-scale comparisons can be generated via a single script. Note that the contour plots are computationally expensive and may take ~1 hour to generate. Therefore, they are turned off by default. To enable them, run the command with the option <code>--with-contours</code>. 
@@ -1071,8 +1071,8 @@ All images regarding the large-scale comparisons can be generated via a single s
 
 
 
-<div id="outline-container-org229532a" class="outline-2">
-<h2 id="org229532a"><span class="section-number-2">9</span> Toy Example</h2>
+<div id="outline-container-org3936e27" class="outline-2">
+<h2 id="org3936e27"><span class="section-number-2">9</span> Toy Example</h2>
 <div class="outline-text-2" id="text-9">
 <p>
 This section lists a set of commands to generate a toy database and and run H. salinarum predictions on it. 
@@ -1140,11 +1140,11 @@ $<span style="color: #268bd2;">bin</span>/sbsp_on_genome_list_py.sh --pf-q-list 
 </div>
 </div>
 
-<div id="outline-container-orgfcaace7" class="outline-2">
-<h2 id="orgfcaace7"><span class="section-number-2">10</span> Using existing databases</h2>
+<div id="outline-container-org1c0dc15" class="outline-2">
+<h2 id="org1c0dc15"><span class="section-number-2">10</span> Using existing databases</h2>
 <div class="outline-text-2" id="text-10">
 <p>
-<a id="orgabcf6ed"></a>
+<a id="org70cf608"></a>
 As previously mentioned, all databases must be constructed using the <code>$bin/extract_annotated_sequences_py.sh</code> and <code>$bin/build_blast_db_py.sh</code> scripts. This is because, for now, the format of the database is strict. This will be relaxed in a later release.
 </p>
 
