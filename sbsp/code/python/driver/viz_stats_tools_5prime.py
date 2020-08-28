@@ -11,7 +11,9 @@ from typing import *
 import matplotlib.pyplot as plt
 
 # noinspection All
-from skmisc.loess._loess import loess
+import pathmagic
+
+#from skmisc.loess._loess import loess
 
 # noinspection PyUnresolvedReferences
 import sbsp_log  # runs init in sbsp_log and configures logger
