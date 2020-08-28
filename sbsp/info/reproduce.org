@@ -262,18 +262,22 @@ Since much of the analysis is done by comparing {{{tool}}} to NCBI's PGAP, GeneM
 
 #+begin_src bash
 
+  # Enable if you have PBS installed
+  pbs_options=""
+  #pbs_options="--pf-parallelization-options $config/parallelization_pbs_1.conf"
+
   function run_tools_on_archaea() {
     pf_list="$1"
 
-    $bin/run_tool_on_genome_list_py.sh --tool gms2 --pf-genome-list $pf_list --type archaea
-    $bin/run_tool_on_genome_list_py.sh --tool prodigal --pf-genome-list $pf_list --type archaea
+    $bin/run_tool_on_genome_list_py.sh --tool gms2 --pf-genome-list $pf_list --type archaea -l INFO --pd-work $runs ${pbs_options}
+    $bin/run_tool_on_genome_list_py.sh --tool prodigal --pf-genome-list $pf_list --type archaea -l INFO --pd-work $runs ${pbs_options}
   }
 
   function run_tools_on_bacteria() {
     pf_list="$1"
 
-    $bin/run_tool_on_genome_list_py.sh --tool gms2 --pf-genome-list $pf_list --type bacteria
-    $bin/run_tool_on_genome_list_py.sh --tool prodigal --pf-genome-list $pf_list --type bacteria
+    $bin/run_tool_on_genome_list_py.sh --tool gms2 --pf-genome-list $pf_list --type bacteria -l INFO --pd-work $runs ${pbs_options}
+    $bin/run_tool_on_genome_list_py.sh --tool prodigal --pf-genome-list $pf_list --type bacteria -l INFO --pd-work $runs ${pbs_options}
   }
 
   pf_rep_arc=$lists/refseq_representative_archaea.list
@@ -305,19 +309,17 @@ Since much of the analysis is done by comparing {{{tool}}} to NCBI's PGAP, GeneM
   #+begin_src bash
 
     pf_list_verified=$lists/verified.list  # verified genomes
-    pf_list_qncbi=$lists/genbank_selected.list   # query genomes
+    pf_list_qncbi=$lists/qncbi.list   # query genomes
 
     # database and configuration files
     pf_db_index=$db/index.csv  # database location files
     pf_sbsp_options=$config/sbsp_defaults.conf # sbsp config file
-    pf_pbs_options=$config/pbs_defaults.conf   # PBS config file
+    pf_pbs_options=$config/parallelization_defaults.conf   # PBS config file
 
     # PBS options
-    toggle_pbs="--pf-pbs-options $config/$pf_pbs_options"  # if PBS not installed, set this option to empty: ""
+    toggle_pbs="--pf-parallelization-options $config/$pf_pbs_options"  # if PBS not installed, set this option to empty: ""
     sg=8   # number of genomes to run simutaneously (low number recommended)
   #+end_src
-
-  #+RESULTS:
 
 ** Difference in 5' predictions on Representative Genomes
 *** Data download
@@ -410,7 +412,7 @@ It also produces the per-step analysis on the verified set of genes.
 [[file:figures/verified_per_step.pdf]]
 
 ** Larger set of query genomes
-*** Running SBSP
+*** Running {{{tool}}}
     Prewarning, running this analysis can take a long time. Our estimate is roughly 5 days on 20 compute nodes with 8 processors each, though that number can vary based on how databases are setup, where they are located, and the cost of accessing them (e.g. databases can be copied to each node beforehand, making access much cheaper and prevent bottlenecks).
 
     In that respect, we have also provided a CSV file containing the per-query analysis of all genes in this set, which is used for visualization of results.

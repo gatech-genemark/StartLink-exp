@@ -171,6 +171,8 @@ def plot_per_tool_by_genome_type(env, df):
                                          **kws, **cbar_enable if counter == 0 else dict())
 
         a.set_title(tag.replace("=", ",").replace("NCBI", "PGAP").replace("GMS2", "GeneMarkS-2"))
+        a.set_ylabel("")
+        a.set_xlabel("")
         # a.set_ylim([65,100])
         # a.set_ylim([0, 35])
         # eps_x = [z for z in a.get_ylim()]
