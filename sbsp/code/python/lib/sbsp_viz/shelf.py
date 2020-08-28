@@ -225,6 +225,7 @@ def heatmap_grid_data_single(env, df_group, x, y, figure_options, ax, **kwargs):
     gms2_eq_sbsp_eq_ncbi = np.zeros([num_row, num_col], dtype=float)
 
     total = 0
+    df_group.reset_index(inplace=True, drop=True)
     for index in df_group.index:
         x_val = df_group.at[index, x]
         y_val = df_group.at[index, y]
