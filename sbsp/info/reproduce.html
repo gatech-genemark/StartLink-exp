@@ -1,0 +1,1211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2020-08-28 Fri 16:03 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Reproducing Analysis of StartLink</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="Karl Gemayel" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2020 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        displayAlign: "center",
+        displayIndent: "0em",
+
+        "HTML-CSS": { scale: 100,
+                        linebreaks: { automatic: "false" },
+                        webFont: "TeX"
+                       },
+        SVG: {scale: 100,
+              linebreaks: { automatic: "false" },
+              font: "TeX"},
+        NativeMML: {scale: 100},
+        TeX: { equationNumbers: {autoNumber: "AMS"},
+               MultLineWidth: "85%",
+               TagSide: "right",
+               TagIndent: ".8em"
+             }
+});
+</script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Reproducing Analysis of StartLink</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#org7b49992">1. Introduction</a></li>
+<li><a href="#org4375a0a">2. Downloading</a></li>
+<li><a href="#orgf4e5cfd">3. Installation</a>
+<ul>
+<li><a href="#org7204208">3.1. StartLink</a></li>
+<li><a href="#orgfba5200">3.2. External Tools</a></li>
+</ul>
+</li>
+<li><a href="#org477b6d3">4. How to continue and tips on running experiments!</a></li>
+<li><a href="#org772656c">5. Prebuilt databases and StartLink predictions</a></li>
+<li><a href="#org77f7995">6. Downloading and installing</a>
+<ul>
+<li><a href="#orgc43203b">6.1. Data</a></li>
+</ul>
+</li>
+<li><a href="#org1952644">7. Code and data structure</a></li>
+<li><a href="#orgd1af088">8. Setting up</a></li>
+<li><a href="#orgbfef55c">9. Experiments</a>
+<ul>
+<li><a href="#org681f5a4">9.1. Difference in 5&rsquo; predictions on Representative Genomes</a></li>
+<li><a href="#org93be067">9.2. Theoretical view of Independence</a></li>
+<li><a href="#org17fa595">9.3. Genomes with genes with verified starts</a></li>
+<li><a href="#org8dbc01b">9.4. Larger set of query genomes</a></li>
+</ul>
+</li>
+<li><a href="#orgbf2778f">10. Toy Example</a></li>
+<li><a href="#org8124703">11. Using existing databases</a></li>
+</ul>
+</div>
+</div>
+
+
+<div id="outline-container-org7b49992" class="outline-2">
+<h2 id="org7b49992"><span class="section-number-2">1</span> Introduction</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+This document serves as a step-by-step instruction manual on how to replicate results from the StartLink paper. We note that many of the experiments are time-consuming and/or resource hungry. Therefore, we also provide raw results (from which graphs can be generated) as well as pre-constructed databases for the clades mentioned in the StartLink paper.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org4375a0a" class="outline-2">
+<h2 id="org4375a0a"><span class="section-number-2">2</span> Downloading</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+To download, simply clone the git repository
+</p>
+<div class="org-src-container">
+<pre class="src src-bash">git clone ...
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgf4e5cfd" class="outline-2">
+<h2 id="orgf4e5cfd"><span class="section-number-2">3</span> Installation</h2>
+<div class="outline-text-2" id="text-3">
+</div>
+<div id="outline-container-org7204208" class="outline-3">
+<h3 id="org7204208"><span class="section-number-3">3.1</span> StartLink</h3>
+<div class="outline-text-3" id="text-3-1">
+<p>
+Once downloaded, binaries can be &ldquo;installed&rdquo; by running 
+</p>
+<div class="org-src-container">
+<pre class="src src-bash"><span style="color: #657b83; font-weight: bold;">source</span> config.sh    <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">sets up environment variables</span>
+<span style="color: #657b83; font-weight: bold;">source</span> install.sh   <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">creates binaries</span>
+</pre>
+</div>
+
+<p>
+The <code>config.sh</code> script loads environment variables (see script for details). These will help you navigate and run commands. It is essential that this is executed if you want to follow the steps listed below.
+</p>
+
+<p>
+The <code>install.sh</code> script creates binary files for all <code>python</code> drivers. This makes them easy to execute. If preferred, drivers can be executed by calling the <code>python</code> interpreter directly. The methods of execution are then:
+</p>
+<div class="org-src-container">
+<pre class="src src-bash">$<span style="color: #268bd2;">bin</span>/NAME_OF_DRIVER_py.sh               <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">if using installed binaries</span>
+python $<span style="color: #268bd2;">driverpython</span>/NAME_OF_DRIVER.py  <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">if using python interpreter</span>
+</pre>
+</div>
+<p>
+where <code>$driverpython</code> is loaded by the <code>config.sh</code> script.
+</p>
+</div>
+
+<div id="outline-container-orga17dcc0" class="outline-4">
+<h4 id="orga17dcc0"><span class="section-number-4">3.1.1</span> Loading Python Libraries</h4>
+<div class="outline-text-4" id="text-3-1-1">
+<p>
+Most of StartLink is built in Python. We use <code>conda</code> to manage package installations. Simply run
+</p>
+<div class="org-src-container">
+<pre class="src src-bash">conda env create -f install/startlink.yml --name startlink  <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">needs to be executed only once</span>
+conda activate startlink                   <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">run whenever you start a new shell</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-orgfba5200" class="outline-3">
+<h3 id="orgfba5200"><span class="section-number-3">3.2</span> External Tools</h3>
+<div class="outline-text-3" id="text-3-2">
+<p>
+StartLink and StartLink+ and their analysis rely on a handful of external tools. The following need to be installed:
+</p>
+<ul class="org-ul">
+<li>GeneMarkS-2
+<ul class="org-ul">
+<li>Used for building StartLink+ predictions, and for analysis</li>
+<li>Place installation in <code>$base/bin_external/gms2/</code></li>
+<li>Link: <a href="http://exon.gatech.edu/GeneMark/license_download.cgi">http://exon.gatech.edu/GeneMark/license_download.cgi</a></li>
+</ul></li>
+<li>ClustalO:
+<ul class="org-ul">
+<li>Used for constructing multiple sequence alignments</li>
+<li>Install and must be accessible from <code>$PATH</code></li>
+<li>Link: <a href="http://www.clustal.org/omega/#Download">http://www.clustal.org/omega/#Download</a></li>
+<li>Install via Anaconda: <code>conda install -c bioconda clustalo</code></li>
+</ul></li>
+<li>Diamond BLAST:
+<ul class="org-ul">
+<li>Used for generating target databases and finding orthologs</li>
+<li>Install and must be accessible from <code>$PATH</code></li>
+<li>Link: <a href="https://github.com/bbuchfink/diamond">https://github.com/bbuchfink/diamond</a></li>
+<li>Install via Anaconda (recommended): <code>conda install -c bioconda diamond</code></li>
+</ul></li>
+<li>Prodigal:
+<ul class="org-ul">
+<li>Used for initial analysis of gene-start prediction status</li>
+<li>Place installation in <code>$base/bin_external/prodigal/</code></li>
+<li>Link: <a href="https://github.com/hyattpd/Prodigal">https://github.com/hyattpd/Prodigal</a></li>
+</ul></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org477b6d3" class="outline-2">
+<h2 id="org477b6d3"><span class="section-number-2">4</span> How to continue and tips on running experiments!</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+After installation, it is best to first try running the toy example shown at the end of this document. It goes through all the steps from generating a target database to running StartLink. Since this is still in beta version, it will also help narrow down where issues might come from. Running commands with <code>-l INFO</code> should give enough information about what is going on. For debugging information, run with <code>-l DEBUG</code>.
+</p>
+
+<p>
+The setup is still in its beta version. StartLink is currently limited to a particular directory structure, with a fixed type of input (i.e. full genome, with a specific database construction, see below). This was done to facilitate development and reduce potential for errors. I am currently working on refactoring and allowing a more diverse set of inputs, and relaxing the constraints on database structure so that users can use a BLASTp or Diamond BLASTp database that they already have. This is still very much work in progress.
+</p>
+
+<p>
+Note: StartLink requires significant computational power and time. You can reduce this by tuning the parallelization parameters found in <code>$config/parallelization_defaults.conf</code>. It is recommended that you make a copy of this file and store it in <code>$config</code>. StartLink current supports PBS and multi-threading.
+</p>
+
+<p>
+If you are interested in reproducing the results from scratch, then follow the document as is. If you are interested in testing out StartLink, then we recommend you start by running <i>H. salinarum</i> on the <i>Archaea</i> database. Start by downloading the data for genomes with verified start (see <a href="#org630fd90">6.1.1</a>). If you already have the <i>Archaea</i> database downloaded, then move to <a href="#orgaf01d5a">11</a>. Otherwise, first construct the database using the instructions in <a href="#org6d436c6">6.1</a>. 
+</p>
+</div>
+</div>
+<div id="outline-container-org772656c" class="outline-2">
+<h2 id="org772656c"><span class="section-number-2">5</span> Prebuilt databases and StartLink predictions</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+For convenience, we provide the StartLink(+) predictions and the DIAMOND databases used to generate them. These can be found at
+LINK
+</p>
+</div>
+</div>
+
+<div id="outline-container-org77f7995" class="outline-2">
+<h2 id="org77f7995"><span class="section-number-2">6</span> Downloading and installing</h2>
+<div class="outline-text-2" id="text-6">
+</div>
+<div id="outline-container-orgc43203b" class="outline-3">
+<h3 id="orgc43203b"><span class="section-number-3">6.1</span> Data</h3>
+<div class="outline-text-3" id="text-6-1">
+<p>
+<a id="org6d436c6"></a>
+<b>Note: As previously mentioned the data used is on the order of hundreds of gigabytes. As such, if one is only interested in reproducibility, we provide pre-built databases (and even raw statistics from our existing runs).</b>
+</p>
+
+<p>
+We provide the databases for <i>Enterobacterales</i>, <i>Actinobacteria</i>, <i>Archaea</i>, and <i>FCB group</i>, and the sequence and label files for the genomes with verified starts: <i>E. coli</i>, <i>H. salinarum</i>, <i>N. pharaonis</i>, <i>M. tuberculosis</i>, and <i>R. denitrificans</i>. We also provide the steps to create a database with for any ancestor using data that can be downloaded from NCBI&rsquo;s website.
+</p>
+</div>
+
+<div id="outline-container-org969a184" class="outline-4">
+<h4 id="org969a184"><span class="section-number-4">6.1.1</span> &ldquo;Downloading&rdquo; data for verified genomes</h4>
+<div class="outline-text-4" id="text-6-1-1">
+<p>
+<a id="org630fd90"></a>
+This data is already provided with this installation in <code>$data/../verified</code>. It should be copied or linked to the <code>$data</code> directory. The following command links it 
+</p>
+<div class="org-src-container">
+<pre class="src src-bash">awk -F <span style="color: #2aa198;">","</span> <span style="color: #2aa198;">'{if (NR &gt; 1 &amp;&amp; NF) print $1}'</span> $<span style="color: #268bd2;">lists</span>/verified.list  | <span style="color: #859900; font-weight: bold;">while </span><span style="color: #657b83; font-weight: bold;">read</span> -r gcfid; <span style="color: #859900; font-weight: bold;">do</span>
+  ln -sn $<span style="color: #268bd2;">data</span>/../verified/$<span style="color: #268bd2;">gcfid</span> $<span style="color: #268bd2;">data</span>/;
+<span style="color: #859900; font-weight: bold;">done</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org15b02ec" class="outline-4">
+<h4 id="org15b02ec"><span class="section-number-4">6.1.2</span> Downloading Assembly Summary File</h4>
+<div class="outline-text-4" id="text-6-1-2">
+<div class="org-src-container">
+<pre class="src src-bash">$<span style="color: #268bd2;">bin</span>/download_assembly_summary_py.sh --database refseq --pf-output $<span style="color: #268bd2;">metadata</span>/refseq_assembly_summary.txt
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgd45da00" class="outline-4">
+<h4 id="orgd45da00"><span class="section-number-4">6.1.3</span> Representative Genomes</h4>
+<div class="outline-text-4" id="text-6-1-3">
+<div class="org-src-container">
+<pre class="src src-bash"><span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">These lists are provided for reproducibility, since NCBI frequently updates them.</span>
+<span style="color: #268bd2;">pf_refseq_arc</span>=$<span style="color: #268bd2;">lists</span>/refseq_representative_archaea.list
+<span style="color: #268bd2;">pf_refseq_bac</span>=$<span style="color: #268bd2;">lists</span>/refseq_representative_bacteria.list
+<span style="color: #268bd2;">pf_assembly_summary</span>=$<span style="color: #268bd2;">metadata</span>/refseq_assembly_summary.txt
+
+$<span style="color: #268bd2;">bin</span>/download_genomes_from_list_py.sh --pf-genome-list $<span style="color: #268bd2;">pf_refseq_arc</span> --pf-assembly-summary $<span style="color: #268bd2;">pf_assembly_summary</span> -l INFO
+$<span style="color: #268bd2;">bin</span>/download_genomes_from_list_py.sh --pf-genome-list $<span style="color: #268bd2;">pf_refseq_bac</span> --pf-assembly-summary $<span style="color: #268bd2;">pf_assembly_summary</span> -l INFO
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgec85d63" class="outline-4">
+<h4 id="orgec85d63"><span class="section-number-4">6.1.4</span> Constructing Taxonomy Tree</h4>
+<div class="outline-text-4" id="text-6-1-4">
+<p>
+To easily download genomes by clade, we first construct a taxonomy tree form NCBI&rsquo;s taxonomy information.
+</p>
+<div class="org-src-container">
+<pre class="src src-bash"><span style="color: #268bd2;">pd_work</span>=$<span style="color: #268bd2;">tmp</span>/tree
+
+mkdir -p $<span style="color: #268bd2;">pd_work</span>
+
+$<span style="color: #268bd2;">bin</span>/download_taxonomy_dump_py.sh --pd-output $<span style="color: #268bd2;">metadata</span>/taxdump
+$<span style="color: #268bd2;">bin</span>/build_taxonomy_tree_py.sh --pf-nodes-dmp $<span style="color: #268bd2;">metadata</span>/taxdump/nodes.dmp --pf-names-dmp $<span style="color: #268bd2;">metadata</span>/taxdump/names.dmp --pf-tree $<span style="color: #268bd2;">pd_work</span>/tree.pkl
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgc4b52fb" class="outline-4">
+<h4 id="orgc4b52fb"><span class="section-number-4">6.1.5</span> Download sequence/label files for different clades, and create Blast databases</h4>
+<div class="outline-text-4" id="text-6-1-5">
+<p>
+Now, we can download genomes from different clades. In the paper, 5 clades are referenced (4 of which are used for the large scale analysis). If you want to change which clade is downloaded, simply change the array <code>clades</code> in the below script. The names are defined by NCBI&rsquo;s <code>name_txt</code> variable in it&rsquo;s assembly summaries.
+</p>
+<div class="org-src-container">
+<pre class="src src-bash">
+<span style="color: #859900; font-weight: bold;">function</span> <span style="color: #268bd2;">mk_path_friendly</span>() {
+  <span style="color: #657b83; font-weight: bold;">echo</span> <span style="color: #2aa198;">"$1"</span> | tr <span style="color: #2aa198;">" "</span> <span style="color: #2aa198;">"_"</span> | tr [:upper:] [:lower:];
+}
+
+<span style="color: #268bd2;">dbt</span>=refseq     <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">database type</span>
+<span style="color: #268bd2;">pf_tree</span>=$<span style="color: #268bd2;">tmp</span>/tree/tree.pkl
+<span style="color: #268bd2;">pf_ass_sum_comb</span>=$<span style="color: #268bd2;">metadata</span>/${<span style="color: #268bd2;">dbt</span>}_assembly_summary.txt
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">Modify this array based on which genome data you want (e.g. set as "Archaea" if you are only interested</span>
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">in archaeal genomes, or add any valid name_txt id from the taxonomy tree).</span>
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">Warning: This downloads all genomes under that clade (one per taxonomy ID)</span>
+<span style="color: #657b83; font-weight: bold;">declare</span> -a <span style="color: #268bd2;">clades</span>=(<span style="color: #2aa198;">"Enterobacterales"</span> <span style="color: #2aa198;">"Actinobacteria"</span> <span style="color: #2aa198;">"Alphaproteobacteria"</span> <span style="color: #2aa198;">"FCB group"</span> <span style="color: #2aa198;">"Archaea"</span>)
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">loop over clades; download data under each clade</span>
+<span style="color: #859900; font-weight: bold;">for</span> cl<span style="color: #859900; font-weight: bold;"> in</span> ${<span style="color: #268bd2;">clades</span>[@]}; <span style="color: #859900; font-weight: bold;">do</span>
+  <span style="color: #268bd2;">dn_cl</span>=$(mk_path_friendly <span style="color: #2aa198;">"$cl"</span>)
+  $<span style="color: #268bd2;">bin</span>/download_genomes_for_clade_py.sh --pf-tree $<span style="color: #268bd2;">pf_tree</span> --pf-assembly-summary $<span style="color: #268bd2;">pf_ass_sum_comb</span> --clade-id $<span style="color: #268bd2;">cl</span> --clade-id-type <span style="color: #2aa198;">"name_txt"</span> --favor-assembly-level-order --genomes-per-taxid 1 --pf-output-list $<span style="color: #268bd2;">lists</span>/${<span style="color: #268bd2;">dbt</span>}_${<span style="color: #268bd2;">dn_cl</span>}.list
+<span style="color: #859900; font-weight: bold;">done</span>
+</pre>
+</div>
+
+<p>
+Construct Diamond Blastp databases
+</p>
+<div class="org-src-container">
+<pre class="src src-bash">
+<span style="color: #859900; font-weight: bold;">for</span> cl<span style="color: #859900; font-weight: bold;"> in</span> <span style="color: #2aa198;">"${clades[@]}"</span>; <span style="color: #859900; font-weight: bold;">do</span>
+  <span style="color: #268bd2;">dn_cl</span>=$(mk_path_friendly <span style="color: #2aa198;">"$cl"</span>)
+
+  <span style="color: #268bd2;">pd_work</span>=<span style="color: #2aa198;">"$tmp/extract_sequences/${dn_cl}"</span>
+  mkdir -p $<span style="color: #268bd2;">pd_work</span>
+
+  <span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">pd_work</span>
+
+  <span style="color: #268bd2;">pf_list</span>=$<span style="color: #268bd2;">lists</span>/${<span style="color: #268bd2;">dbt</span>}_${<span style="color: #268bd2;">dn_cl</span>}.list
+  <span style="color: #268bd2;">pf_faa</span>=$<span style="color: #268bd2;">pd_work</span>/${<span style="color: #268bd2;">dbt</span>}_${<span style="color: #268bd2;">dn_cl</span>}.faa
+  <span style="color: #268bd2;">pf_db</span>=$<span style="color: #268bd2;">db</span>/${<span style="color: #268bd2;">dbt</span>}_${<span style="color: #268bd2;">dn_cl</span>}.dmnd
+
+  <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">extract sequences</span>
+  $<span style="color: #268bd2;">bin</span>/extract_annotated_sequences_py.sh --pf-genome-list $<span style="color: #268bd2;">pf_list</span> --pf-output $<span style="color: #268bd2;">pf_faa</span>
+
+  <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">build blast</span>
+  $<span style="color: #268bd2;">bin</span>/build_blast_db_py.sh --pf-sequences $<span style="color: #268bd2;">pf_faa</span> --pf-db $<span style="color: #268bd2;">pf_db</span>
+
+  <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">clean up sequence file</span>
+  [[ -f $<span style="color: #268bd2;">pf_faa</span> ]] &amp; rm $<span style="color: #268bd2;">pf_faa</span>
+<span style="color: #859900; font-weight: bold;">done</span>
+
+<span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">base</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org2a930ab" class="outline-4">
+<h4 id="org2a930ab"><span class="section-number-4">6.1.6</span> Download query genomes from list</h4>
+<div class="outline-text-4" id="text-6-1-6">
+<div class="org-src-container">
+<pre class="src src-bash"><span style="color: #268bd2;">pf_query_large</span>=$<span style="color: #268bd2;">lists</span>/selected_query.list
+<span style="color: #268bd2;">pf_ass_sum_query_large</span>=$<span style="color: #268bd2;">metadata</span>/assembly_summary_query_large.txt
+$<span style="color: #268bd2;">bin</span>/download_genomes_from_list_py.sh --pf-genome-list $<span style="color: #268bd2;">pf_query_large</span> --pf-assembly-summary $<span style="color: #268bd2;">pf_ass_sum_query_large</span>  -l INFO
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org1952644" class="outline-2">
+<h2 id="org1952644"><span class="section-number-2">7</span> Code and data structure</h2>
+<div class="outline-text-2" id="text-7">
+<p>
+After installing StartLink, you will have the following structure:
+</p>
+
+<p>
+<a href="dir.pdf">dir.pdf</a>
+</p>
+
+
+<p>
+The <code>bin</code> directory contains all executables related to StartLink, while the <code>bin_external</code> may contain external tools, such as GeneMarkS-2 or Prodigal. 
+</p>
+
+<p>
+The <code>data</code> directory will contain raw genome files (sequence and annotation labels) downloaded from NCBI. In particular, upon initial download of the code, it should contain the genomic sequences for the genomes with experimentally verified gene-starts.
+</p>
+
+<p>
+The <code>list</code> directory has files that contain different lists of genomes (for example, those with verified genes, those selected as NCBI query genomes, etc&#x2026;)
+</p>
+
+<p>
+Finally the <code>runs</code> directory will contain runs of different tools, such as StartLink, GeneMarkS-2, or Prodigal (as well as one for NCBI&rsquo;s <code>PGAP</code>). These will be placed in a subdirectory per genome, as shown below.
+</p>
+
+<p>
+<a href="dir_runs.pdf">dir_runs.pdf</a>
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgd1af088" class="outline-2">
+<h2 id="orgd1af088"><span class="section-number-2">8</span> Setting up</h2>
+<div class="outline-text-2" id="text-8">
+<p>
+Since much of the analysis is done by comparing StartLink to NCBI&rsquo;s PGAP, GeneMarkS-2, and/or Prodigal, we first need to run these tools and add the results to the run directory. The following script is capable of doing that (note, depending on which analysis you want to reproduce, you may not need to run the tools on all lists):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">Enable if you have PBS installed</span>
+<span style="color: #268bd2;">pbs_options</span>=<span style="color: #2aa198;">""</span>
+<span style="color: #93a1a1;">#</span><span style="color: #93a1a1;">pbs_options="--pf-parallelization-options $config/parallelization_pbs_1.conf"</span>
+
+<span style="color: #859900; font-weight: bold;">function</span> <span style="color: #268bd2;">run_tools_on_archaea</span>() {
+  <span style="color: #268bd2;">pf_list</span>=<span style="color: #2aa198;">"$1"</span>
+
+  $<span style="color: #268bd2;">bin</span>/run_tool_on_genome_list_py.sh --tool gms2 --pf-genome-list $<span style="color: #268bd2;">pf_list</span> --type archaea -l INFO --pd-work $<span style="color: #268bd2;">runs</span> ${<span style="color: #268bd2;">pbs_options</span>}
+  $<span style="color: #268bd2;">bin</span>/run_tool_on_genome_list_py.sh --tool prodigal --pf-genome-list $<span style="color: #268bd2;">pf_list</span> --type archaea -l INFO --pd-work $<span style="color: #268bd2;">runs</span> ${<span style="color: #268bd2;">pbs_options</span>}
+}
+
+<span style="color: #859900; font-weight: bold;">function</span> <span style="color: #268bd2;">run_tools_on_bacteria</span>() {
+  <span style="color: #268bd2;">pf_list</span>=<span style="color: #2aa198;">"$1"</span>
+
+  $<span style="color: #268bd2;">bin</span>/run_tool_on_genome_list_py.sh --tool gms2 --pf-genome-list $<span style="color: #268bd2;">pf_list</span> --type bacteria -l INFO --pd-work $<span style="color: #268bd2;">runs</span> ${<span style="color: #268bd2;">pbs_options</span>}
+  $<span style="color: #268bd2;">bin</span>/run_tool_on_genome_list_py.sh --tool prodigal --pf-genome-list $<span style="color: #268bd2;">pf_list</span> --type bacteria -l INFO --pd-work $<span style="color: #268bd2;">runs</span> ${<span style="color: #268bd2;">pbs_options</span>}
+}
+
+<span style="color: #268bd2;">pf_rep_arc</span>=$<span style="color: #268bd2;">lists</span>/refseq_representative_archaea.list
+<span style="color: #268bd2;">pf_rep_bac</span>=$<span style="color: #268bd2;">lists</span>/refseq_representative_bacteria.list
+
+<span style="color: #268bd2;">pf_list_verified_arc</span>=$<span style="color: #268bd2;">lists</span>/verified_archaea.list
+<span style="color: #268bd2;">pf_list_verified_bac</span>=$<span style="color: #268bd2;">lists</span>/verified_bacteria.list
+
+<span style="color: #268bd2;">pf_list_qncbi_arc</span>=$<span style="color: #268bd2;">lists</span>/qncbi_archaea.list
+<span style="color: #268bd2;">pf_list_qncbi_bac</span>=$<span style="color: #268bd2;">lists</span>/qncbi_bacteria.list
+
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">Representative genomes</span>
+run_tools_on_archaea $<span style="color: #268bd2;">pf_rep_arc</span>
+run_tools_on_bacteria $<span style="color: #268bd2;">pf_rep_bac</span>
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">Verified genomes</span>
+run_tools_on_archaea $<span style="color: #268bd2;">pf_list_verified_arc</span>
+run_tools_on_bacteria $<span style="color: #268bd2;">pf_list_verified_bac</span>
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">NCBI query genomes</span>
+run_tools_on_archaea $<span style="color: #268bd2;">pf_list_qncbi_arc</span>
+run_tools_on_bacteria $<span style="color: #268bd2;">pf_list_qncbi_bac</span>
+</pre>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-orgbfef55c" class="outline-2">
+<h2 id="orgbfef55c"><span class="section-number-2">9</span> Experiments</h2>
+<div class="outline-text-2" id="text-9">
+<p>
+Unless otherwise noted, these variables (when applicable) will have the following values
+</p>
+<div class="org-src-container">
+<pre class="src src-bash">
+<span style="color: #268bd2;">pf_list_verified</span>=$<span style="color: #268bd2;">lists</span>/verified.list  <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">verified genomes</span>
+<span style="color: #268bd2;">pf_list_qncbi</span>=$<span style="color: #268bd2;">lists</span>/qncbi.list   <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">query genomes</span>
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">database and configuration files</span>
+<span style="color: #268bd2;">pf_db_index</span>=$<span style="color: #268bd2;">db</span>/index.csv  <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">database location files</span>
+<span style="color: #268bd2;">pf_sbsp_options</span>=$<span style="color: #268bd2;">config</span>/sbsp_defaults.conf <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">sbsp config file</span>
+<span style="color: #268bd2;">pf_pbs_options</span>=$<span style="color: #268bd2;">config</span>/parallelization_defaults.conf   <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">PBS config file</span>
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">PBS options</span>
+<span style="color: #268bd2;">toggle_pbs</span>=<span style="color: #2aa198;">"--pf-parallelization-options $pf_pbs_options"</span>  <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">if PBS not installed, set this option to empty: ""</span>
+<span style="color: #268bd2;">sg</span>=8   <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">number of genomes to run simutaneously (low number recommended)</span>
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org681f5a4" class="outline-3">
+<h3 id="org681f5a4"><span class="section-number-3">9.1</span> Difference in 5&rsquo; predictions on Representative Genomes</h3>
+<div class="outline-text-3" id="text-9-1">
+</div>
+<div id="outline-container-orge55854c" class="outline-4">
+<h4 id="orge55854c"><span class="section-number-4">9.1.1</span> Data download</h4>
+<div class="outline-text-4" id="text-9-1-1">
+<div class="org-src-container">
+<pre class="src src-bash"><span style="color: #268bd2;">pf_rep_bac</span>=$<span style="color: #268bd2;">lists</span>/refseq_representative_bacteria.list
+<span style="color: #268bd2;">pf_rep_arc</span>=$<span style="color: #268bd2;">lists</span>/refseq_representative_archaea.list
+<span style="color: #268bd2;">pf_assembly_bac</span>=$<span style="color: #268bd2;">metadata</span>/assembly_summary.txt
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">$bin/download_from_ncbi_py.sh --pf-assembly-summary $pf_assembly_bac --pf-data $data --pf-output-list</span>
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">link ncbi as "tool" (for easy comparison wwith other tools)</span>
+cat $<span style="color: #268bd2;">pf_rep_bac</span> $<span style="color: #268bd2;">pf_rep_arc</span> | grep -v gcfid | cut -f1 -d, | <span style="color: #859900; font-weight: bold;">while </span><span style="color: #657b83; font-weight: bold;">read</span> -r line; <span style="color: #859900; font-weight: bold;">do</span>
+  mkdir -p $<span style="color: #268bd2;">runs</span>/$<span style="color: #268bd2;">line</span>; mkdir -p $<span style="color: #268bd2;">runs</span>/$<span style="color: #268bd2;">line</span>/ncbi;
+  ln -s $<span style="color: #268bd2;">data</span>/$<span style="color: #268bd2;">line</span>/ncbi.gff $<span style="color: #268bd2;">runs</span>/$<span style="color: #268bd2;">line</span>/ncbi/ncbi.gff ;
+<span style="color: #859900; font-weight: bold;">done</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org5f398e3" class="outline-4">
+<h4 id="org5f398e3"><span class="section-number-4">9.1.2</span> Collect statistics</h4>
+<div class="outline-text-4" id="text-9-1-2">
+<p>
+We can now collect the statistics and create the figures to compare GMS2, Prodigal, and NCBI predictions.
+</p>
+<div class="org-src-container">
+<pre class="src src-bash">
+<span style="color: #268bd2;">pd_work</span>=$<span style="color: #268bd2;">tmp</span>/stats_refseq_vs_tools
+mkdir -p $<span style="color: #268bd2;">pd_work</span>
+<span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">pd_work</span>
+
+<span style="color: #268bd2;">pf_stats</span>=$<span style="color: #268bd2;">pd_work</span>/stats_tools.csv
+
+$<span style="color: #268bd2;">bin</span>/stats_tools_5prime_py.sh --pf-genome-lists $<span style="color: #268bd2;">pf_rep_bac</span> $<span style="color: #268bd2;">pf_rep_arc</span> --list-names Bacteria Archaea --dn-tools gms2 prodigal ncbi --tool-names GMS2 Prodigal NCBI --pf-output $<span style="color: #268bd2;">pf_stats</span>
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">create figures</span>
+$<span style="color: #268bd2;">bin</span>/viz_stats_tools_5prime_py.sh --pf-stats $<span style="color: #268bd2;">pf_stats</span>
+
+<span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">base</span>
+</pre>
+</div>
+
+<p>
+This should now create a file containing the following image
+<a href="tools_5prime.pdf">tools_5prime.pdf</a>
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org93be067" class="outline-3">
+<h3 id="org93be067"><span class="section-number-3">9.2</span> Theoretical view of Independence</h3>
+<div class="outline-text-3" id="text-9-2">
+<p>
+While not technically an experimental result, we provide the code to generate this graph for convenience. The sensitivity of the non-random algorithms \(A_1\) and \(A_2\) are set to 0.9, but the user can easily change them (from within) to observe the change in behavior. What remains constant is the improvement of independent algorithms over fully dependent (and random) algorithms..
+</p>
+<div class="org-src-container">
+<pre class="src src-bash">$<span style="color: #268bd2;">bin</span>/independent_predictions_py.sh 
+</pre>
+</div>
+<p>
+<a href="figures/theory_prob_agree.pdf">figures/theory_prob_agree.pdf</a>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org17fa595" class="outline-3">
+<h3 id="org17fa595"><span class="section-number-3">9.3</span> Genomes with genes with verified starts</h3>
+<div class="outline-text-3" id="text-9-3">
+</div>
+<div id="outline-container-org8090cb2" class="outline-4">
+<h4 id="org8090cb2"><span class="section-number-4">9.3.1</span> Running StartLink</h4>
+<div class="outline-text-4" id="text-9-3-1">
+<div class="org-src-container">
+<pre class="src src-bash">
+mkdir $<span style="color: #268bd2;">tmp</span>/verified
+<span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">tmp</span>/verified
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">run SBSP</span>
+$<span style="color: #268bd2;">bin</span>/sbsp_on_genome_list_py.sh --pf-q-list $<span style="color: #268bd2;">pf_list_verified</span> --simultaneous-genomes $<span style="color: #268bd2;">sg</span> --pd-work $<span style="color: #268bd2;">runs</span> --pf-sbsp-options $<span style="color: #268bd2;">pf_sbsp_options</span>  --pf-db-index $<span style="color: #268bd2;">pf_db_index</span> $<span style="color: #268bd2;">toggle_pbs</span>
+
+<span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">base</span>
+
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org3037fb6" class="outline-4">
+<h4 id="org3037fb6"><span class="section-number-4">9.3.2</span> Collecting statistics</h4>
+<div class="outline-text-4" id="text-9-3-2">
+<div class="org-src-container">
+<pre class="src src-bash">mkdir $<span style="color: #268bd2;">tmp</span>/verified_stats
+<span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">tmp</span>/verified_stats
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">collect statistics per query gene (comparing StartLink, GMS2, and verified genes)</span>
+$<span style="color: #268bd2;">bin</span>/stats_per_query_gene_py.sh --pf-genome-list $<span style="color: #268bd2;">pf_list_verified</span> --pf-output-summary summary.csv --verified
+
+<span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">base</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgf9d9ee2" class="outline-4">
+<h4 id="orgf9d9ee2"><span class="section-number-4">9.3.3</span> Visualizing</h4>
+<div class="outline-text-4" id="text-9-3-3">
+<div class="org-src-container">
+<pre class="src src-bash"><span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">tmp</span>/verified_stats
+
+$<span style="color: #268bd2;">bin</span>/viz_stats_genome_level_py.sh --pf-data summary.csv
+
+<span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">base</span>
+</pre>
+</div>
+
+<p>
+This will produce two files, <code>error.csv</code> and <code>coverage.csv</code> containing the following two tables.
+</p>
+
+<p>
+Error
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">Genome</td>
+<td class="org-right">Verified</td>
+<td class="org-right">SBSP</td>
+<td class="org-right">GMS2</td>
+<td class="org-right">GMS2=SBSP</td>
+</tr>
+
+<tr>
+<td class="org-left">E.      coli</td>
+<td class="org-right">769</td>
+<td class="org-right">96.204188</td>
+<td class="org-right">97.001304</td>
+<td class="org-right">99.582754</td>
+</tr>
+
+<tr>
+<td class="org-left">H.      salinarum</td>
+<td class="org-right">530</td>
+<td class="org-right">97.489540</td>
+<td class="org-right">98.679245</td>
+<td class="org-right">99.354839</td>
+</tr>
+
+<tr>
+<td class="org-left">M.      tuberculosis</td>
+<td class="org-right">701</td>
+<td class="org-right">93.197279</td>
+<td class="org-right">90.401146</td>
+<td class="org-right">98.282443</td>
+</tr>
+
+<tr>
+<td class="org-left">N.      pharaonis</td>
+<td class="org-right">315</td>
+<td class="org-right">98.226950</td>
+<td class="org-right">99.047619</td>
+<td class="org-right">100.000000</td>
+</tr>
+
+<tr>
+<td class="org-left">R.      denitrificans</td>
+<td class="org-right">526</td>
+<td class="org-right">95.081967</td>
+<td class="org-right">96.571429</td>
+<td class="org-right">99.248120</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>
+Coverage
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">Genome</td>
+<td class="org-right">Verified</td>
+<td class="org-right">SBSP</td>
+<td class="org-right">GMS2</td>
+<td class="org-right">GMS2=SBSP</td>
+</tr>
+
+<tr>
+<td class="org-left">E.     coli</td>
+<td class="org-right">769</td>
+<td class="org-right">99.349805</td>
+<td class="org-right">99.739922</td>
+<td class="org-right">93.498049</td>
+</tr>
+
+<tr>
+<td class="org-left">H.      salinarum</td>
+<td class="org-right">530</td>
+<td class="org-right">90.188679</td>
+<td class="org-right">100.000000</td>
+<td class="org-right">87.735849</td>
+</tr>
+
+<tr>
+<td class="org-left">M.      tuberculosis</td>
+<td class="org-right">701</td>
+<td class="org-right">83.880171</td>
+<td class="org-right">99.572040</td>
+<td class="org-right">74.750357</td>
+</tr>
+
+<tr>
+<td class="org-left">N.      pharaonis</td>
+<td class="org-right">315</td>
+<td class="org-right">89.523810</td>
+<td class="org-right">100.000000</td>
+<td class="org-right">87.301587</td>
+</tr>
+
+<tr>
+<td class="org-left">R.      denitrificans</td>
+<td class="org-right">526</td>
+<td class="org-right">81.178707</td>
+<td class="org-right">99.809886</td>
+<td class="org-right">75.855513</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+It also produces the per-step analysis on the verified set of genes.
+<a href="figures/verified_per_step.pdf">figures/verified_per_step.pdf</a>
+</p>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org8dbc01b" class="outline-3">
+<h3 id="org8dbc01b"><span class="section-number-3">9.4</span> Larger set of query genomes</h3>
+<div class="outline-text-3" id="text-9-4">
+</div>
+<div id="outline-container-orgb325fdb" class="outline-4">
+<h4 id="orgb325fdb"><span class="section-number-4">9.4.1</span> Running StartLink</h4>
+<div class="outline-text-4" id="text-9-4-1">
+<p>
+Prewarning, running this analysis can take a long time. Our estimate is roughly 5 days on 20 compute nodes with 8 processors each, though that number can vary based on how databases are setup, where they are located, and the cost of accessing them (e.g. databases can be copied to each node beforehand, making access much cheaper and prevent bottlenecks).
+</p>
+
+<p>
+In that respect, we have also provided a CSV file containing the per-query analysis of all genes in this set, which is used for visualization of results.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">
+mkdir $<span style="color: #268bd2;">tmp</span>/large
+<span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">tmp</span>/large
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">run SBSP</span>
+$<span style="color: #268bd2;">bin</span>/sbsp_on_genome_list_py.sh --pf-q-list $<span style="color: #268bd2;">pf_list_qncbi</span> --simultaneous-genomes $<span style="color: #268bd2;">sg</span> --pd-work $<span style="color: #268bd2;">runs</span> --pf-sbsp-options $<span style="color: #268bd2;">pf_sbsp_options</span>  --pf-db-index $<span style="color: #268bd2;">pf_db_index</span> $<span style="color: #268bd2;">toggle_pbs</span>
+
+<span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">base</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgdf44935" class="outline-4">
+<h4 id="orgdf44935"><span class="section-number-4">9.4.2</span> Collecting statistics</h4>
+<div class="outline-text-4" id="text-9-4-2">
+<div class="org-src-container">
+<pre class="src src-bash">mkdir $<span style="color: #268bd2;">tmp</span>/large_stats
+<span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">tmp</span>/large_stats
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">collect statistics per query gene (comparing SBSP, GMS2, and verified genes)</span>
+$<span style="color: #268bd2;">bin</span>/stats_per_query_gene_py.sh --pf-genome-list $<span style="color: #268bd2;">pf_list_qncbi</span> --pf-output-summary summary.csv
+
+<span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">base</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orge595fa0" class="outline-4">
+<h4 id="orge595fa0"><span class="section-number-4">9.4.3</span> Visualizing</h4>
+<div class="outline-text-4" id="text-9-4-3">
+<p>
+All images regarding the large-scale comparisons can be generated via a single script. Note that the contour plots are computationally expensive and may take ~1 hour to generate. Therefore, they are turned off by default. To enable them, run the command with the option <code>--with-contours</code>. 
+</p>
+<div class="org-src-container">
+<pre class="src src-bash"><span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">tmp</span>/large_stats
+
+$<span style="color: #268bd2;">bin</span>/viz_stats_clade_level_py.sh --pf-data summary.csv 
+
+<span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">base</span>
+</pre>
+</div>
+
+<p>
+<a href="figures/sen_ncbi_gms2_eq_sbsp.pdf">figures/sen_ncbi_gms2_eq_sbsp.pdf</a>
+</p>
+
+<p>
+<a href="figures/sen_ncbi_gms2_eq_sbsp_vs_gc.pdf">figures/sen_ncbi_gms2_eq_sbsp_vs_gc.pdf</a>
+</p>
+
+<p>
+<a href="figures/step_sen_cov_sbsp_and_sbsp_gms2_verified.pdf">figures/step_sen_cov_sbsp_and_sbsp_gms2_verified.pdf</a>
+</p>
+
+<p>
+<a href="figures/err_gms2_eq_sbsp_vs_ncbi_step.pdf">figures/err_gms2_eq_sbsp_vs_ncbi_step.pdf</a>
+</p>
+
+<p>
+<a href="figures/pc_range.pdf">figures/pc_range.pdf</a>
+</p>
+
+<p>
+<a href="figures/most_common_upstream.pdf">figures/most_common_upstream.pdf</a>
+</p>
+
+<p>
+<a href="figures/kimura_kde.pdf">figures/kimura_kde.pdf</a>
+</p>
+
+<p>
+<a href="figures/kimura_avg.pdf">figures/kimura_avg.pdf</a>
+</p>
+
+<p>
+\textrm{(NCBI, GMS2=SBSP)}$) based on the minimum and maximum Kimura distances between a query and its targets. The color bar measures the sensitivity rate, with brighter colors indicating higher sensitivity
+    <a href="figures/sen_kimura_min_max.pdf">figures/sen_kimura_min_max.pdf</a>
+</p>
+
+<p>
+<a href="figures/raw_blast_numbers.pdf">figures/raw_blast_numbers.pdf</a>    <a href="figures/raw_blast_percent.pdf">figures/raw_blast_percent.pdf</a>
+</p>
+
+<p>
+<a href="figures/sen_cov_kimura_max.pdf">figures/sen_cov_kimura_max.pdf</a>
+</p>
+
+<p>
+<a href="figures/sen_cov_kimura_min.pdf">figures/sen_cov_kimura_min.pdf</a>
+</p>
+
+<p>
+<a href="figures/sen_cov_kimura_block.pdf">figures/sen_cov_kimura_block.pdf</a>
+</p>
+
+<p>
+<a href="figures/score_blk_compare.pdf">figures/score_blk_compare.pdf</a>
+</p>
+
+<p>
+<a href="figures/score_five_prime_compare.pdf">figures/score_five_prime_compare.pdf</a>
+</p>
+</div>
+</div>
+</div>
+</div>
+
+
+
+
+
+
+
+<div id="outline-container-orgbf2778f" class="outline-2">
+<h2 id="orgbf2778f"><span class="section-number-2">10</span> Toy Example</h2>
+<div class="outline-text-2" id="text-10">
+<p>
+This section lists a set of commands to generate a toy database and and run H. salinarum predictions on it. 
+This is just meant for the user to test out whether the system has been installed correctly.
+</p>
+
+<p>
+Make sure you have GeneMarkS-2 installed under <code>$base/bin_external/gms2/</code>, and <code>Diamond</code> and <code>ClustalO</code> should be installed and in your path.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">setup environment</span>
+<span style="color: #657b83; font-weight: bold;">source</span> config.sh
+<span style="color: #657b83; font-weight: bold;">source</span> install.sh
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">download assembly summary files</span>
+$<span style="color: #268bd2;">bin</span>/download_assembly_summary_py.sh --database refseq --pf-output $<span style="color: #268bd2;">metadata</span>/refseq_assembly_summary.txt
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">construct taxonomy tree</span>
+<span style="color: #268bd2;">pd_work</span>=$<span style="color: #268bd2;">tmp</span>/tree
+mkdir -p $<span style="color: #268bd2;">pd_work</span>
+
+<span style="color: #268bd2;">pf_tree</span>=$<span style="color: #268bd2;">pd_work</span>/tree.pkl
+
+$<span style="color: #268bd2;">bin</span>/download_taxonomy_dump_py.sh --pd-output $<span style="color: #268bd2;">metadata</span>/taxdump
+$<span style="color: #268bd2;">bin</span>/build_taxonomy_tree_py.sh --pf-nodes-dmp $<span style="color: #268bd2;">metadata</span>/taxdump/nodes.dmp --pf-names-dmp $<span style="color: #268bd2;">metadata</span>/taxdump/names.dmp --pf-tree $<span style="color: #268bd2;">pf_tree</span>
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">download genomes for clade</span>
+<span style="color: #268bd2;">clade</span>=Halobacterium
+<span style="color: #268bd2;">dn_cl</span>=halobacterium
+<span style="color: #268bd2;">pf_assembly_summary</span>=$<span style="color: #268bd2;">metadata</span>/refseq_assembly_summary.txt
+<span style="color: #268bd2;">pf_t_list</span>=$<span style="color: #268bd2;">lists</span>/refseq_${<span style="color: #268bd2;">dn_cl</span>}.list
+
+$<span style="color: #268bd2;">bin</span>/download_genomes_for_clade_py.sh --pf-tree $<span style="color: #268bd2;">pf_tree</span> --pf-assembly-summary $<span style="color: #268bd2;">pf_assembly_summary</span> --clade-id $<span style="color: #268bd2;">clade</span> --clade-id-type <span style="color: #2aa198;">"name_txt"</span> --favor-assembly-level-order --genomes-per-taxid 1 --pf-output-list $<span style="color: #268bd2;">pf_t_list</span>
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">extract labeled sequences for targets</span>
+<span style="color: #268bd2;">pd_work</span>=$<span style="color: #268bd2;">tmp</span>/build_database/${<span style="color: #268bd2;">dn_cl</span>}
+
+<span style="color: #268bd2;">pf_faa</span>=$<span style="color: #268bd2;">pd_work</span>/refseq_${<span style="color: #268bd2;">dn_cl</span>}.faa
+<span style="color: #268bd2;">pf_db</span>=$<span style="color: #268bd2;">db</span>/refseq_${<span style="color: #268bd2;">dn_cl</span>}.dmnd
+<span style="color: #268bd2;">pf_db_index</span>=$<span style="color: #268bd2;">db</span>/index.csv      <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">database locations</span>
+
+$<span style="color: #268bd2;">bin</span>/extract_annotated_sequences_py.sh --pf-genome-list $<span style="color: #268bd2;">pf_t_list</span> --pf-output $<span style="color: #268bd2;">pf_faa</span>
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">build database</span>
+$<span style="color: #268bd2;">bin</span>/build_blast_db_py.sh --pf-sequences $<span style="color: #268bd2;">pf_faa</span> -pf-db $<span style="color: #268bd2;">pf_db</span>
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">add path to database into database index file</span>
+<span style="color: #657b83; font-weight: bold;">echo</span> -e <span style="color: #2aa198;">"Clade,pf-db\n${clade},${pf_db}"</span> &gt; $<span style="color: #268bd2;">pf_db_index</span>
+
+[[ -f $<span style="color: #268bd2;">pf_faa</span> ]] &amp; rm $<span style="color: #268bd2;">pf_faa</span>
+
+<span style="color: #657b83; font-weight: bold;">cd</span> $<span style="color: #268bd2;">base</span>
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">run sbsp</span>
+<span style="color: #268bd2;">pf_sbsp_options</span>=$<span style="color: #268bd2;">config</span>/sbsp_0.list
+$<span style="color: #268bd2;">bin</span>/sbsp_on_genome_list_py.sh --pf-q-list $<span style="color: #268bd2;">lists</span>/verified_hsalinarum.list --pd-work $<span style="color: #268bd2;">runs</span> --pf-sbsp-options $<span style="color: #268bd2;">pf_sbsp_options</span> --pf-db-index $<span style="color: #268bd2;">pf_db_index</span>
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">the prediction file 'sbsp.gff' will be located in the directory $runs/GENOME/sbsp/sbsp.gff</span>
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">in this case GENOME is the id for H. salinarum, found in $lists/verified_hsalinarum.list</span>
+
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org8124703" class="outline-2">
+<h2 id="org8124703"><span class="section-number-2">11</span> Using existing databases</h2>
+<div class="outline-text-2" id="text-11">
+<p>
+<a id="orgaf01d5a"></a>
+As previously mentioned, all databases must be constructed using the <code>$bin/extract_annotated_sequences_py.sh</code> and <code>$bin/build_blast_db_py.sh</code> scripts. This is because, for now, the format of the database is strict. This will be relaxed in a later release.
+</p>
+
+<p>
+We have provided some example databases. One containing all RefSeq annotated Archaea genomes, and another for RefSeq annotated Actinobacteria genomes. The below shows how to use them for SBSP prediction (example is shown for H. salinarum and Archaea):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">CHANGE THIS TO POINT TO DATABASE FILE. USE ABSOLUTE PATHS ONLY</span>
+<span style="color: #268bd2;">clade</span>=Archaea
+<span style="color: #268bd2;">pf_db</span>=PATH-TO-DB.dmnd
+<span style="color: #268bd2;">pf_db_index</span>=$<span style="color: #268bd2;">db</span>/index.csv      <span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">database locations</span>
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">This file contains the list of query genomes. See existing examples in $lists for samples.</span>
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">IMPORTANT: the genome and RefSeq labels must already be download and placed in</span>
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">$data/GENOME_NAME/sequence.fasta and $data/GENOME_NAME/ncbi.gff</span>
+<span style="color: #268bd2;">pf_q_list</span>=$<span style="color: #268bd2;">lists</span>/verified_hsalinarum.list
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">Path of database should be in index.</span>
+<span style="color: #657b83; font-weight: bold;">echo</span> -e <span style="color: #2aa198;">"Clade,pf-db\n${clade},${pf_db}"</span> &gt; $<span style="color: #268bd2;">pf_db_index</span>
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">run sbsp (in this example, we're only running on verified genes (from verified.gff)). </span>
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">If --fn-q-labels is not provided, the program takes initial labels from ncbi.gff</span>
+<span style="color: #268bd2;">pf_sbsp_options</span>=$<span style="color: #268bd2;">config</span>/sbsp_defaults.list
+$<span style="color: #268bd2;">bin</span>/sbsp_on_genome_list_py.sh --pf-q-list $<span style="color: #268bd2;">lists</span>/verified_hsalinarum.list --pd-work $<span style="color: #268bd2;">runs</span> --pf-sbsp-options $<span style="color: #268bd2;">pf_sbsp_options</span> --pf-db-index $<span style="color: #268bd2;">pf_db_index</span> --fn-q-labels verified.gff 
+
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">the prediction file 'sbsp.gff' will be located in the directory $runs/GENOME/sbsp/sbsp.gff</span>
+<span style="color: #93a1a1;"># </span><span style="color: #93a1a1;">in this case GENOME is the id for GENOME_NAME, found in $pf_q_list</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
