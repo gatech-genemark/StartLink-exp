@@ -24,7 +24,6 @@ in `install/startlink.yml` through the following command:
 
 This can then be activated via 
 
-<<<<<<< HEAD
     conda activate startlink
 
 See `info/reproduce.[html|pdf]` for more information.
@@ -34,13 +33,6 @@ See `info/reproduce.[html|pdf]` for more information.
 Due to the nature of StartLink as a comparative approach, experiments can take several hours to several days to complete (depending on your setup). In light of this, we also provide all intermediary results, which include all gene predictions done by StartLink(+). These can be found in the `results` directory.
 
 
-=======
-## StartLink Gene Predictions
-
-Due to the nature of StartLink as a comparative approach, experiments can take several hours to several days to complete (depending on your setup). In light of this, we also provide all intermediary results, which include all gene predictions done by StartLink(+). These can be found in the `results` directory.
-
-
->>>>>>> 567a88fd69d242ef18b1f5a9b7657737484481dc
 ##  Reproducing Results
 
 We provide a document detailing how to reproduce all results. This can be found at `info/reproduce.[html|pdf]`
