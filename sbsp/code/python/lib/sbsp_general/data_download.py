@@ -212,10 +212,10 @@ def get_genome_specific_attributes(pd_data, info):
 
     gc = compute_gc_from_file(pf_sequences)
     try:
-        num_genes = count_cds(pf_labels)
+        num_genes = 0; #num_genes = count_cds(pf_labels)
     except Exception:
         num_genes = 0
-    annotation_date = get_annotation_date(pf_labels)
+    annotation_date = "" #get_annotation_date(pf_labels)
 
     return {"gc": gc, "num_genes": num_genes, "annotation_date": annotation_date}
 

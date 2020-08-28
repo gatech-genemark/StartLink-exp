@@ -175,23 +175,28 @@ def analysis_per_query_for_genome(env, gi, pd_sbsp, **kwargs):
     pd_runs = os_join(env["pd-runs"], gi.name)
     pf_gms2 = os_join(pd_runs, "gms2", "gms2.gff")
     pf_prodigal = os_join(pd_runs, "prodigal", "prodigal.gff")
-    pf_sbsp = os_join(pd_sbsp, "accuracy", "{}.gff".format(gi.name))
+    #pf_sbsp = os_join(pd_sbsp, "accuracy", "{}.gff".format(gi.name))
+    pf_sbsp = os_join(pd_sbsp, "sbsp.gff")
     pf_ncbi = os_join(pd_runs, "ncbi", "ncbi.gff")
 
     if use_verified:
         pf_ncbi = os_join(pd_genome, "verified.gff")
-        
+
     pf_sbsp_details = os_join(pd_sbsp, "output.csv")
 
 
     # Read all input and sbsp prediction details
     common_options = {"shift": 0}
-    labels_sbsp = read_labels_from_file(pf_sbsp, name="SBSP", **common_options)
-    labels_gms2 = read_labels_from_file(pf_gms2, name="GMS2", **common_options)
-    labels_ncbi = read_labels_from_file(pf_ncbi, name="NCBI", **common_options)
-    labels_prodigal = read_labels_from_file(pf_prodigal, name="Prodigal", **common_options)
-    df_sbsp_details = pd.read_csv(pf_sbsp_details)
+    try:
+        labels_sbsp = read_labels_from_file(pf_sbsp, name="SBSP", **common_options)
+        labels_gms2 = read_labels_from_file(pf_gms2, name="GMS2", **common_options)
+        labels_ncbi = read_labels_from_file(pf_ncbi, name="NCBI", **common_options)
+        labels_prodigal = read_labels_from_file(pf_prodigal, name="Prodigal", **common_options)
+        df_sbsp_details = pd.read_csv(pf_sbsp_details)
+    except FileNotFoundError:
+        return pd.DataFrame()
     add_q_key_3p_to_df(df_sbsp_details, "q-key-3p")
+
 
     # get keys per label
     key_to_label_sbsp = map_key_3p_to_label(labels_sbsp)

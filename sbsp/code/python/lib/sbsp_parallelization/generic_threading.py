@@ -63,6 +63,7 @@ def run_one_per_thread(data, func, data_arg_name, func_kwargs, **kwargs):
         thread = GenericThread(func, {data_arg_name: dp, **func_kwargs})
         thread.start()
         thread_id += 1
+        active_threads.append(thread)
 
         # wait until number of active threads is low
         if len(active_threads) >= simultaneous_runs:

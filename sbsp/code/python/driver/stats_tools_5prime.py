@@ -39,6 +39,7 @@ parser.add_argument('--list-names', required=True, nargs="+")
 parser.add_argument('--dn-tools', required=True, nargs="+")
 parser.add_argument('--tool-names', required=False, nargs="+")
 parser.add_argument('--pf-output', required=True)
+parser.add_argument('--pf-parallelization-options')
 
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
@@ -103,7 +104,7 @@ def _pairwise_analysis(indexed_labels):
                 f"3p:{n1}={n2}": len(common_3p),
                 f"5p:{n1}={n2}": num_common_5p
             })
-    
+
     return result
 
 
@@ -165,7 +166,7 @@ def stats_for_gi(env, gi, list_dn_tools, list_tool_names):
 
     # pairwise analysis
     result.update(_pairwise_analysis(indexed_labels))
-    
+
     # all together
     result.update(_all_together_analysis(indexed_labels))
 
@@ -188,13 +189,13 @@ def stats_for_gil(env, gil, list_dn_tools, list_tool_names, **kwargs):
 def stats_tools_5prime(env, list_gil, list_names, list_dn_tools, list_tool_names, pf_output, **kwargs):
     # type: (Environment, List[GenomeInfoList], List[str], List[str], List[str], str, Dict[str, Any]) -> None
 
-    
+
     prl_options = get_value(kwargs, "prl_options", None)
     # for each gil
     list_df = list()
     for name, gil in zip(list_names, list_gil):
         logger.info(f"Analyzing list: {name}")
-        if prl_options is not None:
+        if prl_options is not None and prl_options["use-pbs"]:
             pbs = PBS(env, prl_options,
               splitter=split_genome_info_list,
               merger=merge_identity
@@ -241,7 +242,7 @@ def main(env, args):
 
     prl_options = ParallelizationOptions.init_from_dict(env, vars(args))
 
-    
+
 
     stats_tools_5prime(env, list_gil, list_names, list_dn_tools, list_tool_names, args.pf_output, prl_options=prl_options)
 
