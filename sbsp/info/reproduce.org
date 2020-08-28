@@ -1,6 +1,6 @@
 #+TITLE: Reproducing Analysis of {{{tool}}}
 #+AUTHOR: Karl Gemayel
-#+Date: May 21 2020 
+#+Date: August 28, 2020 
 #+OPTIONS: toc:2 H:3 num:3
 
 #+LATEX_HEADER_EXTRA:  \usepackage{mdframed}
@@ -30,7 +30,7 @@ This document serves as a step-by-step instruction manual on how to replicate re
 * Downloading
 To download, simply clone the git repository
 #+begin_src bash
-git clone ...
+  git clone ...
 #+end_src
 
 * Installation
@@ -53,8 +53,8 @@ where =$driverpython= is loaded by the =config.sh= script.
 *** Loading Python Libraries
     Most of {{{tool}}} is built in Python. We use =conda= to manage package installations. Simply run
  #+begin_src bash
- conda env create -f install/biogem_sbsp.yml  # needs to be executed only once
- conda activate biogem_sbsp                   # run whenever you start a new shell
+ conda env create -f install/startlink.yml --name startlink  # needs to be executed only once
+ conda activate startlink                   # run whenever you start a new shell
  #+end_src
 ** External Tools
    {{{tool}}} and {{{tool}}}+ and their analysis rely on a handful of external tools. The following need to be installed:
@@ -86,6 +86,10 @@ The setup is still in its beta version. {{{tool}}} is currently limited to a par
 Note: {{{tool}}} requires significant computational power and time. You can reduce this by tuning the parallelization parameters found in =$config/parallelization_defaults.conf=. It is recommended that you make a copy of this file and store it in =$config=. {{{tool}}} current supports PBS and multi-threading.
 
 If you are interested in reproducing the results from scratch, then follow the document as is. If you are interested in testing out {{{tool}}}, then we recommend you start by running /H. salinarum/ on the /Archaea/ database. Start by downloading the data for genomes with verified start (see [[sec:dl_verified]]). If you already have the /Archaea/ database downloaded, then move to [[sec:exp_hsalinarum]]. Otherwise, first construct the database using the instructions in [[sec:data]]. 
+* Prebuilt databases and StartLink predictions
+For convenience, we provide the StartLink(+) predictions and the DIAMOND databases used to generate them. These can be found at
+LINK
+
 * Downloading and installing
 ** Data
    <<sec:data>>
@@ -317,7 +321,7 @@ Since much of the analysis is done by comparing {{{tool}}} to NCBI's PGAP, GeneM
     pf_pbs_options=$config/parallelization_defaults.conf   # PBS config file
 
     # PBS options
-    toggle_pbs="--pf-parallelization-options $config/$pf_pbs_options"  # if PBS not installed, set this option to empty: ""
+    toggle_pbs="--pf-parallelization-options $pf_pbs_options"  # if PBS not installed, set this option to empty: ""
     sg=8   # number of genomes to run simutaneously (low number recommended)
   #+end_src
 
@@ -327,7 +331,7 @@ Since much of the analysis is done by comparing {{{tool}}} to NCBI's PGAP, GeneM
       pf_rep_bac=$lists/refseq_representative_bacteria.list
       pf_rep_arc=$lists/refseq_representative_archaea.list
       pf_assembly_bac=$metadata/assembly_summary.txt
-      $bin/download_from_ncbi_py.sh --pf-assembly-summary $pf_assembly_bac --pf-data $data --pf-output-list
+      # $bin/download_from_ncbi_py.sh --pf-assembly-summary $pf_assembly_bac --pf-data $data --pf-output-list
 
       # link ncbi as "tool" (for easy comparison wwith other tools)
       cat $pf_rep_bac $pf_rep_arc | grep -v gcfid | cut -f1 -d, | while read -r line; do
@@ -336,27 +340,22 @@ Since much of the analysis is done by comparing {{{tool}}} to NCBI's PGAP, GeneM
       done
     #+end_src
 
-*** Run GMS2 and Prodigal
-    #+begin_src bash
-
-      # Run on GMS2
-      $bin/run_tool_on_genome_list_py.sh --tool gms2 --pf-genome-list $pf_rep_bac --type bacteria --dn-run gms2
-      $bin/run_tool_on_genome_list_py.sh --tool gms2 --pf-genome-list $pf_rep_arc --type archaea --dn-run gms2
-
-      # Run on Prodigal
-      $bin/run_tool_on_genome_list_py.sh --tool prodigal --pf-genome-list $pf_rep_bac --type bacteria --dn-run prodigal
-      $bin/run_tool_on_genome_list_py.sh --tool prodigal --pf-genome-list $pf_rep_arc --type archaea --dn-run prodigal
-    #+end_src
-
 *** Collect statistics
     We can now collect the statistics and create the figures to compare GMS2, Prodigal, and NCBI predictions.
     #+begin_src bash
+
+      pd_work=$tmp/stats_refseq_vs_tools
+      mkdir -p $pd_work
+      cd $pd_work
+
       pf_stats=$pd_work/stats_tools.csv
 
       $bin/stats_tools_5prime_py.sh --pf-genome-lists $pf_rep_bac $pf_rep_arc --list-names Bacteria Archaea --dn-tools gms2 prodigal ncbi --tool-names GMS2 Prodigal NCBI --pf-output $pf_stats
 
       # create figures
       $bin/viz_stats_tools_5prime_py.sh --pf-stats $pf_stats
+
+      cd $base
     #+end_src    
 
     This should now create a file containing the following image
@@ -372,21 +371,34 @@ Since much of the analysis is done by comparing {{{tool}}} to NCBI's PGAP, GeneM
 ** Genomes with genes with verified starts
 *** Running {{{tool}}}
 #+BEGIN_SRC bash
-  # set this to only run on genes with verified starts
-  opt_verif="--fn-q-labels verified.gff --fn-q-labels-compare verified.gff"
+
+  mkdir $tmp/verified
+  cd $tmp/verified
 
   # run SBSP
-  $bin/sbsp_on_genome_list_py.sh --pf-q-list $pf_list_verified --simultaneous-genomes $sg --pd-work $pd_runs --pf-sbsp-options $pf_sbsp_options  --pf-db-index $pf_db_index $opt_verif $toggle_pbs
+  $bin/sbsp_on_genome_list_py.sh --pf-q-list $pf_list_verified --simultaneous-genomes $sg --pd-work $runs --pf-sbsp-options $pf_sbsp_options  --pf-db-index $pf_db_index $toggle_pbs
+
+  cd $base
+
 #+END_SRC 
 
 *** Collecting statistics
     #+begin_src bash
-      # collect statistics per query gene (comparing SBSP, GMS2, and verified genes)
+      mkdir $tmp/verified_stats
+      cd $tmp/verified_stats
+
+      # collect statistics per query gene (comparing StartLink, GMS2, and verified genes)
       $bin/stats_per_query_gene_py.sh --pf-genome-list $pf_list_verified --pf-output-summary summary.csv --verified
+
+      cd $base
     #+end_src
 *** Visualizing
     #+begin_src bash
+      cd $tmp/verified_stats
+
       $bin/viz_stats_genome_level_py.sh --pf-data summary.csv
+
+      cd $base
     #+end_src
 
 This will produce two files, =error.csv= and =coverage.csv= containing the following two tables.
@@ -411,6 +423,7 @@ Coverage
 It also produces the per-step analysis on the verified set of genes.
 [[file:figures/verified_per_step.pdf]]
 
+
 ** Larger set of query genomes
 *** Running {{{tool}}}
     Prewarning, running this analysis can take a long time. Our estimate is roughly 5 days on 20 compute nodes with 8 processors each, though that number can vary based on how databases are setup, where they are located, and the cost of accessing them (e.g. databases can be copied to each node beforehand, making access much cheaper and prevent bottlenecks).
@@ -419,19 +432,32 @@ It also produces the per-step analysis on the verified set of genes.
 
     #+BEGIN_SRC bash
 
-      # run SBSP
-      $bin/sbsp_on_genome_list_py.sh --pf-q-list $pf_list_qncbi --simultaneous-genomes $sg --pd-work $pd_runs --pf-sbsp-options $pf_sbsp_options  --pf-db-index $pf_db_index $toggle_pbs
+      mkdir $tmp/large
+      cd $tmp/large
 
+      # run SBSP
+      $bin/sbsp_on_genome_list_py.sh --pf-q-list $pf_list_qncbi --simultaneous-genomes $sg --pd-work $runs --pf-sbsp-options $pf_sbsp_options  --pf-db-index $pf_db_index $toggle_pbs
+
+      cd $base
     #+END_SRC 
 *** Collecting statistics
     #+begin_src bash
+      mkdir $tmp/large_stats
+      cd $tmp/large_stats
+
       # collect statistics per query gene (comparing SBSP, GMS2, and verified genes)
       $bin/stats_per_query_gene_py.sh --pf-genome-list $pf_list_qncbi --pf-output-summary summary.csv
+
+      cd $base
     #+end_src
 *** Visualizing
     All images regarding the large-scale comparisons can be generated via a single script. Note that the contour plots are computationally expensive and may take ~1 hour to generate. Therefore, they are turned off by default. To enable them, run the command with the option =--with-contours=. 
     #+begin_src bash
+      cd $tmp/large_stats
+
       $bin/viz_stats_clade_level_py.sh --pf-data summary.csv 
+
+      cd $base
     #+end_src
 
     #+CAPTION: The 5' error rate of NCBI compared to GMS2=SBSP for query genomes in different clades
@@ -545,7 +571,7 @@ It also produces the per-step analysis on the verified set of genes.
     # in this case GENOME is the id for H. salinarum, found in $lists/verified_hsalinarum.list
 
   #+end_src
-
+  
 * Using existing databases
 <<sec:exp_hsalinarum>>
 As previously mentioned, all databases must be constructed using the =$bin/extract_annotated_sequences_py.sh= and =$bin/build_blast_db_py.sh= scripts. This is because, for now, the format of the database is strict. This will be relaxed in a later release.
