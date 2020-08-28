@@ -14,8 +14,8 @@ This repository contains the data and source code needed to reproduce all result
 StartLink requires external software. To reproduce the results, it is recommended that you have the exact versions 
 listed here, and they should be available through your environment's `$PATH`:
 
-ClustalO: `v1.2.4`
-DIAMOND: `0.9.24`
+- ClustalO: `v1.2.4`
+- DIAMOND: `0.9.24`
 
 StartLink is a `python` based program. To get all packages, it is recommended that the user creates a `conda` environment from the file 
 in `install/startlink.yml` through the following command:
@@ -23,11 +23,14 @@ in `install/startlink.yml` through the following command:
     conda env create -f install/startlink.yml --name startlink
 
 
-## StartLink Gene Predictions and Reproducing Results
+## StartLink Gene Predictions
+
+Due to the nature of StartLink as a comparative approach, experiments can take several hours to several days to complete (depending on your setup). In light of this, we also provide all intermediary results, which include all gene predictions done by StartLink(+). These can be found in the `results` directory.
+
+
+##  Reproducing Results
 
 We provide a document detailing how to reproduce all results. This can be found at `info/reproduce.[html|pdf]`
-
-Note: Due to the nature of StartLink as a comparative approach, experiments can take several hours to several days to complete (depending on your setup). In light of this, we also provide all intermediary results, which include all gene predictions done by StartLink(+). These can be found in the `results` directory.
 
 
 ## Folder structure
