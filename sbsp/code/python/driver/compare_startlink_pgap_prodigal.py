@@ -27,6 +27,7 @@ from sbsp_general.shelf import compute_gc_from_file, next_name
 from sbsp_io.general import mkdir_p
 from sbsp_io.labels import read_labels_from_file
 from sbsp_io.objects import save_obj, load_obj
+from sbsp_options.parallelization import ParallelizationOptions
 from sbsp_parallelization.pbs import PBS
 from sbsp_pbs_data.mergers import merge_identity
 from sbsp_pbs_data.splitters import split_genome_info_list
@@ -137,7 +138,25 @@ def main(env, args):
     pf_checkpoint = args.pf_checkpoint
 
     if not pf_checkpoint or not os.path.isfile(pf_checkpoint):
-        df = get_differences(env, gil)
+        prl_options = ParallelizationOptions.init_from_dict(env, vars(args))
+
+        if prl_options is not None:
+            pbs = PBS(env, prl_options,
+                      splitter=split_genome_info_list,
+                      merger=merge_identity
+                      )
+
+            output = pbs.run(
+                data={"gil": gil},
+                func=get_differences,
+                func_kwargs={
+                    "env": env,
+                }
+            )
+            df = pd.concat(output, ignore_index=True, sort=False)
+        else:
+            df = get_differences(env, gil)
+
         if pf_checkpoint:
             save_obj(df, pf_checkpoint)
     else:
