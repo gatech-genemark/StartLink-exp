@@ -43,6 +43,7 @@ parser = argparse.ArgumentParser("Run external prediction tools on genome list."
 
 parser.add_argument('--pf-genome-list', required=True, help="List of genomes")
 parser.add_argument('--pf-checkpoint')
+parser.add_argument('--pf-parallelization-options')
 
 parser.add_argument('--pd-work', required=False, default=None, help="Path to working directory")
 parser.add_argument('--pd-data', required=False, default=None, help="Path to data directory")
