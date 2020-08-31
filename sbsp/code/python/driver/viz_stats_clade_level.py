@@ -1111,7 +1111,7 @@ def viz_analysis_per_query(env, df, **kwargs):
     df["(GMS2=SBSP)!=NCBI"] = df["GMS2=SBSP"] & df["NCBI"] & ~df["GMS2=SBSP=NCBI"]
     df["(GMS2=SBSP)!=Prodigal"] = df["GMS2=SBSP"] & df["Prodigal"] & ~df["GMS2=SBSP=Prodigal"]
 
-    print(df[["Ancestor", "GMS2=SBSP"]].groupby("Ancestor", as_index=False).sum().to_string())
+    print(df[["Ancestor", "SBSP", "GMS2=SBSP"]].groupby("Ancestor", as_index=False).sum().to_string())
     print(df[["Ancestor", "GCFID"]].groupby("Ancestor")["GCFID"].nunique().to_string())
 
     df.drop(df[((df["Ancestor"] == "FCB group") & (df["Genome GC"] > 0.6))].index, axis=0, inplace=True)
