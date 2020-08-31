@@ -1120,13 +1120,14 @@ def viz_analysis_per_query(env, df, **kwargs):
     # df.loc[df["Predicted-at-step"] == "B", "Predicted-at-step"] = "C"
     # df.loc[df["Predicted-at-step"] == "U", "Predicted-at-step"] = "B"
     # df.drop(df.index[df["Support"] < 5], inplace=True)
-    #  viz_summary_per_gcfid_per_step(env, df)
-    #
-    #
-    #  df_summary_per_gcfid = get_summary_per_gcfid(df)
-    #  viz_summary_per_gcfid(env, df_summary_per_gcfid)
-    #
-    #  analyze_upstream_distances(env, df[~df["Upstream-distance"].isnull()].copy())
+
+    viz_summary_per_gcfid_per_step(env, df)
+
+
+    df_summary_per_gcfid = get_summary_per_gcfid(df)
+    viz_summary_per_gcfid(env, df_summary_per_gcfid)
+
+    analyze_upstream_distances(env, df[~df["Upstream-distance"].isnull()].copy())
     analyze_kimura_distances(env, df[~df["Kimura-to-query"].isnull()].copy())
     analyze_support(env, df)
 

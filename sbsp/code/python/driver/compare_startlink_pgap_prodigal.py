@@ -2,6 +2,7 @@
 # Georgia Institute of Technology
 #
 # Created: 08/30/2020
+import copy
 import logging
 import argparse
 import os
@@ -36,6 +37,7 @@ import sbsp_argparse.parallelization
 # ------------------------------ #
 #           Parse CMD            #
 # ------------------------------ #
+from sbsp_viz.colormap import ColorMap
 from sbsp_viz.general import FigureOptions
 from sbsp_viz.sns import lmplot
 
@@ -124,11 +126,63 @@ def get_differences(env, gil, **kwargs):
 def plot_difference_to_startlink(env, df):
     # type: (Environment, pd.DataFrame) -> None
 
-    lmplot(df, "GC", "Difference", col="Tool", hue="Clade", figure_options=FigureOptions(
-        save_fig=next_name(env["pd-work"]),
-        xlabel="GC",
-        ylabel="% difference in gene starts"
-    ))
+    df_combined = copy.deepcopy(df)
+    df_combined["Clade"] = "Total"
+
+    df = pd.concat([df, df_combined], ignore_index=True, sort=False)
+    import matplotlib.pyplot as plt
+
+    cmap = ColorMap.get_map("ancestor")
+    cmap["Total"] = "black"
+    df["Difference"] *= 100
+
+    fig, axes = plt.subplots(1, 2, sharey="all", sharex="all", figsize=(12,4))
+
+    for i, (tool, ax) in enumerate(zip(df["Tool"].unique(), axes)):
+
+        df_tool = df[df["Tool"] == tool]
+        for hue in df_tool["Clade"].unique():
+            if hue == "Total":
+                continue
+
+            seaborn.regplot(
+            "GC", "Difference", data=df_tool[df_tool["Clade"] == hue], lowess=True,
+            scatter_kws={"s": 2, "alpha": 0.3}, color=cmap[hue],
+            ax=ax, label=hue
+            )
+
+        handles, labels = ax.get_legend_handles_labels()
+
+        seaborn.regplot(
+            "GC", "Difference", data=df_tool[df_tool["Clade"] == "Total"], lowess=True,
+            scatter_kws={"s": 0}, line_kws={"linestyle": "dashed"}, color=cmap["Total"],
+            ax=ax
+        )
+
+        if i == 1:
+            ax.set_ylabel("")
+        else:
+            ax.set_ylabel("Percentage of gene-start differences")
+        ax.set_ylim(0, 20)
+        ax.set_title(tool)
+
+    fig.subplots_adjust(0, 0.1, 1, 1)
+    leg = fig.legend(handles=handles, labels=labels, loc="lower center", ncol=4, frameon=False)#, bbox_to_anchor=(0.5, -0.25))
+    for lh in leg.legendHandles:
+        lh.set_alpha(1)
+        lh._sizes = [50]
+
+    fig.tight_layout(rect=[0,0.1,1,1])
+    plt.savefig(next_name(env["pd-work"]))
+    plt.show()
+
+    # lmplot(df, "GC", "Difference", hue="Clade",
+    #        sns_kwargs={"col": "Tool", "lowess": True},
+    #        figure_options=FigureOptions(
+    #     save_fig=next_name(env["pd-work"]),
+    #     xlabel="GC",
+    #     ylabel="% difference in gene starts"
+    # ))
 
 
 def main(env, args):
