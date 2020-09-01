@@ -100,7 +100,9 @@ def get_differences_for_gi(env, gi, **kwargs):
             "Difference": len(lcd.match_3p_not_5p("a")) / float(len(lcd.match_3p("a"))),
             "Tool": f"{ref_name},{ref_pred}",
             "GC": gc,
-            "Clade": clade
+            "Clade": clade,
+            "GCFID": gi.name,
+            "Name": gi.attributes.get("name")
         }
 
     list_entries = [
@@ -151,13 +153,13 @@ def plot_difference_to_startlink(env, df):
             ax=ax, label=hue
             )
 
-        handles, labels = ax.get_legend_handles_labels()
-
         seaborn.regplot(
             "GC", "Difference", data=df_tool[df_tool["Clade"] == "Total"], lowess=True,
             scatter_kws={"s": 0}, line_kws={"linestyle": "dashed"}, color=cmap["Total"],
-            ax=ax
+            ax=ax, label="Average"
         )
+
+        handles, labels = ax.get_legend_handles_labels()
 
         if i == 1:
             ax.set_ylabel("")
@@ -166,8 +168,10 @@ def plot_difference_to_startlink(env, df):
         ax.set_ylim(0, 20)
         ax.set_title(tool)
 
+        print(df_tool.sort_values("Difference", ascending=False).to_csv())
+
     fig.subplots_adjust(0, 0.1, 1, 1)
-    leg = fig.legend(handles=handles, labels=labels, loc="lower center", ncol=4, frameon=False)#, bbox_to_anchor=(0.5, -0.25))
+    leg = fig.legend(handles=handles, labels=labels, loc="lower center", ncol=5, frameon=False)#, bbox_to_anchor=(0.5, -0.25))
     for lh in leg.legendHandles:
         lh.set_alpha(1)
         lh._sizes = [50]
