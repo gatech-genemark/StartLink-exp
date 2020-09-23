@@ -239,6 +239,7 @@ def analysis_per_query(env, gil, pf_output_summary, **kwargs):
         remove_p(pf_output_summary)
 
     counter = 0
+    header = None
     for gi in gil:
         logger.info("{} / {}: {}".format(counter, len(gil), gi.name))
         pd_genome = os.path.join(env["pd-data"], gi.name)
@@ -247,10 +248,22 @@ def analysis_per_query(env, gil, pf_output_summary, **kwargs):
         pd_run = os.path.join(env["pd-runs"], gi.name, dn_run)
 
         df = analysis_per_query_for_genome(env, gi, pd_run, **kwargs)
+
+        if len(df) == 0:
+            logger.warning(f"No data found for {gi.name}")
+            continue
+
         df["GCFID"] = gi.name
         df["Name"] = gi.attributes["name"] if "name" in gi.attributes else gi.name
         df["Genome GC"] = gc
         df["Ancestor"] = gi.attributes["ancestor"] if "ancestor" in gi.attributes else ""
+
+        if header is None:
+            header = sorted(df.columns.values)
+        else:
+            if header != sorted(df.columns.values):
+                logger.debug(f"Header conflict.\nA: {header}\nB: {sorted(df.columns.values)}")
+
 
         append_data_frame_to_csv(df, pf_output_summary)
         counter += 1

@@ -494,8 +494,8 @@ def append_data_frame_to_csv(df, pf_output):
     if df is not None and len(df) > 0:
         try:
             if not os.path.isfile(pf_output):
-                df.to_csv(pf_output, index=False)
+                df[sorted(df.columns)].to_csv(pf_output, index=False)
             else:
-                df.to_csv(pf_output, mode="a", index=False, header=False)
+                df[sorted(df.columns)].to_csv(pf_output, mode="a", index=False, header=False)
         except FileNotFoundError:
             raise ValueError(f"Could not write to file {pf_output}")

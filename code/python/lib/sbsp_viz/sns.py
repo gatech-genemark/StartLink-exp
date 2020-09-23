@@ -100,16 +100,23 @@ def lineplot(df, x, y, hue=None, figure_options=None, **kwargs):
 def catplot(df, x, y, hue=None, kind="box", figure_options=None, **kwargs):
     # type: (pd.DataFrame, str, str, str, Union[str, None], FigureOptions, Dict[str, Any]) -> None
     sns_kwargs = get_value(kwargs, "sns_kwargs", dict())
-
     g = sns.catplot(x=x, y=y, data=df, kind=kind, hue=hue, legend=False, aspect=1.5, **sns_kwargs)
 
     if kind == "point":
         plt.setp(g.ax.lines, linewidth=1)  # set lw for all lines of g axes
         # plt.setp(g.ax.lines, markersize=0)  # set lw for all lines of g axes
+    #
+    # if fontsize:
+    #     g.set_xlabels(x, fontsize=fontsize)
+    #     g.set_ylabels(x, fontsize=fontsize)
 
     FigureOptions.set_properties_for_axis(g.axes[0][0], figure_options)
     legend = get_value(kwargs, "legend", "full")
     legend_loc = get_value(kwargs, "legend_loc", None)
+
+
+
+
     if hue is not None and legend:
         title = get_value(kwargs, "legend_title", None)
         if not legend_loc:
@@ -117,6 +124,7 @@ def catplot(df, x, y, hue=None, kind="box", figure_options=None, **kwargs):
         else:
             plt.legend(loc=legend_loc)
 
+    # plt.savefig(next_name(pd_work))
     save_figure(figure_options)
     plt.show()
 
