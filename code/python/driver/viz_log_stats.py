@@ -4,6 +4,8 @@
 # Created: 3/17/20
 import logging
 import argparse
+
+import matplotlib
 import pandas as pd
 from typing import *
 import seaborn
@@ -119,6 +121,23 @@ def viz_per_genome(env, df):
 
     df_tmp = pd.DataFrame(list_entries)
 
+    SMALL_SIZE = 16
+    MEDIUM_SIZE = 22
+    BIGGER_SIZE = 24
+    matplotlib.rcParams.update({
+        # "pgf.texsystem": "pdflatex",
+        'font.family': 'serif',
+        'text.usetex': True,
+        'pgf.rcfonts': False,
+        'font.size': SMALL_SIZE,  # controls default text sizes
+        'axes.titlesize': SMALL_SIZE,  # fontsize of the axes title
+        'axes.labelsize': MEDIUM_SIZE,  # fontsize of the x and y labels
+        'xtick.labelsize': SMALL_SIZE,  # fontsize of the tick labels
+        'ytick.labelsize': SMALL_SIZE,  # fontsize of the tick labels
+        'legend.fontsize': 12,  # legend fontsize
+        'figure.titlesize': BIGGER_SIZE,  # fontsize of the figure title
+    })
+
     sns.lineplot(df_tmp, "x", "y", hue="Ancestor", figure_options=FigureOptions(
         xlabel="Number of BLASTp hits",
         ylabel="Cumulative percentage of queries (per genome)",
@@ -141,6 +160,22 @@ def viz_per_genome(env, df):
                  legend_ncol=2,
                  sns_kwargs={"ci": "sd", "palette": CM.get_map("ancestor")})
 
+    SMALL_SIZE = 14
+    MEDIUM_SIZE = 18
+    BIGGER_SIZE = 20
+    matplotlib.rcParams.update({
+        # "pgf.texsystem": "pdflatex",
+        'font.family': 'serif',
+        'text.usetex': True,
+        'pgf.rcfonts': False,
+        'font.size': SMALL_SIZE,  # controls default text sizes
+        'axes.titlesize': SMALL_SIZE,  # fontsize of the axes title
+        'axes.labelsize': MEDIUM_SIZE,  # fontsize of the x and y labels
+        'xtick.labelsize': SMALL_SIZE,  # fontsize of the tick labels
+        'ytick.labelsize': SMALL_SIZE,  # fontsize of the tick labels
+        'legend.fontsize': 12,  # legend fontsize
+        'figure.titlesize': BIGGER_SIZE,  # fontsize of the figure title
+    })
     fig, axes = plt.subplots(2, 2, sharex="all", sharey="all")
 
     ancestors = sorted(set(df["Ancestor"]))
@@ -153,24 +188,25 @@ def viz_per_genome(env, df):
                      ax=ax,
                      sns_kwargs={"ci": "sd", "palette": CM.get_map("ancestor")})
         ax.set_title(anc)
-        ax.set_xlabel(None)
-        ax.set_ylabel(None)
+        ax.set_xlabel("")
+        ax.set_ylabel("")
 
     figure_options = FigureOptions(
         xlabel="Number of BLASTp hits",
-        ylabel="Cumulative percentage of queries (per genome)",
+        ylabel="Cumulative percentage of\nqueries (per genome)",
         save_fig=next_name(env["pd-work"]),
     )
+
 
     fig.add_subplot(111, frameon=False)
     # # hide tick and tick label of the big axes
     plt.tick_params(top=False, bottom=False, left=False, right=False, which="both",
                     labelbottom=False, labeltop=False, labelleft=False, labelright=False)
-    plt.xlabel(figure_options.xlabel, labelpad=20)
+    plt.xlabel(figure_options.xlabel, labelpad=30)
     plt.ylabel(figure_options.ylabel, labelpad=30)
 
-    save_figure(figure_options, fig)
-
+    # save_figure(figure_options, fig)
+    fig.savefig(next_name(env["pd-work"]), bbox_inches="tight")
     plt.show()
 
 def compute_more(df):
