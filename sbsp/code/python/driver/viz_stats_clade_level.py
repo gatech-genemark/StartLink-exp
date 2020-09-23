@@ -588,16 +588,19 @@ def one_dim_Kimura_accuracy(env, df_all, num_steps=20):
                  legend_title="",
                  sns_kwargs={"palette": CM.get_map("ancestor")})
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(8, 4))
     import seaborn
     seaborn.lineplot("Average-Kimura", "Percentage-of-queries", data=df, hue="Ancestor", ax=ax,
                      palette=CM.get_map("ancestor"))
 
     ax.set_ylabel("Percentage of queries")
     ax.set_xlabel("Average Kimura distance")
-    plt.legend(loc="best", title="")
-    plt.tight_layout()
-    plt.savefig(next_name(pd_work))
+    plt.legend(loc="best", title="", frameon=False)
+    # plt.tight_layout()
+    # plt.subplots_adjust(bottom=-0.1)
+    # plt.savefig(next_name(pd_work))
+    fig.savefig(next_name(pd_work), bbox_inches='tight')
+
     plt.show()
 
     sns.lineplot(df, "Average-Kimura", "Cumulative-percentage-of-queries", hue="Ancestor", figure_options=FigureOptions(
@@ -807,24 +810,30 @@ def analyze_upstream_distances(env, df):
     #                scatter=False, hue="Flexibility")
     # plt.show()
 
+    df_tmp["Most frequent upstream"] -= 1
+
     sns.lmplot(
         df_tmp, "Most frequent upstream", "DC(x,f)", hue="Flexibility", sns_kwargs={
             "scatter": False, "lowess": True
         },
         legend_loc="best",
-        figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-9, None], ylim=[0, 1],
+        figure_options=FigureOptions(save_fig=next_name(pd_work), xlim=[-10, None], ylim=[0, 1],
                                      ylabel="Distance conservation", xlabel="Most frequent distance to upstream gene")
     )
+
+
 
     # sns.distplot(df, "Most frequent upstream", figure_options=FigureOptions(
     #     save_fig=next_name(pd_work)
     # ),
     #              sns_kwargs={"kde": True})
 
+    df["Most frequent upstream"] -= 1
+
     fig, ax = plt.subplots()
     import seaborn
     # seaborn.countplot("Most frequent upstream", data=df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)], hue="Ancestor")
-    (df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)]
+    (df[(df["Most frequent upstream"] < 9) & (df["Most frequent upstream"] >= -10)]
      .groupby("Ancestor")["Most frequent upstream"]
      .value_counts(normalize=True)
      .mul(100)
@@ -850,7 +859,7 @@ def analyze_upstream_distances(env, df):
 
     fig, ax = plt.subplots()
     # scatter
-    (df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)]
+    (df[(df["Most frequent upstream"] < 9) & (df["Most frequent upstream"] >= -10)]
      .groupby("Ancestor")["Most frequent upstream"]
      .value_counts(normalize=True)
      .mul(100)
@@ -897,13 +906,108 @@ def analyze_upstream_distances(env, df):
         ylabel="Percentage of components (by clade)",
         # xlim=[-9.5, 9.5]
     )
-    plt.xlabel(figure_options.xlabel)
-    plt.ylabel(figure_options.ylabel)
+    plt.xlabel(figure_options.xlabel, fontsize=20)
+    plt.ylabel(figure_options.ylabel, fontsize=20)
     # plt.xlim(figure_options.xlim)
     # plt.xticks(range(-8,9,2))
 
-    save_figure(figure_options)
+    # save_figure(figure_options)
+    # plt.subplots_adjust(bottom=-0.1)
+    # plt.savefig(next_name(pd_work))
+    fig.savefig(next_name(pd_work), bbox_inches='tight')
 
+    plt.show()
+
+    import copy
+    import numpy as np
+    df_plot = copy.deepcopy(df_tmp)
+
+    df_plot.loc[df_plot["Most frequent upstream"] == 0, "DC(x,f)"] = np.nan
+
+    import matplotlib.gridspec as gridspec
+    xlim = [-10, 100]
+    fig3 = plt.figure(constrained_layout=True)
+    # gs = fig3.add_gridspec(4, 1)
+    gs = gridspec.GridSpec(4, 1)
+    ax1 = fig3.add_subplot(gs[1:, 0])
+    (df_plot.pipe((seaborn.lineplot, 'data'), x="Most frequent upstream", y='DC(x,f)', hue="Flexibility", ax=ax1))
+    ax1.set_ylim(0, 1)
+    ax1.set_xlim(*xlim)
+
+    ax2 = fig3.add_subplot(gs[0, 0])
+    df_t = df_plot[df_plot["Flexibility"] == "DC(x,0)"]
+    (df_t[(df_t["Most frequent upstream"] <= xlim[1]) & (df_t["Most frequent upstream"] >= xlim[0])]
+     .groupby("Flexibility")["Most frequent upstream"]
+     .value_counts(normalize=True)
+     .mul(100)
+     .rename('Percentage (by clade)')
+     .reset_index().pipe((seaborn.lineplot, 'data'), x="Most frequent upstream", y='Percentage (by clade)', ax=ax2))
+    # (df_plot[df_plot["Flexibility"] == "DC(x,0)"].pipe((seaborn.barplot, 'data'), x="Most frequent upstream", y='DC(x,f)', ax=ax2, order=range(*xlim)))
+    # seaborn.distplot(df_plot[df_plot["Flexibility"] == "DC(x,0)"]["Most frequent upstream"], ax=ax2, norm_hist=False, bins=50)
+    ax2.set_xlabel("")
+    # ax2.set_xticklabels([])
+    # ax2.set_xlim(*xlim)
+
+    plt.show()
+
+    import copy
+    import numpy as np
+    from matplotlib.ticker import FuncFormatter
+
+    df_plot = copy.deepcopy(df_tmp)
+
+    df_plot.loc[df_plot["Most frequent upstream"] == -5, "DC(x,f)"] = np.nan
+
+    def number_formatter(number, pos=None):
+        """Convert a number into a human readable format."""
+        magnitude = 0
+        while abs(number) >= 1000:
+            magnitude += 1
+            number /= 1000.0
+        return '%.0f%s' % (number, ['', 'K', 'M', 'B', 'T', 'Q'][magnitude])
+
+    import matplotlib.gridspec as gridspec
+    xlim = [-10, 100]
+    fig3 = plt.figure(constrained_layout=True)
+    # gs = fig3.add_gridspec(4, 1)
+    gs = gridspec.GridSpec(4, 1, )
+    ax1 = fig3.add_subplot(gs[1:, 0])
+    (df_plot.pipe((seaborn.lineplot, 'data'), x="Most frequent upstream", y='DC(x,f)', hue="Flexibility", ax=ax1))
+    ax1.set_ylim(0, 1)
+    ax1.set_xlim(*xlim)
+    ax1.set_xlabel("Most frequent distance to upstream gene")
+
+    ax2 = fig3.add_subplot(gs[0, 0])
+    df_t = df_plot[df_plot["Flexibility"] == "DC(x,0)"]
+    (df_t[(df_t["Most frequent upstream"] <= xlim[1]) & (df_t["Most frequent upstream"] >= xlim[0])]
+     .groupby("Flexibility")["Most frequent upstream"]
+     .value_counts(normalize=False)
+     # .mul(100)
+     .rename('Percentage (by clade)')
+     .reset_index().pipe((seaborn.lineplot, 'data'), x="Most frequent upstream", y='Percentage (by clade)', ax=ax2))
+    # (df_plot[df_plot["Flexibility"] == "DC(x,0)"].pipe((seaborn.barplot, 'data'), x="Most frequent upstream", y='DC(x,f)', ax=ax2, order=range(*xlim)))
+    # seaborn.distplot(df_plot[df_plot["Flexibility"] == "DC(x,0)"]["Most frequent upstream"], ax=ax2, norm_hist=False, bins=50)
+    ax2.set_xlabel("")
+    ax2.set_ylabel("Number of\ncomponents")
+    ax2.set_xticklabels([])
+    ax2.set_xlim(*xlim)
+    ax2.set_ylim(0, None)
+    ax2.yaxis.set_major_formatter(FuncFormatter(number_formatter))
+    fig3.align_ylabels()
+    plt.tight_layout()
+    plt.savefig(next_name(env["pd-work"]))
+    plt.show()
+
+    xlim = [-10, 100]
+    fig, ax = plt.subplots()
+    # gs = fig3.add_gridspec(4, 1)
+    (df_plot.pipe((seaborn.lineplot, 'data'), x="Most frequent upstream", y='DC(x,f)', hue="Flexibility", ax=ax))
+    ax.set_ylim(0, 1)
+    ax.set_xlim(*xlim)
+    ax.set_xlabel("Most frequent distance to upstream gene")
+
+    plt.tight_layout()
+    plt.savefig(next_name(env["pd-work"]))
     plt.show()
 
     # (df[(df["Most frequent upstream"] < 10) & (df["Most frequent upstream"] > -10)]
@@ -1072,7 +1176,8 @@ def analyze_support(env, df):
         sns_kwargs={"palette": CM.get_map("ancestor")},
         figure_options=FigureOptions(
             xlabel="Clade",
-            ylabel="Average number of targets per query, per species",
+            ylabel="Average number of targets\nper query, per species",
+            ylim=[0,None],
             save_fig=next_name(env['pd-work'])
         )
     )
@@ -1097,8 +1202,12 @@ def viz_summary_per_gcfid_per_step(env, df):
         figure_options=FigureOptions(
             save_fig=next_name(pd_work),
             xlabel="Clade",
-            ylabel=f"Diff(PGAP,{TOOLp})"
-        )
+            ylabel=f"Diff(PGAP,{TOOLp})",
+            # label_fontsize="x-large",
+            # title_fontsize="x-large",
+
+        ),
+
     )
 
 

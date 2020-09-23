@@ -31,7 +31,7 @@ def save_figure(figure_options, fig=None):
     if figure_options is not None and figure_options.save_fig is not None:
         if fig:
             # fig.tight_layout()
-            plt.savefig(figure_options.save_fig) #, bbox_index="tight")
+            fig.savefig(figure_options.save_fig, bbox_index="tight")
         else:
             plt.savefig(figure_options.save_fig , bbox_index="tight")
 
@@ -42,6 +42,10 @@ class FigureOptions:
         # type: (str, str, str, Tuple(int, int), Tuple(int, int), str, Dict[str, Any]) -> None
         self.balanced = get_value(kwargs, "balanced", False)
         self.legend_title = get_value(kwargs, "legend_title", None)
+
+        self.label_fontsize = get_value(kwargs, "label_fontsize", None)
+        self.title_fontsize = get_value(kwargs, "title_fontsize", None)
+        self.ticklabels_fontsize = get_value(kwargs, "tick_labels_fontsize", None)
 
         self.title = title
         self.xlabel = xlabel
@@ -58,11 +62,11 @@ class FigureOptions:
             return
 
         if figure_options.title:
-            axis.set_title(figure_options.title)
+            axis.set_title(figure_options.title, fontsize=figure_options.title_fontsize)
         if figure_options.xlabel:
-            axis.set_xlabel(figure_options.xlabel)
+            axis.set_xlabel(figure_options.xlabel, fontsize=figure_options.label_fontsize)
         if figure_options.ylabel:
-            axis.set_ylabel(figure_options.ylabel)
+            axis.set_ylabel(figure_options.ylabel, fontsize=figure_options.label_fontsize)
 
         if figure_options.xlim:
             axis.set_xlim(*figure_options.xlim)
@@ -77,7 +81,7 @@ class FigureOptions:
             axis.set_ylim(min_xy, max_xy)
 
         if figure_options.legend_title:
-            axis.legend().texts[0].set_text(figure_options.legend_title)
+            axis.legend().texts[0].set_text(figure_options.legend_title, fontsize=figure_options.label_fontsize)
 
 
 
